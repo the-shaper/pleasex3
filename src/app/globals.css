@@ -1,26 +1,74 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* RU tokens (order aligned with RU-1 comp) */
+  --color-text: #372525; /* paragraph normal */
+  --color-text-bright: #e9f8ee; /* bright text */
+  --color-text-muted: #6a8689; /* lighter dark */
+  --color-gray-subtle: #c6d9d1; /* subtle gray */
+  --color-bg: #e9f8ee; /* background */
+  --color-greenlite: #d0ff94; /* greenielo */
+  --color-coral: #ff5757; /* coral red */
+  --color-pink: #ffb9b0; /* light pink */
+  --color-gold: #dab67f; /* ui gold */
+  --color-ielo: #ffe694; /* ui gold */
+  --color-purple: #be97ff; /* pupr */
+  --color-blue: #94ecff; /* big blu */
+  --color-blue-2: #acdde0; /* other blu */
+  --color-bg-pink: #fef1f1; /* bg pink */
+
+  /* Back-compat base tokens */
+  --background: var(--color-bg);
+  --foreground: var(--color-text);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Map RU color tokens to Tailwind utilities */
+  --color-text: var(--color-text);
+  --color-text-bright: var(--color-text-bright);
+  --color-text-muted: var(--color-text-muted);
+  --color-gray-subtle: var(--color-gray-subtle);
+  --color-bg: var(--color-bg);
+  --color-greenlite: var(--color-greenlite);
+  --color-coral: var(--color-coral);
+  --color-pink: var(--color-pink);
+  --color-gold: var(--color-gold);
+  --color-purple: var(--color-purple);
+  --color-blue: var(--color-blue);
+  --color-blue-2: var(--color-blue-2);
+  --color-bg-pink: var(--color-bg-pink);
+  --color-ielo: var(--color-ielo);
 }
 
 body {
+  --font-body: var(--font-space-mono);
+  --font-heading: var(--font-space-mono);
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), space-mono, -apple-system, Segoe UI, Roboto,
+    Helvetica, Arial, sans-serif;
+}
+
+/* Hide number input spinners for custom-styled fields */
+.no-spinners::-webkit-outer-spin-button,
+.no-spinners::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinners[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+/* Some WebKit versions need this on the input itself */
+.no-spinners {
+  -webkit-appearance: none;
+}
+
+@utility no-scrollbar {
+  @apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
 }

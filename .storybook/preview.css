@@ -1,0 +1,48 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
+@import "tailwindcss";
+
+/* Test style to verify CSS is loading */
+.test-storybook-css {
+  border: 2px solid red !important;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Map RU color tokens to Tailwind utilities */
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-gray-subtle: var(--color-gray-subtle);
+  --color-bg: var(--color-bg);
+  --color-greenlite: var(--color-greenlite);
+  --color-coral: var(--color-coral);
+  --color-pink: var(--color-pink);
+  --color-gold: var(--color-gold);
+  --color-purple: var(--color-purple);
+  --color-blue: var(--color-blue);
+  --color-blue-2: var(--color-blue-2);
+  --color-bg-pink: var(--color-bg-pink);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Space Mono", system-ui, -apple-system, Segoe UI, Roboto,
+    Helvetica, Arial, sans-serif;
+}
+
+/* Hide number input spinners for custom-styled fields */
+.no-spinners::-webkit-outer-spin-button,
+.no-spinners::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinners[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+/* Some WebKit versions need this on the input itself */
+.no-spinners {
+  -webkit-appearance: none;
+}

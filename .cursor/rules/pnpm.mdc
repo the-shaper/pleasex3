@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+This project is working on PNMP
+The default is localhost:3000
+By default, the server is always on. So before trying to apply pmpm run dev or pmpm dev, check if it's already running and close before restarting
+---
