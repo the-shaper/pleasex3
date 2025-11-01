@@ -27,6 +27,7 @@ export interface CellComponentProps {
   data: CellComponentData;
   onOpen?: (ref: string) => void;
   className?: string;
+  currentTurn?: number;
 }
 
 const formatDate = (timestamp: number): string => {
@@ -42,6 +43,7 @@ export function CellComponent({
   data,
   onOpen,
   className = "",
+  currentTurn,
 }: CellComponentProps) {
   const handleOpen = () => {
     onOpen?.(data.ref);
@@ -58,7 +60,7 @@ export function CellComponent({
       <div className="flex justify-center">
         <GeneralNumber
           data={{ activeTurn: data.generalNumber }}
-          variant={data.status === "open" ? "active" : "default"}
+          variant={data.generalNumber === currentTurn ? "active" : "default"}
         />
       </div>
 

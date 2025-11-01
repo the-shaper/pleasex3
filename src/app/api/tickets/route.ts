@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
       creatorSlug: body.creatorSlug,
       queueKind: body.queue, // API uses "queue", Convex expects "queueKind"
       tipCents: body.priorityTipCents || 0,
+      taskTitle: body.taskTitle || undefined,
       message: body.needText || undefined,
       // Add user contact fields
       name: body.name,

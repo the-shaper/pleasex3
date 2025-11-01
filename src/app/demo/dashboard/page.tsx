@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { SideBar } from "@/components/sidebar/sideBar";
 import { TableComponent } from "@/components/dashboard/table/tableComponent";
 import TaskCard from "@/components/taskcard";
-import ApprovalPanel from "@/components/checkout/approvalPanel";
+import ApprovalPanel from "@/components/dashboard/approvalPanel";
 import { TaskTag, QueueSnapshot, DashboardOverview, Ticket } from "@/lib/types";
 import DashHeaderOG from "@/components/dashboard/DashHeaderOG";
 import { ConvexDataProvider } from "@/lib/data/convex";
@@ -355,7 +355,11 @@ export default function DashboardPage() {
         {/* Favors Table */}
         <div data-element="FAVORS-TABLE" className="h-full">
           <h2 className="text-xl font-bold mb-4">ALL FAVORS</h2>
-          <TableComponent data={tableData} onOpen={handleOpenTicket} />
+          <TableComponent
+            data={tableData}
+            onOpen={handleOpenTicket}
+            currentTurn={autoqueueCardData?.currentTurn}
+          />
         </div>
       </div>
     </div>

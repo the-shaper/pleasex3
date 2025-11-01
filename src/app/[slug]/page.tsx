@@ -2,62 +2,19 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@convex/_generated/api";
 import QueueCard from "../../../ui-backup/QueueCard";
-import { ConvexDataProvider } from "@/lib/data/convex";
-
-const dataProvider = new ConvexDataProvider();
 
 export default function CreatorQueuesPage() {
   const params = useParams();
   const slug = params.slug as string;
   const minPriorityTipCents = 1500;
-  const [queueData, setQueueData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  // Reactive queries (auto-update on DB changes)
+  const queueSnapshot = useQuery(api.queues.getSnapshot, { creatorSlug: slug });
+  const creatorInfo = useQuery(api.dashboard.getCreator, { creatorSlug: slug }) || { displayName: slug };
 
-  // Get creator info dynamically
-  const [displayName, setDisplayName] = useState<string>("Loading...");
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch queue data and creator info in parallel
-        const [snapshot, creatorInfo] = await Promise.all([
-          dataProvider.getQueueSnapshot(slug),
-          dataProvider.getCreatorInfo?.(slug) || Promise.resolve({ displayName: slug })
-        ]);
-
-        setQueueData(snapshot);
-        setDisplayName(creatorInfo.displayName || slug);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        // Fallback to mock data if there's an error
-        setQueueData({
-          personal: {
-            activeTurn: 0,
-            nextTurn: 1,
-            etaMins: 0,
-            activeCount: 0,
-            enabled: true,
-          },
-          priority: {
-            activeTurn: 0,
-            nextTurn: 1,
-            etaMins: 0,
-            activeCount: 0,
-            enabled: true,
-          },
-        });
-        setDisplayName(slug); // Fallback to slug as display name
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [slug]);
-
-  if (loading || !queueData) {
+  if (!queueSnapshot) {  // Loading (useQuery handles)
     return (
       <div className="bg-bg">
         <div className="max-w-6xl mx-auto p-8 min-h-screen flex flex-col items-center justify-center">
@@ -84,7 +41,7 @@ export default function CreatorQueuesPage() {
               style={{ fontFamily: "var(--font-body)" }}
             >
               NEED A QUICK FAVOR FROM{" "}
-              <span className="text-coral">{displayName}?</span>
+              <span className="text-coral">{creatorInfo.displayName}?</span>
             </p>
             <h1
               className="text-[40px] font-bold leading-none"
@@ -112,13 +69,13 @@ export default function CreatorQueuesPage() {
             <QueueCard
               kind="personal"
               slug={slug}
-              data={queueData.personal}
+              data={queueSnapshot.personal}
               minPriorityTipCents={minPriorityTipCents}
             />
             <QueueCard
               kind="priority"
               slug={slug}
-              data={queueData.priority}
+              data={queueSnapshot.priority}
               minPriorityTipCents={minPriorityTipCents}
             />
           </div>

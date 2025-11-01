@@ -200,10 +200,11 @@
 - [x] `/demo/approval` page rendering `TicketApprovalCard` with mock payload.
 - [ ] README: 60-second quickstart for the demo (install, run, demo paths).
 - [ ] Dashboard integration: Move approval functionality from `/demo/approval` into `/demo/dashboard`
-  - Create `ApprovalPanel` component for pending approvals section
-  - Add "PENDING APPROVALS" column to dashboard layout
-  - Remove standalone `/demo/approval` page
-  - Update navigation flow for unified creator workflow
+  - [x] Create `ApprovalPanel` component for pending approvals section
+  - [ ] Edit Styling of `ApprovalPanel` component to make it look in line with PPP
+  - [x] Add "PENDING APPROVALS" column to dashboard layout
+  - [x] Remove standalone `/demo/approval` page
+  - [ ] Update navigation flow for unified creator workflow
 
 ### Phase 2 (deferred; see archived plans)
 
@@ -214,7 +215,9 @@
   - `implementation-plan-glm/creator-page-plan.md`
   - `implementation-plan-glm/notification-system-plan.md`
 
-[2 tools called]
+
+
+- TASK DETAIL
 
 Based on the current state and the implementation plan, here's a comprehensive plan to set up the dashboard page:
 
@@ -308,7 +311,26 @@ Based on the current state and the implementation plan, here's a comprehensive p
     - Verify real-time updates across browser tabs
     - Test edge cases (no tickets, network errors, etc.)
 
+
+**N M I T**
+
+
+13. **Task Expanded View BUILD**
+- [ ]Design component in figma
+- [ ]Build React component
+- [ ]Integrate component into dashboard
+- [ ]Connect component to database (convex)
+
+14. **Clerk UI Dashboard**
+
+
+- [ ] CLERK
+  - [ ] Fit UI buttons within my own components
+  - [ ] Customize clerk ui elements
+
+
 ---
+
 
 ## 🔧 **Technical Implementation Details**
 

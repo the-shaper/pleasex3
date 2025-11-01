@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import TicketApprovalCard from "./ticketApprovalCard";
+import TicketApprovalCard from "../checkout/ticketApprovalCard";
 import { ConvexDataProvider } from "@/lib/data/convex";
 import type { Ticket } from "@/lib/types";
 

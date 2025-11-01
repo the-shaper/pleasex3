@@ -18,19 +18,16 @@ export interface TableComponentProps {
   data: CellComponentData[];
   onOpen?: (ref: string) => void;
   className?: string;
+  currentTurn?: number;
 }
 
 export function TableComponent({
   data,
   onOpen,
   className = "",
+  currentTurn,
 }: TableComponentProps) {
-  const [sorting, setSorting] = useState<SortingState>([
-    {
-      id: "general",
-      desc: false, // Default to ascending to show priority-first 3:1 ratio order
-    },
-  ]);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   // Define columns for TanStack Table with sorting
   const columns: ColumnDef<CellComponentData>[] = [
@@ -93,7 +90,7 @@ export function TableComponent({
       id: "ticket",
       accessorKey: "ticketNumber",
       header: "TICKET",
-      sortingFn: "basic", // Basic numeric sorting
+      enableSorting: false,
     },
     {
       id: "date",
@@ -135,17 +132,10 @@ export function TableComponent({
           }[table.getColumn("general")?.getIsSorted() as string] ?? " ⇅"}
         </button>
 
-        {/* TICKET - Sortable */}
-        <button
-          className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-center gap-1"
-          onClick={table.getColumn("ticket")?.getToggleSortingHandler()}
-        >
+        {/* TICKET - Not sortable */}
+        <div className="font-semibold text-sm uppercase tracking-wider">
           TICKET
-          {{
-            asc: " ↑",
-            desc: " ↓",
-          }[table.getColumn("ticket")?.getIsSorted() as string] ?? " ⇅"}
-        </button>
+        </div>
 
         {/* QUEUE - Not sortable */}
         <div className="font-semibold text-sm uppercase tracking-wider">
@@ -186,6 +176,7 @@ export function TableComponent({
               data={row.original}
               onOpen={onOpen}
               className="border-b-0"
+              currentTurn={currentTurn}
             />
           </div>
         ))}

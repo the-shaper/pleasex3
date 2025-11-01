@@ -23,6 +23,7 @@ export default defineSchema({
     creatorSlug: v.string(),
     queueKind: v.union(v.literal("personal"), v.literal("priority")),
     tipCents: v.number(),
+    taskTitle: v.optional(v.string()),
     message: v.optional(v.string()),
     status: v.union(
       v.literal("open"),

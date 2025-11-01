@@ -17,6 +17,7 @@ export const create = mutation({
     creatorSlug: v.string(),
     queueKind: v.union(v.literal("personal"), v.literal("priority")),
     tipCents: v.number(),
+    taskTitle: v.optional(v.string()),
     message: v.optional(v.string()),
     // Add new user contact fields
     name: v.optional(v.string()),
@@ -35,6 +36,7 @@ export const create = mutation({
       creatorSlug: args.creatorSlug,
       queueKind: args.queueKind,
       tipCents: args.tipCents,
+      taskTitle: args.taskTitle,
       message: args.message,
       status: "open",
       createdAt: Date.now(),

@@ -84,24 +84,24 @@ export default function TaskCard({
   const accentBg = isPriority
     ? "bg-gold"
     : isPersonal
-    ? "bg-greenlite"
-    : isAutoqueue
-    ? "bg-coral"
-    : "bg-gray-subtle";
+      ? "bg-greenlite"
+      : isAutoqueue
+        ? "bg-coral"
+        : "bg-gray-subtle";
   const queueBadgeBg = isPriority
     ? "bg-gold"
     : isPersonal
-    ? "bg-greenlite"
-    : isAutoqueue
-    ? "bg-coral"
-    : "bg-gray-subtle";
+      ? "bg-greenlite"
+      : isAutoqueue
+        ? "bg-coral"
+        : "bg-gray-subtle";
   const queueTypeVariant = isPriority
     ? "priority"
     : isPersonal
-    ? "personal"
-    : isAutoqueue
-    ? "autoqueue"
-    : "neutral";
+      ? "personal"
+      : isAutoqueue
+        ? "autoqueue"
+        : "neutral";
 
   // Toggle expanded state
   const toggleExpanded = () => {

@@ -5,56 +5,97 @@ import { useEffect, useState } from "react";
 import { SideBar } from "@/components/sidebar/sideBar";
 import { TableComponent } from "@/components/dashboard/table/tableComponent";
 import TaskCard from "@/components/taskcard";
-import ApprovalPanel from "@/components/checkout/approvalPanel";
-import { TaskTag, QueueSnapshot, DashboardOverview, Ticket } from "@/lib/types";
+import ApprovalPanel from "@/components/dashboard/approvalPanel";
+import {
+  TaskTag,
+  QueueSnapshot,
+  DashboardOverview,
+  Ticket,
+  SidebarSectionProps,
+} from "@/lib/types";
+import { useSearchParams } from "next/navigation";
+import { QueueSettings } from "@/components/dashboard/QueueSettings";
 import DashHeaderOG from "@/components/dashboard/DashHeaderOG";
 import { ConvexDataProvider } from "@/lib/data/convex";
+import { CellComponentData } from "@/components/dashboard/table/cellComponent";
+import TaskModule from "@/components/dashboard/taskModule/taskModule";
+import { useUser, SignedIn, SignedOut, SignIn } from "@clerk/nextjs";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@convex/_generated/api"; // Generated Convex API via path alias
 
 const dataProvider = new ConvexDataProvider();
 
 export default function DashboardPage() {
   const params = useParams();
   const slug = params.slug as string;
+
+  // All hooks first: Consistent order every render
+  const { isSignedIn, isLoaded } = useUser();
   const [queueData, setQueueData] = useState<Record<
     string,
     QueueSnapshot
   > | null>(null);
   const [dashboardOverview, setDashboardOverview] =
     useState<DashboardOverview | null>(null);
+  const [tableData, setTableData] = useState<CellComponentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const queueSnapshot = useQuery(api.queues.getSnapshot, { creatorSlug: slug });
+  const toggleQueue = useMutation(api.queues.toggleEnabled);
+  const [personalEnabled, setPersonalEnabled] = useState(false);
+  const [priorityEnabled, setPriorityEnabled] = useState(false);
 
-  const handleTicketUpdate = async (updatedTicket: Ticket) => {
-    if (!dashboardOverview) return;
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab") || "active";
 
-    // Refresh queue data and full ticket data after approval
-    try {
-      const [queueSnapshot, overview] = await Promise.all([
-        dataProvider.getQueueSnapshot(slug),
-        dataProvider.getDashboardOverview(slug),
-      ]);
-
-      setQueueData(queueSnapshot);
-      setDashboardOverview(overview);
-    } catch (err) {
-      console.error("Error refreshing dashboard data:", err);
-    }
-  };
+  const dashboardSections: SidebarSectionProps[] = [
+    {
+      title: "Favors",
+      links: [
+        { href: "?tab=active", label: "Active" },
+        { href: "/past", label: "Past" },
+        { href: "/all", label: "All" },
+      ],
+    },
+    {
+      title: "My Page",
+      links: [
+        { href: "?tab=queue-settings", label: "Queue Settings" },
+        { href: "/skills", label: "My Skills" },
+      ],
+    },
+  ];
 
   useEffect(() => {
+    if (queueSnapshot) {
+      setPersonalEnabled(queueSnapshot.personal.enabled);
+      setPriorityEnabled(queueSnapshot.priority.enabled);
+    }
+  }, [queueSnapshot]);
+
+  // useEffect: Always called, but guard inside
+  useEffect(() => {
     const fetchDashboardData = async () => {
+      // Always exit loading state first (even on unauth)
+      setLoading(false);
+
+      // Skip fetch if not signed in
+      if (!isSignedIn) return;
+
       try {
         setLoading(true);
         setError(null);
 
         // Fetch queue snapshot and dashboard overview in parallel
-        const [queueSnapshot, overview] = await Promise.all([
+        const [queueSnapshot, overview, tableTickets] = await Promise.all([
           dataProvider.getQueueSnapshot(slug),
           dataProvider.getDashboardOverview(slug),
+          dataProvider.getAllTicketsForTable(slug),
         ]);
 
         setQueueData(queueSnapshot);
         setDashboardOverview(overview);
+        setTableData(tableTickets);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
         setError("Failed to load dashboard data");
@@ -64,27 +105,102 @@ export default function DashboardPage() {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [slug, isSignedIn]); // Re-run on auth change
 
-  // Show loading state
-  if (loading) {
+  // Early returns: AFTER all hooks
+  // Combined loading (Clerk + app)
+  if (!isLoaded || loading) {
     return (
-      <div
-        id="DASHBOARD-LAYOUT"
-        className="grid grid-cols-[250px_1fr] grid-rows-[auto_1fr] h-screen overflow-hidden bg-bg p-8"
-      >
-        <DashHeaderOG />
-        <div className="col-start-2 row-start-2 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-xl font-bold mb-4">Loading dashboard...</h2>
-            <p className="text-gray-600">
-              Fetching latest queue and ticket data.
-            </p>
-          </div>
+      <div className="flex items-center justify-center min-h-screen bg-bg">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-4">Loading dashboard...</h2>
+          <p className="text-gray-600">
+            Fetching latest queue and ticket data.
+          </p>
         </div>
       </div>
     );
   }
+
+  // Unauth: Sign-in screen
+  if (!isSignedIn) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-bg p-8">
+        <div className="text-center max-w-md">
+          <h1 className="text-3xl font-bold mb-4">Welcome to Dashboard</h1>
+          <p className="text-text-muted mb-8">
+            Please sign in to access your dashboard.
+          </p>
+          <SignIn
+            routing="hash"
+            signUpUrl="/sign-up"
+            afterSignInUrl={window.location.pathname} // Redirect back to this dashboard URL after sign-in
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const handleTicketUpdate = async (updatedTicket: Ticket) => {
+    if (!dashboardOverview) return;
+
+    // Refresh queue data and full ticket data after approval
+    try {
+      const [queueSnapshot, overview, tableTickets] = await Promise.all([
+        dataProvider.getQueueSnapshot(slug),
+        dataProvider.getDashboardOverview(slug),
+        dataProvider.getAllTicketsForTable(slug),
+      ]);
+
+      setQueueData(queueSnapshot);
+      setDashboardOverview(overview);
+      setTableData(tableTickets);
+    } catch (err) {
+      console.error("Error refreshing dashboard data:", err);
+    }
+  };
+
+  const handleOpenTicket = (ref: string) => {
+    // For now, just log the ticket ref
+    // In a full implementation, this could navigate to a ticket detail page or open a modal
+    console.log("Open ticket:", ref);
+  };
+
+  // Helper function to sort tickets with 3:1 priority-to-personal ratio
+  const sortTicketsByPriorityRatio = (tickets: any[]) => {
+    // Separate tickets by type
+    const priorityTickets = tickets
+      .filter((t) => t.queueKind === "priority")
+      .sort((a, b) => a.createdAt - b.createdAt); // Oldest first within priority
+
+    const personalTickets = tickets
+      .filter((t) => t.queueKind === "personal")
+      .sort((a, b) => a.createdAt - b.createdAt); // Oldest first within personal
+
+    // Interleave with 3:1 ratio (3 priority : 1 personal)
+    const result = [];
+    let priorityIndex = 0;
+    let personalIndex = 0;
+
+    while (
+      priorityIndex < priorityTickets.length ||
+      personalIndex < personalTickets.length
+    ) {
+      // Add up to 3 priority tickets
+      for (let i = 0; i < 3 && priorityIndex < priorityTickets.length; i++) {
+        result.push(priorityTickets[priorityIndex]);
+        priorityIndex++;
+      }
+
+      // Add 1 personal ticket if available
+      if (personalIndex < personalTickets.length) {
+        result.push(personalTickets[personalIndex]);
+        personalIndex++;
+      }
+    }
+
+    return result;
+  };
 
   // Show error state
   if (error || !queueData || !dashboardOverview) {
@@ -125,10 +241,8 @@ export default function DashboardPage() {
 
     if (approvedTickets.length === 0) return null;
 
-    // Sort by creation time and get the first (oldest/current)
-    const sortedTickets = [...approvedTickets].sort(
-      (a, b) => a.createdAt - b.createdAt
-    );
+    // Sort by 3:1 priority ratio and get the first (highest priority)
+    const sortedTickets = sortTicketsByPriorityRatio(approvedTickets);
 
     return sortedTickets[0];
   };
@@ -139,106 +253,99 @@ export default function DashboardPage() {
   const hasPendingApprovals = dashboardOverview?.openTickets?.length > 0;
 
   // Create autoqueue card data for the NEXT UP section
-  // Create autoqueue card data for the summary at the top
-  const autoqueueCardData =
-    dashboardOverview.approvedTickets.length > 0
-      ? {
-          currentTurn: queues.general.activeTurn,
-          nextTurn: queues.general.nextTurn,
+  // Autoqueue shows the CURRENT ticket being worked on (first approved ticket)
+  // This represents the actual task the creator should focus on next
+  const autoqueueCardData = firstApprovedTicket
+    ? (() => {
+        // Calculate position in combined chronological queue (all tickets together)
+        const allApprovedTickets = dashboardOverview.approvedTickets.sort(
+          (a, b) => a.createdAt - b.createdAt
+        );
+
+        const ticketPosition =
+          allApprovedTickets.findIndex(
+            (t) => t.ref === firstApprovedTicket.ref
+          ) + 1;
+
+        return {
+          currentTurn: ticketPosition,
+          nextTurn: ticketPosition, // Show current position in combined queue
           etaMins: queues.general.etaMins,
-          activeCount: dashboardOverview.approvedTickets.length, // Show total approved tickets
+          activeCount: queues.general.activeCount, // Total tickets in general queue
           enabled: queues.general.enabled,
-          name: "Processing Queue", // Show queue info, not individual user
-          email: `${dashboardOverview.approvedTickets.length} ticket${
-            dashboardOverview.approvedTickets.length !== 1 ? "s" : ""
-          } in queue`,
-          phone: "",
-          location: "",
-          social: "",
-          needText: "Processing approved requests",
-          attachments: [],
-          tipCents: 0, // Not relevant for summary card
-          queueKind: "personal" as const, // Use personal for autoqueue
+          name: firstApprovedTicket.name || "Anonymous",
+          email: firstApprovedTicket.email || "user@example.com",
+          phone: firstApprovedTicket.phone || "",
+          location: firstApprovedTicket.location || "",
+          social: firstApprovedTicket.social || "",
+          needText: firstApprovedTicket.message || "No description provided",
+          attachments: firstApprovedTicket.attachments || [],
+          tipCents: firstApprovedTicket.tipCents,
+          queueKind: firstApprovedTicket.queueKind as "personal" | "priority",
           status: "current" as const,
           tags: ["current"] as TaskTag[],
-          createdAt: Date.now(), // Not relevant for summary card
-          ref: "AUTOQUEUE-SUMMARY", // Special ref for summary card
-        }
-      : null;
+          createdAt: firstApprovedTicket.createdAt,
+          ref: firstApprovedTicket.ref,
+        };
+      })()
+    : null;
 
   // Create individual cards for approved tickets (next up)
-  const approvedTaskCards = dashboardOverview.approvedTickets
-    .filter(
+  const approvedTaskCards = sortTicketsByPriorityRatio(
+    dashboardOverview.approvedTickets.filter(
       (ticket) =>
         ticket.queueKind === "personal" || ticket.queueKind === "priority"
     )
-    .sort((a, b) => a.createdAt - b.createdAt)
-    .map((ticket, index) => {
-      let status: "current" | "next-up" | "pending" = "pending";
-      if (index === 0) {
-        status = "current"; // First ticket is current
-      } else if (index === 1) {
-        status = "next-up"; // Second ticket is next-up
-      }
-      // All others are pending
+  ).map((ticket, index) => {
+    let status: "current" | "next-up" | "pending" = "pending";
+    if (index === 0) {
+      status = "current"; // First ticket is current
+    } else if (index === 1) {
+      status = "next-up"; // Second ticket is next-up
+    }
+    // All others are pending
 
-      // Use placeholder data for user details since they're not stored in tickets yet
-      const placeholderUsers = [
-        {
-          name: "Alex Chen",
-          email: "alex@example.com",
-          location: "San Francisco, CA",
-          social: "@alexdev",
-        },
-        {
-          name: "Sarah Johnson",
-          email: "sarah@example.com",
-          location: "New York, NY",
-          social: "@sarahj",
-        },
-        {
-          name: "Mike Rodriguez",
-          email: "mike@example.com",
-          location: "Austin, TX",
-          social: "@miketech",
-        },
-        {
-          name: "Emma Wilson",
-          email: "emma@example.com",
-          location: "Seattle, WA",
-          social: "@emmaw",
-        },
-        {
-          name: "David Kim",
-          email: "david@example.com",
-          location: "Los Angeles, CA",
-          social: "@davidk",
-        },
-      ];
+    // Use actual ticket data now that it's stored in the database
+    const userData = {
+      name: ticket.name || "Anonymous",
+      email: ticket.email || "user@example.com",
+      location: ticket.location || "",
+      social: ticket.social || "",
+      phone: ticket.phone || "",
+    };
 
-      const userData = placeholderUsers[index % placeholderUsers.length];
+    // Use queue-specific metrics based on ticket's queue kind
+    const ticketQueue = queues[ticket.queueKind as "personal" | "priority"];
 
-      return {
-        currentTurn: queues.general.activeTurn,
-        nextTurn: queues.general.nextTurn,
-        etaMins: queues.general.etaMins,
-        activeCount: queues.general.activeCount,
-        enabled: queues.general.enabled,
-        name: userData.name,
-        email: userData.email,
-        phone: "+1 (555) 123-4567",
-        location: userData.location,
-        social: userData.social,
-        needText: ticket.message || "No description provided",
-        attachments: [], // Not implemented yet
-        tipCents: ticket.tipCents,
-        queueKind: ticket.queueKind as "personal" | "priority",
-        status,
-        tags: [status] as TaskTag[],
-        createdAt: ticket.createdAt,
-        ref: ticket.ref,
-      };
-    });
+    // Calculate this ticket's position within its queue
+    const ticketsInSameQueue = dashboardOverview.approvedTickets
+      .filter((t) => t.queueKind === ticket.queueKind)
+      .sort((a, b) => a.createdAt - b.createdAt);
+
+    const ticketPosition =
+      ticketsInSameQueue.findIndex((t) => t.ref === ticket.ref) + 1;
+
+    return {
+      currentTurn: ticketPosition, // Show this ticket's position
+      nextTurn: ticketPosition, // Use same number for display
+      etaMins: ticketQueue.etaMins,
+      activeCount: ticketQueue.activeCount, // Total in this queue type
+      enabled: ticketQueue.enabled,
+      name: userData.name,
+      email: userData.email,
+      phone: userData.phone,
+      location: userData.location,
+      social: userData.social,
+      needText: ticket.message || "No description provided",
+      attachments: ticket.attachments || [],
+      tipCents: ticket.tipCents,
+      queueKind: ticket.queueKind as "personal" | "priority",
+      status,
+      tags: [status] as TaskTag[],
+      createdAt: ticket.createdAt,
+      ref: ticket.ref,
+    };
+  });
 
   return (
     <div
@@ -253,74 +360,113 @@ export default function DashboardPage() {
         data-element="SIDEBAR-WRAPPER"
         className="col-start-1 row-start-2 overflow-y-auto pt-4"
       >
-        <SideBar />
+        <SideBar sections={dashboardSections} currentTab={tab} />
       </div>
 
       {/* Main Content Area */}
       <div
         data-element="MAIN-CONTENT-WRAPPER"
-        className={`col-start-2 row-start-2 overflow-hidden grid gap-4 p-4 h-full ${
-          hasPendingApprovals
-            ? "grid-cols-[400px_350px_1fr]"
-            : "grid-cols-[400px_1fr]"
-        }`}
+        className="col-start-2 row-start-2 overflow-hidden grid gap-4 p-4 h-full"
       >
-        {/* Next Up Column */}
-        <div
-          data-element="NEXT-UP-COLUMN"
-          className="overflow-y-auto no-scrollbar flex flex-col"
-        >
-          <h2 className="text-xl font-bold mb-4">NEXT UP</h2>
-          <div
-            data-element="TASK-CARDS-WRAPPER"
-            className="flex-1  pl-1 pr-2 pb-4"
-          >
-            <div className="space-y-4">
-              {/* Autoqueue summary card */}
-              {autoqueueCardData && (
-                <TaskCard variant="autoqueue" data={autoqueueCardData} />
-              )}
-
-              {/* Individual approved ticket cards */}
-              {approvedTaskCards.length > 0 ? (
-                approvedTaskCards.map((taskCardData) => (
-                  <TaskCard
-                    key={taskCardData.ref}
-                    variant={
-                      taskCardData.queueKind === "priority"
-                        ? "priority"
-                        : "personal"
-                    }
-                    data={taskCardData}
-                  />
-                ))
-              ) : !autoqueueCardData ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No approved tickets in processing queue</p>
-                  <p className="text-sm mt-2">
-                    Approve tickets to see them here
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        {/* Pending Approvals Column - conditionally rendered */}
-        {hasPendingApprovals && (
-          <div data-element="PENDING-APPROVALS-COLUMN" className="h-full">
-            <ApprovalPanel
-              tickets={dashboardOverview?.openTickets || []}
-              onTicketUpdate={handleTicketUpdate}
+        {tab === "queue-settings" ? (
+          <div className="col-span-2">
+            {" "}
+            {/* Assuming 2 cols for sidebar + main; adjust if more */}
+            <QueueSettings
+              queueSnapshot={queueSnapshot}
+              toggleQueue={toggleQueue}
+              slug={slug}
+              personalEnabled={personalEnabled}
+              setPersonalEnabled={setPersonalEnabled}
+              priorityEnabled={priorityEnabled}
+              setPriorityEnabled={setPriorityEnabled}
             />
           </div>
-        )}
+        ) : (
+          <div
+            className={`grid gap-4 h-full ${
+              hasPendingApprovals
+                ? "grid-cols-[400px_200px_350px_1fr]"
+                : "grid-cols-[400px_1fr]"
+            }`}
+          >
+            {/* Next Up Column */}
+            <div
+              data-element="NEXT-UP-COLUMN"
+              className="overflow-y-auto no-scrollbar flex flex-col"
+            >
+              <h2 className="text-xl font-bold mb-4 sticky top-0 bg-bg border-b border-gray-subtle pb-2">
+                NEXT UP
+              </h2>
+              <div
+                data-element="TASK-CARDS-WRAPPER"
+                className="flex-1  pl-1 pr-2 pb-4"
+              >
+                <div className="space-y-4">
+                  {/* Autoqueue summary card */}
+                  {autoqueueCardData && (
+                    <TaskCard variant="autoqueue" data={autoqueueCardData} />
+                  )}
 
-        {/* Favors Table */}
-        <div data-element="FAVORS-TABLE" className="h-full">
-          <h2 className="text-xl font-bold mb-4">ALL FAVORS</h2>
-          <TableComponent data={[]} />
-        </div>
+                  {/* Individual approved ticket cards */}
+                  {approvedTaskCards.length > 0 ? (
+                    approvedTaskCards.map((taskCardData) => (
+                      <TaskCard
+                        key={taskCardData.ref}
+                        variant={
+                          taskCardData.queueKind === "priority"
+                            ? "priority"
+                            : "personal"
+                        }
+                        data={taskCardData}
+                      />
+                    ))
+                  ) : !autoqueueCardData ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>No approved tickets in processing queue</p>
+                      <p className="text-sm mt-2">
+                        Approve tickets to see them here
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            {/* Pending Approvals Column - conditionally rendered */}
+            {hasPendingApprovals && (
+              <div data-element="PENDING-APPROVALS-COLUMN" className="h-full">
+                <ApprovalPanel
+                  tickets={dashboardOverview?.openTickets || []}
+                  onTicketUpdate={handleTicketUpdate}
+                />
+              </div>
+            )}
+
+            {/* Right Column: Favors Table + Task Module Stack */}
+            <div className="flex flex-col h-full gap-4">
+              {/* Task Module */}
+              <div data-element="TASK-MODULE" className="flex-1">
+                <TaskModule data={autoqueueCardData} />
+              </div>
+
+              {/* Favors Table */}
+              <div
+                data-element="FAVORS-TABLE"
+                className="flex-1 overflow-y-auto"
+              >
+                <h2 className="text-xl font-bold mb-4 pb-2 border-b border-gray-subtle">
+                  ALL FAVORS
+                </h2>
+                <TableComponent
+                  data={tableData}
+                  onOpen={handleOpenTicket}
+                  currentTurn={autoqueueCardData?.currentTurn}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

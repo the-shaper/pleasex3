@@ -70,6 +70,7 @@ export default function SubmitClient({
     phone: "",
     location: "",
     social: "",
+    favorTitle: "",
     needText: "",
     attachments: "",
     priorityTipCents: initialTip,
@@ -137,6 +138,7 @@ export default function SubmitClient({
         phone: form.phone || undefined,
         location: form.location || undefined,
         social: form.social || undefined,
+        taskTitle: form.favorTitle || undefined,
         needText: form.needText,
         attachments,
         priorityTipCents: form.priorityTipCents,
@@ -229,6 +231,13 @@ export default function SubmitClient({
               placeholder="Social (optional)"
               value={form.social}
               onChange={(e) => onChange("social", e.target.value)}
+            />
+
+            <input
+              className="w-full border p-2 rounded"
+              placeholder="Subject | Favor Title"
+              value={form.favorTitle}
+              onChange={(e) => onChange("favorTitle", e.target.value)}
             />
             <textarea
               className="w-full border p-2 rounded"
