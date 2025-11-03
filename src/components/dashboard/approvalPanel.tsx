@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import TicketApprovalCard from "../checkout/ticketApprovalCard";
+import TicketApprovalCreatorCard from "../checkout/ticketApprovalCreatorCard";
 import { ConvexDataProvider } from "@/lib/data/convex";
 import type { Ticket } from "@/lib/types";
 
@@ -70,7 +70,6 @@ export default function ApprovalPanel({
   if (tickets.length === 0) {
     return (
       <div className="h-full flex flex-col">
-        <h2 className="text-xl font-bold mb-4">PENDING APPROVALS</h2>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center py-8 text-gray-500">
             <p>No tickets pending approval</p>
@@ -85,8 +84,7 @@ export default function ApprovalPanel({
 
   return (
     <div className="h-full flex flex-col">
-      <h2 className="text-xl font-bold mb-4">PENDING APPROVALS</h2>
-      <div className="flex-1 overflow-y-auto space-y-6">
+      <div className="flex-1  space-y-6">
         {tickets.map((ticket) => {
           // Map ticket data to the format expected by TicketApprovalCard
           const ticketData = {
@@ -94,6 +92,7 @@ export default function ApprovalPanel({
               name: ticket.name || "Anonymous",
               email: ticket.email || "user@example.com",
               needText: ticket.message || "No description provided",
+              taskTitle: ticket.taskTitle || "", // Added: Short title from Convex ticket
               attachments: ticket.attachments
                 ? ticket.attachments.join(", ")
                 : "",
@@ -114,59 +113,29 @@ export default function ApprovalPanel({
             referenceNumber: ticket.ref,
           };
 
+          const isApprovedOrRejected =
+            ticket.status === "approved" || ticket.status === "rejected";
+          const isLoading = actionLoading === ticket.ref;
+
           return (
-            <div key={ticket.ref} className="bg-white rounded-lg border p-4">
+            <div key={ticket.ref} className="p-4 bg-coral">
               {/* Status indicator */}
-              <div className="mb-4 p-3 bg-gray-50 rounded">
+              <div className="mb-4 p-3 bg-text ">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-sm">Ticket Status</h3>
-                    <p className="text-xs text-gray-600">
+                    <h3 className="font-semibold text-sm text-text-bright uppercase">
+                      Ticket Status
+                    </h3>
+                    <p className="text-xs text-text-bright">
                       Reference: {ticket.ref} • Submitted:{" "}
                       {new Date(ticket.createdAt).toLocaleString()}
                     </p>
                   </div>
-                  <div
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      ticket.status === "open"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : ticket.status === "approved"
-                        ? "bg-green-100 text-green-800"
-                        : ticket.status === "rejected"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {ticket.status.toUpperCase()}
-                  </div>
                 </div>
               </div>
 
-              {/* Action buttons for open tickets */}
-              {ticket.status === "open" && (
-                <div className="mb-4 flex gap-3 justify-center">
-                  <button
-                    onClick={() => handleApprove(ticket)}
-                    disabled={actionLoading === ticket.ref}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-green-700 disabled:opacity-50"
-                  >
-                    {actionLoading === ticket.ref
-                      ? "Processing..."
-                      : "✅ Approve"}
-                  </button>
-                  <button
-                    onClick={() => handleReject(ticket)}
-                    disabled={actionLoading === ticket.ref}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-red-700 disabled:opacity-50"
-                  >
-                    {actionLoading === ticket.ref
-                      ? "Processing..."
-                      : "❌ Reject"}
-                  </button>
-                </div>
-              )}
-
-              <TicketApprovalCard
+              {/* Render TicketApprovalCard with buttons wired in */}
+              <TicketApprovalCreatorCard
                 form={ticketData.form}
                 isPriority={ticketData.isPriority}
                 activeQueue={ticketData.activeQueue}
@@ -177,7 +146,10 @@ export default function ApprovalPanel({
                 onChange={() => {}}
                 userName={ticketData.userName}
                 referenceNumber={ticketData.referenceNumber}
-                approvedContext={ticket.status === "approved"}
+                approvedContext={isApprovedOrRejected}
+                approveHandler={() => handleApprove(ticket)}
+                rejectHandler={() => handleReject(ticket)}
+                isLoading={isLoading}
               />
             </div>
           );

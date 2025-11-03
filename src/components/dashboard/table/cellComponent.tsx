@@ -49,12 +49,32 @@ export function CellComponent({
     onOpen?.(data.ref);
   };
 
+  // NEW: Keyboard handler for accessibility
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleOpen();
+    }
+  };
+
+  // UPDATED: Conditionally enable row clicks based on status
+  const isClickable = data.status === "open" || data.status === "approved";
+
   return (
+    // UPDATED: Make entire row clickable; remove button column
     <div
-      className={`grid gap-4 items-center p-2 border-b border-gray-subtle ${className}`}
+      className={`grid gap-4 items-center p-2 border-b border-gray-subtle cursor-pointer hover:bg-gray-subtle/50 transition-colors ${className} ${
+        isClickable ? "focus:bg-gray-subtle" : ""
+      }`}
       style={{
-        gridTemplateColumns: "100px 100px 100px 1fr 1fr 140px 120px",
+        gridTemplateColumns: "100px 100px 100px 1fr 1fr 140px", // REMOVED: 120px for button column
       }}
+      role={isClickable ? "button" : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={isClickable ? handleOpen : undefined}
+      onKeyDown={isClickable ? handleKeyDown : undefined}
+      aria-disabled={!isClickable}
+      aria-label={isClickable ? `Open ticket ${data.ref}` : undefined}
     >
       {/* General Number */}
       <div className="flex justify-center">
@@ -91,17 +111,7 @@ export function CellComponent({
         {formatDate(data.requestDate)}
       </div>
 
-      {/* Open Button */}
-      <div className="flex justify-center">
-        <ButtonBase
-          variant="primary"
-          size="sm"
-          onClick={handleOpen}
-          disabled={data.status !== "open"}
-        >
-          OPEN
-        </ButtonBase>
-      </div>
+      {/* REMOVED: Open Button - Now handled by row click */}
     </div>
   );
 }

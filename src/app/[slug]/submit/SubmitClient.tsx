@@ -82,7 +82,7 @@ export default function SubmitClient({
   const [lastPersonalTipCents, setLastPersonalTipCents] = useState(
     initialQueueTab === "personal" ? initialTip : 0
   );
-  const [queueMetrics, setQueueMetrics] = useState<any>(initialQueue);
+  const [queueMetrics, setQueueMetrics] = useState<QueuePayload | null>(initialQueue);
   const tipDollarsInt = useMemo(
     () => Math.round(form.priorityTipCents / 100),
     [form.priorityTipCents]
@@ -147,7 +147,7 @@ export default function SubmitClient({
     });
     const json = await res.json();
     if (res.ok) {
-      router.push(`/demo/submit/success?ref=${encodeURIComponent(json.ref)}`);
+      router.push(`/${slug}/submit/success?ref=${encodeURIComponent(json.ref)}`);
     } else {
       alert(`Error: ${JSON.stringify(json.error)}`);
     }

@@ -17,6 +17,7 @@ export interface TagBaseProps extends HTMLAttributes<HTMLSpanElement> {
   children: ReactNode;
   variant?: TagVariant;
   className?: string;
+  fixedWidth?: boolean; // NEW: Optional prop to add fixed min-width (default: false for hug)
 }
 
 const getVariantClasses = (variant: TagVariant): string => {
@@ -47,11 +48,12 @@ const getVariantClasses = (variant: TagVariant): string => {
 export function TagBase({
   className = "",
   variant = "neutral",
+  fixedWidth = false, // NEW: Default to hug (no fixed width)
   children,
   ...props
 }: TagBaseProps) {
-  const baseClasses =
-    "min-w-24 inline-flex items-center justify-center gap-2 font-medium uppercase tracking-wider text-[10px] px-3 py-0.5  transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
+  // UPDATED: Base classes always hug; add min-w-24 only if fixedWidth
+  const baseClasses = `inline-flex items-center justify-center gap-2 text-nowrap font-medium uppercase tracking-wider text-[10px] px-3 py-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${fixedWidth ? "min-w-24" : ""}`;
 
   const variantClasses = getVariantClasses(variant);
 

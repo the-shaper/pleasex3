@@ -140,18 +140,72 @@ export class ConvexDataProvider implements DataProvider {
     return res as { ok: true };
   }
 
-  async getAllTicketsForTable(creatorSlug: string): Promise<CellComponentData[]> {
-    const tickets = await client.query(api.dashboard.getAllTicketsWithPositions, { creatorSlug });
+  async getAllTicketsForTable(
+    creatorSlug: string
+  ): Promise<CellComponentData[]> {
+    const tickets = await client.query(
+      api.dashboard.getAllTicketsWithPositions,
+      { creatorSlug }
+    );
+    // Debug: Log raw tickets from Convex
+    console.log(
+      "🔍 Convex Debug - Raw tickets from getAllTicketsWithPositions:",
+      tickets
+    );
+    console.log("🔍 Convex Debug - Raw tickets length:", tickets?.length);
 
-    return tickets.map((ticket: any) => ({
-      generalNumber: ticket.generalNumber,
-      ticketNumber: ticket.ticketNumber,
-      queueKind: ticket.queueKind,
-      task: ticket.message || "",
-      submitterName: ticket.name || "Anonymous",
-      requestDate: ticket.createdAt,
-      ref: ticket.ref,
-      status: ticket.status
-    }));
+    // Filter out "general" queue tickets and map to CellComponentData format
+    const mappedData = tickets
+      .filter(
+        (ticket: any) =>
+          ticket.queueKind === "personal" || ticket.queueKind === "priority"
+      )
+      .map((ticket: any) => ({
+        generalNumber: ticket.generalNumber,
+        ticketNumber: ticket.ticketNumber,
+        queueKind: ticket.queueKind as "personal" | "priority",
+        task: ticket.taskTitle || "",
+        submitterName: ticket.name || "Anonymous",
+        requestDate: ticket.createdAt,
+        ref: ticket.ref,
+        status: ticket.status as "open" | "approved" | "rejected" | "closed",
+      }));
+
+    // Debug: Log mapped data
+    console.log(
+      "🔍 Convex Debug - Mapped data for TableComponent:",
+      mappedData
+    );
+    console.log("🔍 Convex Debug - Mapped data length:", mappedData?.length);
+
+    // TEMP: If no data, add test data to verify rendering works
+    if (mappedData.length === 0) {
+      console.log("🔍 Convex Debug - No tickets found, adding test data");
+      const testData = [
+        {
+          generalNumber: 1,
+          ticketNumber: 1,
+          queueKind: "priority" as const,
+          task: "Test priority task",
+          submitterName: "Test User",
+          requestDate: Date.now(),
+          ref: "TEST-REF-123",
+          status: "open" as const,
+        },
+        {
+          generalNumber: 2,
+          ticketNumber: 2,
+          queueKind: "personal" as const,
+          task: "Test personal task",
+          submitterName: "Another User",
+          requestDate: Date.now(),
+          ref: "TEST-REF-456",
+          status: "approved" as const,
+        },
+      ];
+      return testData;
+    }
+
+    return mappedData;
   }
 }

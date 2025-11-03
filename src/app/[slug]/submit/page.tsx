@@ -10,7 +10,7 @@ const dataProvider = new ConvexDataProvider();
 export default function SubmitPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const [initialQueue, setInitialQueue] = useState<any>(null);
+  const [initialQueue, setInitialQueue] = useState<QueuePayload | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

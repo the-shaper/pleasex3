@@ -118,3 +118,59 @@ export const removeTag = mutation({
     return { ok: true } as const;
   },
 });
+
+// Toggle between "current" and "awaiting-feedback" for a ticket by ref.
+// Enforce a single "current" per creator by clearing it from others when applied here.
+export const toggleCurrentAwaiting = mutation({
+  args: { ref: v.string() },
+  handler: async (ctx, args) => {
+    const ticket = await ctx.db
+      .query("tickets")
+      .withIndex("by_ref", (q) => q.eq("ref", args.ref))
+      .unique();
+
+    if (!ticket) return { ok: false as const };
+
+    const tags = ticket.tags || [];
+    const hasAwaiting = tags.includes("awaiting-feedback");
+    const hasCurrent = tags.includes("current");
+
+    // If ticket currently has awaiting-feedback, switch to current and clear current from others
+    if (hasAwaiting) {
+      const nextTags = tags.filter((t) => t !== "awaiting-feedback");
+      if (!nextTags.includes("current")) nextTags.push("current");
+
+      await ctx.db.patch(ticket._id, { tags: nextTags });
+
+      // Enforce exclusivity per creator
+      const others = await ctx.db
+        .query("tickets")
+        .withIndex("by_creator", (q) => q.eq("creatorSlug", ticket.creatorSlug))
+        .collect();
+
+      for (const other of others) {
+        if (other._id === ticket._id) continue;
+        const otherTags = other.tags || [];
+        if (otherTags.includes("current")) {
+          await ctx.db.patch(other._id, {
+            tags: otherTags.filter((t) => t !== "current"),
+          });
+        }
+      }
+
+      return { ok: true as const, tag: "current" as const };
+    }
+
+    // If ticket currently has current, switch to awaiting-feedback
+    if (hasCurrent) {
+      const nextTags = tags.filter((t) => t !== "current");
+      if (!nextTags.includes("awaiting-feedback"))
+        nextTags.push("awaiting-feedback");
+      await ctx.db.patch(ticket._id, { tags: nextTags });
+      return { ok: true as const, tag: "awaiting-feedback" as const };
+    }
+
+    // Non-current tickets should not toggle via this mutation
+    return { ok: false as const };
+  },
+});

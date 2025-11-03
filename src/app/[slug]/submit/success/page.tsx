@@ -1,38 +1,63 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import TicketApprovalCard from "@/components/checkout/ticketApprovalCard";
+import TicketApprovalCard from "@/components/checkout/ticketApprovalCreatorCard";
 import { ConvexDataProvider } from "@/lib/data/convex";
 import type { Ticket } from "@/lib/types";
 
 const dataProvider = new ConvexDataProvider();
 
 export default function SuccessPage() {
+  const params = useParams();
+  const slug = params.slug as string;
   const sp = useSearchParams();
   const referenceNumber = sp.get("ref") || "DEMO-123";
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [queueSnapshot, setQueueSnapshot] = useState<Record<
+    string,
+    {
+      activeTurn: number | null;
+      nextTurn: number;
+      etaMins: number | null;
+      activeCount: number;
+      enabled: boolean;
+    }
+  > | null>(null);
+  const [creatorInfo, setCreatorInfo] = useState<{
+    displayName: string;
+    minPriorityTipCents: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchTicket = async () => {
+    const fetchData = async () => {
       try {
-        const ticketData = await dataProvider.getTicketByRef(referenceNumber);
+        // Fetch ticket, queue data, and creator info in parallel
+        const [ticketData, queueData, creatorData] = await Promise.all([
+          dataProvider.getTicketByRef(referenceNumber),
+          dataProvider.getQueueSnapshot(slug),
+          dataProvider.getCreatorInfo?.(slug) ||
+            Promise.resolve({ displayName: slug, minPriorityTipCents: 1500 }),
+        ]);
+
         setTicket(ticketData);
+        setQueueSnapshot(queueData);
+        setCreatorInfo(creatorData);
       } catch (err) {
-        console.error("Error fetching ticket:", err);
+        console.error("Error fetching data:", err);
         setError("Failed to load ticket data");
       } finally {
         setLoading(false);
       }
     };
 
-    if (referenceNumber) {
-      fetchTicket();
+    if (referenceNumber && slug) {
+      fetchData();
     }
-  }, [referenceNumber]);
+  }, [referenceNumber, slug]);
 
   const formatEtaMins = (mins: number): string => {
     if (!mins || mins <= 0) return "—";
@@ -45,7 +70,9 @@ export default function SuccessPage() {
     return (
       <div className="min-h-screen bg-bg py-8 px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-2xl font-bold mb-4 text-text">Loading ticket...</h1>
+          <h1 className="text-2xl font-bold mb-4 text-text">
+            Loading ticket...
+          </h1>
         </div>
       </div>
     );
@@ -62,28 +89,42 @@ export default function SuccessPage() {
     );
   }
 
+  // Calculate the actual ticket position
+  const getTicketPosition = () => {
+    if (!queueSnapshot || !ticket) return 1;
+
+    const queueType = ticket.queueKind as "personal" | "priority";
+    // The ticket got the position that was nextTurn when submitted
+    // Since nextTurn shows position for next person, this ticket got nextTurn - 1
+    // But if this was the first ticket, it should be position 1
+    const currentNextTurn = queueSnapshot[queueType]?.nextTurn || 1;
+    return Math.max(1, currentNextTurn - 1);
+  };
+
   // Map ticket data to the format expected by TicketApprovalCard
   const ticketData = {
     form: {
-      name: "Anonymous", // Not stored in ticket yet
-      email: "user@example.com", // Not stored in ticket yet
-      needText: ticket.message || "No description provided",
-      attachments: "", // Not implemented yet
-      priorityTipCents: ticket.tipCents,
+      name: ticket?.name || "Anonymous",
+      email: ticket?.email || "user@example.com",
+      needText: ticket?.message || "No description provided",
+      attachments: ticket?.attachments ? ticket.attachments.join(", ") : "",
+      priorityTipCents: ticket?.tipCents || 0,
     },
-    isPriority: ticket.queueKind === "priority",
+    isPriority: ticket?.queueKind === "priority",
     activeQueue: {
-      nextTurn: 1, // Mock for now
-      activeCount: 1, // Mock for now
+      nextTurn: getTicketPosition(),
+      activeCount:
+        queueSnapshot?.[ticket?.queueKind as "personal" | "priority"]
+          ?.activeCount || 0,
     },
-    tipDollarsInt: Math.floor(ticket.tipCents / 100),
-    minPriorityTipCents: 1500, // Mock for now
+    tipDollarsInt: Math.floor((ticket?.tipCents || 0) / 100),
+    minPriorityTipCents: creatorInfo?.minPriorityTipCents || 1500,
     queueMetrics: {
-      personal: { etaMins: 240 },
-      priority: { etaMins: 60 },
+      personal: { etaMins: queueSnapshot?.personal?.etaMins || 240 },
+      priority: { etaMins: queueSnapshot?.priority?.etaMins || 60 },
     },
-    userName: "Demo Creator", // Mock for now
-    referenceNumber: ticket.ref,
+    userName: creatorInfo?.displayName || slug,
+    referenceNumber: ticket?.ref || referenceNumber,
   };
 
   return (

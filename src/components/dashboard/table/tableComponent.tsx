@@ -29,6 +29,9 @@ export function TableComponent({
 }: TableComponentProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
+  console.log("🔍 TableComponent Debug - Received data:", data);
+  console.log("🔍 TableComponent Debug - Data length:", data?.length);
+
   // Define columns for TanStack Table with sorting
   const columns: ColumnDef<CellComponentData>[] = [
     {
@@ -100,6 +103,8 @@ export function TableComponent({
     },
   ];
 
+  console.log("🔍 TableComponent Debug - Using data:", data);
+
   const table = useReactTable({
     data,
     columns,
@@ -111,75 +116,108 @@ export function TableComponent({
     getSortedRowModel: getSortedRowModel(),
   });
 
+  // Debug: Log table state
+  const sortedRows = table.getSortedRowModel().rows;
+  console.log("🔍 TableComponent Debug - Final sorted rows:", sortedRows);
+  console.log(
+    "🔍 TableComponent Debug - Final sorted rows length:",
+    sortedRows?.length
+  );
+
+  const [isCollapsed, setIsCollapsed] = useState(false); // NEW: Collapse state, default expanded
+  const toggleCollapse = () => setIsCollapsed(!isCollapsed); // NEW: Toggle
+
   return (
     <div className={`overflow-x-auto ${className}`}>
-      {/* Header Row */}
-      <div
-        className="grid gap-4 items-center p-4 border-b-2 border-gray-subtle bg-bg"
-        style={{
-          gridTemplateColumns: "100px 100px 100px 1fr 1fr 140px 120px",
-        }}
+      {/* NEW: Clickable title matching page.tsx style */}
+      <button
+        onClick={toggleCollapse}
+        className="flex items-center justify-between w-full mb-4 pb-2 border-b border-gray-subtle text-left"
+        aria-expanded={!isCollapsed}
       >
-        {/* GENERAL - Sortable */}
-        <button
-          className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-center gap-1"
-          onClick={table.getColumn("general")?.getToggleSortingHandler()}
+        <h2 className="text-xl font-bold">ALL FAVORS</h2>
+        <span
+          className={`text-xs text-gray-subtle  transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
         >
-          GENERAL
-          {{
-            asc: " ↑",
-            desc: " ↓",
-          }[table.getColumn("general")?.getIsSorted() as string] ?? " ⇅"}
-        </button>
+          ▼
+        </span>
+      </button>
 
-        {/* TICKET - Not sortable */}
-        <div className="font-semibold text-sm uppercase tracking-wider">
-          TICKET
-        </div>
-
-        {/* QUEUE - Not sortable */}
-        <div className="font-semibold text-sm uppercase tracking-wider">
-          QUEUE
-        </div>
-
-        {/* TASK - Not sortable */}
-        <div className="font-semibold text-sm uppercase tracking-wider">
-          TASK
-        </div>
-
-        {/* FRIEND - Not sortable */}
-        <div className="font-semibold text-sm uppercase tracking-wider">
-          FRIEND
-        </div>
-
-        {/* REQUESTED ON - Sortable */}
-        <button
-          className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-center gap-1"
-          onClick={table.getColumn("date")?.getToggleSortingHandler()}
+      {/* NEW: Wrap existing table content for collapse */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${isCollapsed ? "max-h-0" : "max-h-[60vh]"}`}
+      >
+        {/* Header Row */}
+        <div
+          className="grid gap-4 items-center p-4 border-b-2 border-gray-subtle bg-bg"
+          style={{
+            gridTemplateColumns: "100px 100px 100px 1fr 1fr 140px",
+          }}
         >
-          REQUESTED ON
-          {{
-            asc: " ↑",
-            desc: " ↓",
-          }[table.getColumn("date")?.getIsSorted() as string] ?? " ⇅"}
-        </button>
+          {/* GENERAL - Sortable */}
+          <button
+            className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-center gap-1"
+            onClick={table.getColumn("general")?.getToggleSortingHandler()}
+          >
+            GENERAL
+            {{
+              asc: " ↑",
+              desc: " ↓",
+            }[table.getColumn("general")?.getIsSorted() as string] ?? " ⇅"}
+          </button>
 
-        {/* OPEN button column - no header needed */}
-        <div className="font-semibold text-sm uppercase tracking-wider"></div>
-      </div>
-
-      {/* Data Rows */}
-      <div className="space-y-0">
-        {table.getSortedRowModel().rows.map((row) => (
-          <div key={row.id} className="hover:bg-gray-subtle/20">
-            <CellComponent
-              data={row.original}
-              onOpen={onOpen}
-              className="border-b-0"
-              currentTurn={currentTurn}
-            />
+          {/* TICKET - Not sortable */}
+          <div className="font-semibold text-sm uppercase tracking-wider">
+            TICKET
           </div>
-        ))}
+
+          {/* QUEUE - Not sortable */}
+          <div className="font-semibold text-sm uppercase tracking-wider">
+            QUEUE
+          </div>
+
+          {/* TASK - Not sortable */}
+          <div className="font-semibold text-sm uppercase tracking-wider">
+            TASK
+          </div>
+
+          {/* FRIEND - Not sortable */}
+          <div className="font-semibold text-sm uppercase tracking-wider">
+            FRIEND
+          </div>
+
+          {/* REQUESTED ON - Sortable */}
+          <button
+            className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-center gap-1"
+            onClick={table.getColumn("date")?.getToggleSortingHandler()}
+          >
+            REQUESTED ON
+            {{
+              asc: " ↑",
+              desc: " ↓",
+            }[table.getColumn("date")?.getIsSorted() as string] ?? " ⇅"}
+          </button>
+        </div>
+
+        {/* Data Rows */}
+        <div className="space-y-0">
+          {table.getSortedRowModel().rows.map((row) => {
+            console.log(
+              "🔍 TableComponent Debug - Rendering row data:",
+              row.original
+            );
+            return (
+              <div key={row.id} className="hover:bg-gray-subtle/20">
+                <CellComponent
+                  data={row.original}
+                  onOpen={onOpen}
+                  className="border-b-0"
+                  currentTurn={currentTurn}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

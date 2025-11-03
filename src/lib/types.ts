@@ -23,13 +23,23 @@ export interface QueueSnapshot {
   enabled: boolean;
 }
 
+export interface FormData {
+  name: string;
+  email: string;
+  taskTitle?: string;  // Optional short title (from Convex 'taskTitle')
+  needText: string;    // Long description (maps to Convex 'message')
+  attachments: string;
+  priorityTipCents: number;
+}
+
+// Update Ticket if needed (for fetched data)
 export interface Ticket {
   ref: string;
   creatorSlug: string;
   queueKind: QueueKind;
   tipCents: number;
   taskTitle?: string;
-  message?: string;
+  message?: string;  // We'll map to needText in data layer if fetching
   status: "open" | "approved" | "rejected" | "closed";
   tags?: TaskTag[];
   createdAt: number;
@@ -81,4 +91,7 @@ export interface SideBarProps {
   sections: SidebarSectionProps[];
   initialActiveLink?: string;
   currentTab?: string; // Add this for highlighting based on current tab
+  isOpen?: boolean;
+  onClose?: () => void;
+  mobileOverlay?: boolean;
 }

@@ -50,7 +50,7 @@ export function ButtonBase({
   ...props
 }: ButtonBaseProps) {
   const baseClasses =
-    "inline-flex items-center justify-center gap-2 font-medium uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+    "inline-flex items-center justify-center gap-2 font-medium uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 text-nowrap";
 
   const variantClasses = getVariantClasses(variant);
   const sizeClasses = getSizeClasses(size);

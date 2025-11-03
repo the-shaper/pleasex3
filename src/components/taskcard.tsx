@@ -50,6 +50,7 @@ export interface TaskCardProps {
    */
   data: TaskCardData;
   className?: string;
+  onOpen?: (data: TaskCardData) => void; // NEW: Callback for opening task in module
 }
 
 function formatEtaMins(etaMins: number | null | undefined): string {
@@ -73,6 +74,7 @@ export default function TaskCard({
   variant,
   data,
   className = "",
+  onOpen,
 }: TaskCardProps) {
   const [isExpanded, setIsExpanded] = useState(variant === "autoqueue");
 
@@ -86,15 +88,15 @@ export default function TaskCard({
     : isPersonal
       ? "bg-greenlite"
       : isAutoqueue
-        ? "bg-coral"
-        : "bg-gray-subtle";
+        ? "bg-text"
+        : "bg-text-bright";
   const queueBadgeBg = isPriority
     ? "bg-gold"
     : isPersonal
       ? "bg-greenlite"
       : isAutoqueue
-        ? "bg-coral"
-        : "bg-gray-subtle";
+        ? "bg-text"
+        : "bg-text-bright";
   const queueTypeVariant = isPriority
     ? "priority"
     : isPersonal
@@ -103,6 +105,13 @@ export default function TaskCard({
         ? "autoqueue"
         : "neutral";
 
+  const queueBadgeText = isPriority
+    ? "text-text"
+    : isPersonal
+      ? "text-text"
+      : isAutoqueue
+        ? "text-white"
+        : "text-white";
   // Toggle expanded state
   const toggleExpanded = () => {
     if (!isAutoqueue) {
@@ -110,13 +119,27 @@ export default function TaskCard({
     }
   };
 
+  const queueText = isPersonal
+    ? "personal tickets"
+    : isPriority
+      ? "priority tickets"
+      : "total tickets";
+
+  const queueInfoBg = isAutoqueue
+    ? "bg-gray-subtle"
+    : isPriority
+      ? "bg-gold"
+      : "bg-greenlite";
+
   return (
     <section
-      className={`space-y-1 ${className} bg-bg pb-6 max-w-[400px] outline-1 outline-gray-subtle`}
+      className={`space-y-1 ${className} bg-bg pb-4 min-w-[300px] md:w-full outline-1 outline-gray-subtle`}
     >
       {/* Queue Type Badge */}
       <div className={`flex justify-center ${queueBadgeBg}`}>
-        <h3 className="text-medium  px-3 py-0.5">{variant.toUpperCase()}</h3>
+        <h3 className={`text-base ${queueBadgeText}  px-3 py-0.5`}>
+          {variant.toUpperCase()}
+        </h3>
       </div>
       <div className="space-y-1 px-9">
         {/* Header Section */}
@@ -143,22 +166,24 @@ export default function TaskCard({
                 style={{ fontFamily: "var(--font-body)" }}
               >
                 <div className="flex items-center gap-2 ">
-                  <div className="bg-gray-subtle  px-3 flex items-center gap-2">
-                    <p>out of</p>
+                  <div
+                    className={`${queueInfoBg} px-3 flex items-center gap-2`}
+                  >
+                    <p className="leading-none text-[0.6rem] md:-mr-2 ">
+                      out of
+                    </p>
                     <p className="text-text-muted text-xl">
                       {data.activeCount}
                     </p>
+                    <p className="leading-none text-[0.6rem]">{queueText}</p>
                   </div>
                 </div>
-                <TagBase
-                  variant={
-                    data.queueKind === "priority" ? "priority" : "personal"
-                  }
-                >
-                  {data.queueKind?.toUpperCase() || "PERSONAL"}
-                </TagBase>
+
                 <div className="flex items-center gap-1">
-                  <p className="bg-gray-subtle px-3 py-0.5"> STATUS </p>
+                  <p className="bg-gray-subtle px-3 py-0.5 text-[10px]">
+                    {" "}
+                    STATUS{" "}
+                  </p>
                   {(() => {
                     // Priority order for displaying single status tag
                     const priorityOrder = [
@@ -196,8 +221,8 @@ export default function TaskCard({
             <div className="font-semibold min-w-0 break-words whitespace-pre-wrap">
               {data.name || "—"}
             </div>
-            <div className="text-coral">E-MAIL</div>
-            <div className="font-semibold break-all min-w-0">
+            <div className="text-coral md:block hidden">E-MAIL</div>
+            <div className="font-semibold break-all min-w-0 md:block hidden">
               {data.email || "—"}
             </div>
           </div>
@@ -229,7 +254,12 @@ export default function TaskCard({
 
             {/* Action Buttons */}
             <div className="flex gap-2 mt-4">
-              <ButtonBase variant="primary" size="sm" className="flex-1">
+              <ButtonBase
+                variant="primary"
+                size="sm"
+                className="flex-1"
+                onClick={() => onOpen?.(data)}
+              >
                 OPEN TASK
               </ButtonBase>
             </div>

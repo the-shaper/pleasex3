@@ -22,6 +22,7 @@
     "@chromatic-com/storybook": "^4.1.1",
     "@eslint/eslintrc": "^3",
     "@storybook/addon-a11y": "^9.1.10",
+    "@storybook/addon-actions": "^9.0.8",
     "@storybook/addon-docs": "^9.1.10",
     "@storybook/addon-mcp": "^0.0.5",
     "@storybook/addon-onboarding": "^9.1.10",
