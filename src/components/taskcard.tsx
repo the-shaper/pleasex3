@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { ButtonBase } from "./general/buttonBase";
 import { TagBase } from "./general/tagBase";
 import { TaskTag } from "@/lib/types";
@@ -53,29 +53,12 @@ export interface TaskCardProps {
   onOpen?: (data: TaskCardData) => void; // NEW: Callback for opening task in module
 }
 
-function formatEtaMins(etaMins: number | null | undefined): string {
-  if (!etaMins || etaMins <= 0) return "—";
-  if (etaMins < 60) return "<1h";
-  const hours = Math.round(etaMins / 60);
-  return `${hours}h`;
-}
-
-function formatEtaDate(etaMins: number | null | undefined): string {
-  if (!etaMins || etaMins <= 0) return "—";
-  const ms = etaMins * 60 * 1000;
-  const d = new Date(Date.now() + ms);
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${mm}.${dd}.${yy}`;
-}
-
-export default function TaskCard({
+const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(({
   variant,
   data,
   className = "",
   onOpen,
-}: TaskCardProps) {
+}, ref) => {
   const [isExpanded, setIsExpanded] = useState(variant === "autoqueue");
 
   const isPriority = variant === "priority";
@@ -83,13 +66,6 @@ export default function TaskCard({
   const isAutoqueue = variant === "autoqueue";
 
   // Determine colors based on variant
-  const accentBg = isPriority
-    ? "bg-gold"
-    : isPersonal
-      ? "bg-greenlite"
-      : isAutoqueue
-        ? "bg-text"
-        : "bg-text-bright";
   const queueBadgeBg = isPriority
     ? "bg-gold"
     : isPersonal
@@ -97,13 +73,6 @@ export default function TaskCard({
       : isAutoqueue
         ? "bg-text"
         : "bg-text-bright";
-  const queueTypeVariant = isPriority
-    ? "priority"
-    : isPersonal
-      ? "personal"
-      : isAutoqueue
-        ? "autoqueue"
-        : "neutral";
 
   const queueBadgeText = isPriority
     ? "text-text"
@@ -133,6 +102,7 @@ export default function TaskCard({
 
   return (
     <section
+      ref={ref}
       className={`space-y-1 ${className} bg-bg pb-4 min-w-[300px] md:w-full outline-1 outline-gray-subtle`}
     >
       {/* Queue Type Badge */}
@@ -253,7 +223,7 @@ export default function TaskCard({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-2 mt-4 md:hidden">
               <ButtonBase
                 variant="primary"
                 size="sm"
@@ -282,4 +252,8 @@ export default function TaskCard({
       </div>
     </section>
   );
-}
+});
+
+TaskCard.displayName = 'TaskCard';
+
+export default TaskCard;

@@ -1,12 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import TaskCard, {
   type TaskCardData,
   type TaskCardVariant,
 } from "@/components/taskcard";
 import ApprovalPanel from "@/components/dashboard/approvalPanel"; // Import for Pending
 import { type Ticket } from "@/lib/types"; // For tickets prop
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+// Register GSAP plugin
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 interface NextUpSectionProps {
   autoqueueCardData: TaskCardData | null;
@@ -29,6 +36,64 @@ export default function NextUpSection({
 
   const toggleCollapse = () => setIsCollapsed(!isCollapsed);
 
+  // Create refs for each task card
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  // Ref for the scrollable container
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Combine all task cards for ScrollTrigger
+  const allTaskCards = useMemo(() => {
+    const cards = [];
+    if (autoqueueCardData) {
+      cards.push(autoqueueCardData);
+    }
+    cards.push(...approvedTaskCards);
+    return cards;
+  }, [
+    autoqueueCardData?.ref,
+    approvedTaskCards.map((card) => card.ref).join(","),
+  ]);
+
+  // GSAP ScrollTrigger setup (desktop only)
+  useEffect(() => {
+    // Only run on desktop
+    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+    if (!isDesktop || isCollapsed || !scrollContainerRef.current) return;
+
+    const triggers: ScrollTrigger[] = [];
+    const scrollContainer = scrollContainerRef.current;
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      // Create ScrollTrigger for each card
+      cardRefs.current.forEach((cardElement, index) => {
+        if (!cardElement || !allTaskCards[index]) return;
+
+        const trigger = ScrollTrigger.create({
+          trigger: cardElement,
+          scroller: scrollContainer, // Track this container's scroll, not window
+          start: "top 50%", // When card's top hits 50% of container
+          end: "bottom 50%", // When card's bottom leaves 50% of container
+          onEnter: () => {
+            onOpen(allTaskCards[index]);
+          },
+          onEnterBack: () => {
+            onOpen(allTaskCards[index]);
+          },
+          markers: false,
+        });
+
+        triggers.push(trigger);
+      });
+    }, 100);
+
+    // Cleanup on unmount
+    return () => {
+      clearTimeout(timer);
+      triggers.forEach((trigger) => trigger.kill());
+    };
+  }, [allTaskCards, onOpen, isCollapsed]); // Re-run when cards change
+
   return (
     <div
       data-element="NEXT-UP-COLUMN"
@@ -42,10 +107,7 @@ export default function NextUpSection({
       </h2>
 
       {hasPendingApprovals && (
-        <div
-          data-element="PENDING-APPROVALS-COLUMN"
-          className="h-auto mb-8 md:max-h-[40vh] md:overflow-y-auto no-scrollbar"
-        >
+        <div data-element="PENDING-APPROVALS-COLUMN" className="h-auto mb-8">
           <ApprovalPanel
             tickets={openTickets}
             onTicketUpdate={onTicketUpdate}
@@ -56,7 +118,7 @@ export default function NextUpSection({
       {/* UPDATED: Clickable NEXT UP title with chevron */}
       <button
         onClick={toggleCollapse}
-        className="flex items-center justify-between w-full text-left border-b border-gray-subtle pb-2 sticky top-0 bg-bg"
+        className="flex items-center justify-between w-full text-left border-b border-gray-subtle pb-2 sticky top-0"
         aria-expanded={!isCollapsed}
       >
         <h2 className="text-xl font-bold  bg-bg w--full ">NEXT UP</h2>
@@ -69,7 +131,8 @@ export default function NextUpSection({
 
       {/* UPDATED: Add px-4 to scrollable for inset padding around the entire horizontal scroll area */}
       <div
-        className={`overflow-x-auto no-scrollbar transition-all duration-300 ease-in-out px-4 ${isCollapsed ? "max-h-0" : "max-h-[80vh]"} scroll-pb-6`}
+        ref={scrollContainerRef}
+        className={`overflow-x-auto md:overflow-y-auto md:overflow-x-visible no-scrollbar transition-all duration-300 ease-in-out px-4 ${isCollapsed ? "max-h-0" : "max-h-[80vh]"} scroll-pb-6`}
       >
         <div data-element="TASK-CARDS-WRAPPER" className="md:flex-1 pb-4">
           {/* UPDATED: Flex row - replace space-x-4 pr-6 with gap-4 + balanced pl/pr for ends + between spacing */}
@@ -77,6 +140,7 @@ export default function NextUpSection({
             {/* Autoqueue summary card */}
             {autoqueueCardData && (
               <TaskCard
+                ref={(el) => (cardRefs.current[0] = el)}
                 variant="autoqueue"
                 data={autoqueueCardData}
                 onOpen={onOpen}
@@ -85,18 +149,22 @@ export default function NextUpSection({
 
             {/* Individual approved ticket cards */}
             {approvedTaskCards.length > 0 ? (
-              approvedTaskCards.map((taskCardData) => (
-                <TaskCard
-                  key={taskCardData.ref}
-                  variant={
-                    taskCardData.queueKind === "priority"
-                      ? "priority"
-                      : "personal"
-                  }
-                  data={taskCardData}
-                  onOpen={onOpen}
-                />
-              ))
+              approvedTaskCards.map((taskCardData, index) => {
+                const refIndex = autoqueueCardData ? index + 1 : index;
+                return (
+                  <TaskCard
+                    key={taskCardData.ref}
+                    ref={(el) => (cardRefs.current[refIndex] = el)}
+                    variant={
+                      taskCardData.queueKind === "priority"
+                        ? "priority"
+                        : "personal"
+                    }
+                    data={taskCardData}
+                    onOpen={onOpen}
+                  />
+                );
+              })
             ) : !autoqueueCardData ? (
               <div className="text-center py-8 text-gray-500">
                 <p>No approved tickets in processing queue</p>

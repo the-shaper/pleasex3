@@ -49,8 +49,14 @@ export default function DashboardPage() {
   const [personalEnabled, setPersonalEnabled] = useState(false);
   const [priorityEnabled, setPriorityEnabled] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskCardData | null>(null);
+
+  // Debug: Log when selectedTask changes
+  useEffect(() => {
+    console.log("🔄 Dashboard: selectedTask changed to:", selectedTask?.ref || 'null');
+  }, [selectedTask]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // New state for mobile sidebar
   const [isModalOpen, setIsModalOpen] = useState(false); // NEW: Modal visibility, tied to selectedTask
+  const [isDesktop, setIsDesktop] = useState(false); // NEW: Track desktop breakpoint
 
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "active";
@@ -132,6 +138,22 @@ export default function DashboardPage() {
       document.body.style.overflow = "";
     };
   }, [isSidebarOpen]);
+
+  // useEffect to detect desktop breakpoint
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.matchMedia("(min-width: 768px)").matches);
+    };
+    
+    checkDesktop();
+    
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+    mediaQuery.addEventListener("change", checkDesktop);
+    
+    return () => {
+      mediaQuery.removeEventListener("change", checkDesktop);
+    };
+  }, []);
 
   // Early returns: AFTER all hooks
   // Combined loading (Clerk + app)
@@ -288,7 +310,10 @@ export default function DashboardPage() {
       console.log("🔍 Setting selectedTask..."); // DEBUG: Before set
 
       setSelectedTask(taskCardData);
-      setIsModalOpen(true); // NEW: Open modal for table row clicks too
+      // Only open modal on mobile, desktop shows in TaskModule directly
+      if (!isDesktop) {
+        setIsModalOpen(true);
+      }
       console.log("🔍 selectedTask set!"); // DEBUG: After set (may not log if re-render)
     } catch (err) {
       console.error("Error opening ticket:", err);
@@ -555,9 +580,11 @@ export default function DashboardPage() {
                 autoqueueCardData={autoqueueCardData}
                 approvedTaskCards={approvedTaskCards}
                 onOpen={(data) => {
-                  // UPDATED: Set both states to open modal
                   setSelectedTask(data);
-                  setIsModalOpen(true);
+                  // Only open modal on mobile, desktop shows in TaskModule directly
+                  if (!isDesktop) {
+                    setIsModalOpen(true);
+                  }
                 }}
                 hasPendingApprovals={hasPendingApprovals}
                 openTickets={overview?.openTickets || []}
