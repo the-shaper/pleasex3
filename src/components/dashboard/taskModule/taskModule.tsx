@@ -278,12 +278,12 @@ export default function TaskModule({
                 {String(localStatus).replace("-", " ").toUpperCase()}
               </ButtonBase>
               <ButtonBase
-                variant="secondary"
+                variant="neutral"
                 size="sm"
                 className="flex-1"
                 onClick={onMarkAsFinished}
               >
-                FINISHED{" "}
+                MARK AS FINISHED{" "}
               </ButtonBase>
             </div>
           </aside>

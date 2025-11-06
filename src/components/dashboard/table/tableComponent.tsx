@@ -8,7 +8,7 @@ import {
   SortingState,
   flexRender,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CellComponent, type CellComponentData } from "./cellComponent";
 
 // Re-export for convenience
@@ -19,6 +19,10 @@ export interface TableComponentProps {
   onOpen?: (ref: string) => void;
   className?: string;
   currentTurn?: number;
+  activeTaskRef?: string; // Track active task from ScrollTrigger
+  enableClickToScroll?: boolean; // NEW: Enable click-to-scroll functionality
+  clickToScrollBreakpoint?: "mobile" | "desktop" | "both"; // NEW: Control when click-to-scroll is active
+  disableFocusStyling?: boolean; // NEW: Disable focus styling for dashboard context
 }
 
 export function TableComponent({
@@ -26,8 +30,25 @@ export function TableComponent({
   onOpen,
   className = "",
   currentTurn,
+  activeTaskRef,
+  enableClickToScroll = false,
+  clickToScrollBreakpoint = "desktop",
+  disableFocusStyling = false,
 }: TableComponentProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.matchMedia("(max-width: 767px)").matches);
+    };
+
+    checkMobile();
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    mediaQuery.addEventListener("change", checkMobile);
+
+    return () => mediaQuery.removeEventListener("change", checkMobile);
+  }, []);
 
   console.log("🔍 TableComponent Debug - Received data:", data);
   console.log("🔍 TableComponent Debug - Data length:", data?.length);
@@ -127,6 +148,115 @@ export function TableComponent({
   const [isCollapsed, setIsCollapsed] = useState(false); // NEW: Collapse state, default expanded
   const toggleCollapse = () => setIsCollapsed(!isCollapsed); // NEW: Toggle
 
+  // NEW: Scroll to corresponding TaskCard in NextUpSection
+  const scrollToTaskCard = (ref: string) => {
+    console.log("🔍 scrollToTaskCard called with ref:", ref);
+    console.log("🔍 isMobile:", isMobile);
+    console.log("🔍 enableClickToScroll:", enableClickToScroll);
+    console.log("🔍 clickToScrollBreakpoint:", clickToScrollBreakpoint);
+
+    const taskCardElement = document.querySelector(`[data-task-ref="${ref}"]`);
+    const outerContainer = document.querySelector(
+      '[data-element="NEXT-UP-COLUMN"]'
+    );
+
+    // Find the actual scrollable container - try multiple selectors
+    let scrollContainer = outerContainer?.querySelector(
+      ".overflow-y-auto"
+    ) as HTMLElement;
+    if (!scrollContainer) {
+      scrollContainer = outerContainer?.querySelector(
+        ".md\\:overflow-y-auto"
+      ) as HTMLElement;
+    }
+    if (!scrollContainer) {
+      // Fallback: find any child with scrollHeight > clientHeight
+      const children = outerContainer?.querySelectorAll("*") || [];
+      for (const child of children) {
+        const element = child as HTMLElement;
+        if (element.scrollHeight > element.clientHeight) {
+          scrollContainer = element;
+          break;
+        }
+      }
+    }
+
+    console.log("🔍 Trying fallback scroll container search...");
+    if (scrollContainer) {
+      console.log("🔍 Found scrollContainer via fallback:", scrollContainer);
+      console.log("🔍 scrollContainer classes:", scrollContainer.className);
+    }
+
+    console.log("🔍 taskCardElement found:", !!taskCardElement);
+    console.log("🔍 outerContainer found:", !!outerContainer);
+
+    if (outerContainer) {
+      console.log(
+        "🔍 outerContainer children count:",
+        outerContainer.children.length
+      );
+      console.log(
+        "🔍 outerContainer children:",
+        Array.from(outerContainer.children).map((child) => ({
+          tagName: child.tagName,
+          className: child.className,
+          scrollHeight: (child as HTMLElement).scrollHeight,
+          clientHeight: (child as HTMLElement).clientHeight,
+        }))
+      );
+    }
+
+    console.log("🔍 scrollContainer found:", !!scrollContainer);
+
+    if (taskCardElement) {
+      console.log("🔍 taskCardElement:", taskCardElement);
+    }
+
+    if (scrollContainer) {
+      console.log("🔍 scrollContainer:", scrollContainer);
+      console.log(
+        "🔍 scrollContainer.scrollTo:",
+        typeof scrollContainer.scrollTo
+      );
+      console.log(
+        "🔍 scrollContainer.scrollHeight:",
+        scrollContainer.scrollHeight
+      );
+      console.log(
+        "🔍 scrollContainer.clientHeight:",
+        scrollContainer.clientHeight
+      );
+    }
+
+    if (taskCardElement && scrollContainer) {
+      // Get current scroll position to account for manual scrolling
+      const currentScrollTop = scrollContainer.scrollTop;
+      console.log("🔍 currentScrollTop:", currentScrollTop);
+      
+      // Scroll to top of ScrollTrigger trigger zone (40% position for last card compatibility)
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const cardRect = taskCardElement.getBoundingClientRect();
+      
+      // Calculate relative position and add current scroll offset
+      const relativeScrollTop = cardRect.top - containerRect.top - containerRect.height * 0.4;
+      const targetScrollTop = currentScrollTop + relativeScrollTop;
+      
+      console.log("🔍 containerRect:", containerRect);
+      console.log("🔍 cardRect:", cardRect);
+      console.log("🔍 relativeScrollTop:", relativeScrollTop);
+      console.log("🔍 targetScrollTop:", targetScrollTop);
+
+      scrollContainer.scrollTo({
+        top: targetScrollTop,
+        behavior: "smooth",
+      });
+
+      console.log("🔍 scrollTo called with current scroll offset");
+    } else {
+      console.log("🔍 Cannot scroll - missing elements");
+    }
+  };
+
   return (
     <div className={`overflow-x-auto ${className}`}>
       {/* NEW: Clickable title matching page.tsx style */}
@@ -206,13 +336,56 @@ export function TableComponent({
               "🔍 TableComponent Debug - Rendering row data:",
               row.original
             );
+
+            // NEW: Determine if click-to-scroll should be enabled
+            const shouldEnableClickToScroll =
+              enableClickToScroll &&
+              (clickToScrollBreakpoint === "both" ||
+                (clickToScrollBreakpoint === "desktop" && !isMobile) ||
+                (clickToScrollBreakpoint === "mobile" && isMobile));
+
+            // NEW: Enhanced click handler
+            const handleRowClick = (ref: string) => {
+              console.log("🔍 handleRowClick called with ref:", ref);
+              console.log(
+                "🔍 shouldEnableClickToScroll:",
+                shouldEnableClickToScroll
+              );
+              console.log("🔍 isMobile:", isMobile);
+
+              // Existing mobile behavior
+              if (isMobile && onOpen) {
+                console.log("🔍 Mobile: calling onOpen");
+                onOpen(ref);
+              }
+              // NEW: Desktop click-to-scroll behavior
+              if (shouldEnableClickToScroll) {
+                console.log("🔍 Desktop: calling scrollToTaskCard");
+                scrollToTaskCard(ref);
+              } else {
+                console.log(
+                  "🔍 Click-to-scroll not enabled for this breakpoint"
+                );
+              }
+            };
+
             return (
-              <div key={row.id} className="hover:bg-gray-subtle/20">
+              <div
+                key={row.id}
+                className={`${isMobile ? "hover:bg-gray-subtle/20 cursor-pointer" : ""} ${
+                  shouldEnableClickToScroll
+                    ? "cursor-pointer hover:bg-gray-subtle/20"
+                    : ""
+                }`}
+                onClick={() => handleRowClick(row.original.ref)}
+              >
                 <CellComponent
                   data={row.original}
-                  onOpen={onOpen}
+                  onOpen={isMobile ? onOpen : undefined}
                   className="border-b-0"
                   currentTurn={currentTurn}
+                  isActive={row.original.ref === activeTaskRef}
+                  disableFocusStyling={disableFocusStyling}
                 />
               </div>
             );

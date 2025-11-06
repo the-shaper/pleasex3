@@ -2,7 +2,6 @@
 
 import { GeneralNumber } from "./generalNumber";
 import { TagBase } from "../../general/tagBase";
-import { ButtonBase } from "../../general/buttonBase";
 
 export interface CellComponentData {
   // General number - combined position across all queues
@@ -28,6 +27,8 @@ export interface CellComponentProps {
   onOpen?: (ref: string) => void;
   className?: string;
   currentTurn?: number;
+  isActive?: boolean; // NEW: Highlight when active from ScrollTrigger
+  disableFocusStyling?: boolean; // NEW: Disable focus styling for dashboard context
 }
 
 const formatDate = (timestamp: number): string => {
@@ -44,6 +45,8 @@ export function CellComponent({
   onOpen,
   className = "",
   currentTurn,
+  isActive,
+  disableFocusStyling = false,
 }: CellComponentProps) {
   const handleOpen = () => {
     onOpen?.(data.ref);
@@ -65,14 +68,16 @@ export function CellComponent({
     <div
       className={`grid gap-4 items-center p-2 border-b border-gray-subtle cursor-pointer hover:bg-gray-subtle/50 transition-colors ${className} ${
         isClickable ? "focus:bg-gray-subtle" : ""
+      } ${
+        isActive ? "bg-gray-subtle" : "" // NEW: Highlight when active from ScrollTrigger
       }`}
       style={{
         gridTemplateColumns: "100px 100px 100px 1fr 1fr 140px", // REMOVED: 120px for button column
       }}
-      role={isClickable ? "button" : undefined}
-      tabIndex={isClickable ? 0 : undefined}
+      role={disableFocusStyling ? undefined : (isClickable ? "button" : undefined)}
+      tabIndex={disableFocusStyling ? undefined : (isClickable ? 0 : undefined)}
       onClick={isClickable ? handleOpen : undefined}
-      onKeyDown={isClickable ? handleKeyDown : undefined}
+      onKeyDown={disableFocusStyling ? undefined : (isClickable ? handleKeyDown : undefined)}
       aria-disabled={!isClickable}
       aria-label={isClickable ? `Open ticket ${data.ref}` : undefined}
     >

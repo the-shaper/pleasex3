@@ -579,6 +579,7 @@ export default function DashboardPage() {
               <NextUpSection
                 autoqueueCardData={autoqueueCardData}
                 approvedTaskCards={approvedTaskCards}
+                activeTaskRef={selectedTask?.ref || autoqueueCardData?.ref}
                 onOpen={(data) => {
                   setSelectedTask(data);
                   // Only open modal on mobile, desktop shows in TaskModule directly
@@ -609,6 +610,10 @@ export default function DashboardPage() {
                     data={tableData}
                     onOpen={handleOpenTicket}
                     currentTurn={autoqueueCardData?.currentTurn}
+                    activeTaskRef={selectedTask?.ref || autoqueueCardData?.ref}
+                    enableClickToScroll={true}
+                    clickToScrollBreakpoint="desktop"
+                    disableFocusStyling={true}
                   />
                 </div>
               </div>
