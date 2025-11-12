@@ -1,5 +1,9 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import {
+  assignNumbersOnApprove,
+  computeTagsForCreator,
+} from "./lib/ticketEngine";
 
 export const getByRef = query({
   args: { ref: v.string() },
@@ -62,7 +66,12 @@ export const approve = mutation({
       .unique();
     if (!ticket) return { ok: true } as const;
     if (ticket.status !== "open") return { ok: true } as const;
+
     await ctx.db.patch(ticket._id, { status: "approved" });
+
+    await assignNumbersOnApprove(ctx, ticket._id);
+    await computeTagsForCreator(ctx, ticket.creatorSlug);
+
     return { ok: true } as const;
   },
 });
@@ -76,10 +85,14 @@ export const reject = mutation({
       .unique();
     if (!ticket) return { ok: true } as const;
     if (ticket.status !== "open") return { ok: true } as const;
+
     await ctx.db.patch(ticket._id, { status: "rejected" });
+
     return { ok: true } as const;
   },
 });
+
+// addTag, removeTag unchanged
 
 export const addTag = mutation({
   args: { ref: v.string(), tag: v.string() },
@@ -119,8 +132,16 @@ export const removeTag = mutation({
   },
 });
 
-// Toggle between "current" and "awaiting-feedback" for a ticket by ref.
-// Enforce a single "current" per creator by clearing it from others when applied here.
+// recomputeWorkflowTagsForCreator is now delegated to ticketEngine
+
+export const recomputeWorkflowTagsForCreator = mutation({
+  args: { creatorSlug: v.string() },
+  handler: async (ctx, args) => {
+    await computeTagsForCreator(ctx, args.creatorSlug);
+    return { ok: true as const };
+  },
+});
+
 export const toggleCurrentAwaiting = mutation({
   args: { ref: v.string() },
   handler: async (ctx, args) => {
@@ -135,42 +156,73 @@ export const toggleCurrentAwaiting = mutation({
     const hasAwaiting = tags.includes("awaiting-feedback");
     const hasCurrent = tags.includes("current");
 
-    // If ticket currently has awaiting-feedback, switch to current and clear current from others
     if (hasAwaiting) {
       const nextTags = tags.filter((t) => t !== "awaiting-feedback");
       if (!nextTags.includes("current")) nextTags.push("current");
-
       await ctx.db.patch(ticket._id, { tags: nextTags });
-
-      // Enforce exclusivity per creator
-      const others = await ctx.db
-        .query("tickets")
-        .withIndex("by_creator", (q) => q.eq("creatorSlug", ticket.creatorSlug))
-        .collect();
-
-      for (const other of others) {
-        if (other._id === ticket._id) continue;
-        const otherTags = other.tags || [];
-        if (otherTags.includes("current")) {
-          await ctx.db.patch(other._id, {
-            tags: otherTags.filter((t) => t !== "current"),
-          });
-        }
-      }
-
+      await computeTagsForCreator(ctx, ticket.creatorSlug);
       return { ok: true as const, tag: "current" as const };
     }
 
-    // If ticket currently has current, switch to awaiting-feedback
     if (hasCurrent) {
-      const nextTags = tags.filter((t) => t !== "current");
-      if (!nextTags.includes("awaiting-feedback"))
+      const nextTags = tags.filter((t) => t !== "current" && t !== "next-up");
+      if (!nextTags.includes("awaiting-feedback")) {
         nextTags.push("awaiting-feedback");
-      await ctx.db.patch(ticket._id, { tags: nextTags });
+      }
+      await ctx.db.patch(ticket._id, {
+        tags: nextTags,
+      });
+      await computeTagsForCreator(ctx, ticket.creatorSlug);
       return { ok: true as const, tag: "awaiting-feedback" as const };
     }
 
-    // Non-current tickets should not toggle via this mutation
     return { ok: false as const };
+  },
+});
+
+export const markAsFinished = mutation({
+  args: { ref: v.string() },
+  handler: async (ctx, args) => {
+    const ticket = await ctx.db
+      .query("tickets")
+      .withIndex("by_ref", (q) => q.eq("ref", args.ref))
+      .unique();
+
+    if (!ticket) return { ok: false as const };
+    if (ticket.status === "closed") return { ok: true as const };
+
+    const currentTags = ticket.tags || [];
+    const cleanedTags = currentTags.filter(
+      (t) => t !== "current" && t !== "awaiting-feedback"
+    );
+
+    await ctx.db.patch(ticket._id, {
+      status: "closed",
+      tags: cleanedTags.length > 0 ? cleanedTags : undefined,
+    });
+
+    await computeTagsForCreator(ctx, ticket.creatorSlug);
+
+    return { ok: true as const };
+  },
+});
+
+export const cleanupTicketNumbers = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const tickets = await ctx.db.query("tickets").collect();
+
+    for (const t of tickets) {
+      if (t.status === "open" || t.status === "rejected") {
+        if (t.ticketNumber || t.queueNumber) {
+          await ctx.db.patch(t._id, {
+            ticketNumber: undefined,
+            queueNumber: undefined,
+          });
+        }
+      }
+    }
+
+    return { ok: true as const };
   },
 });

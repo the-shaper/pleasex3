@@ -9,6 +9,7 @@ import { useState } from "react"; // Ensure useState is imported
 // removed unused import
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
+import ConfirmDone from "./confirmDone";
 
 export interface TaskModuleProps {
   data: TaskCardData;
@@ -43,6 +44,7 @@ export default function TaskModule({
 }: TaskModuleProps) {
   // Live ticket subscription for reactive status
   const liveTicket = useQuery(api.tickets.getByRef, { ref: data.ref });
+  const isClosed = liveTicket?.status === "closed" || data.status === "finished";
 
   // Calculate statusTag before early return to follow React Rules of Hooks
   const statusTag = useMemo(() => {
@@ -62,38 +64,42 @@ export default function TaskModule({
     const chosen = tagsSource?.find((t) =>
       priorityOrder.includes(t as TaskTag)
     );
-    return chosen ?? (data.status as TaskTag) ?? "pending";
+    
+    const result = chosen ?? (data.status as TaskTag) ?? "pending";
+    console.log("[TaskModule] statusTag calculation", {
+      ref: data.ref,
+      liveTicketTags: liveTicket?.tags,
+      dataTags: data.tags,
+      tagsSource,
+      chosen,
+      result
+    });
+    
+    return result;
   }, [data, liveTicket?.tags]);
 
-  const [isCollapsed, setIsCollapsed] = useState(false); // NEW: Collapse state, default expanded
-
-  // Local status for immediate UI feedback, synced with derived statusTag
-  const [localStatus, setLocalStatus] = useState(statusTag as TaskTag);
-  useEffect(() => {
-    setLocalStatus(statusTag as TaskTag);
-  }, [statusTag]);
+  const [isCollapsed, setIsCollapsed] = useState(false); // Collapse state, default expanded
 
   // Convex mutation to toggle between current <-> awaiting-feedback with exclusivity
   const toggleCurrentAwaiting = useMutation(api.tickets.toggleCurrentAwaiting);
+  const markAsFinished = useMutation(api.tickets.markAsFinished);
   const [isToggling, setIsToggling] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
+  const [showConfirmDone, setShowConfirmDone] = useState(false);
 
   const canToggle =
-    localStatus === "current" || localStatus === "awaiting-feedback";
-  const isAwaiting = localStatus === "awaiting-feedback";
-  const isCurrent = localStatus === "current";
+    statusTag === "current" || statusTag === "awaiting-feedback";
+  const isAwaiting = statusTag === "awaiting-feedback";
+  const isCurrent = statusTag === "current";
 
   const handleStatusButtonClick = async () => {
     if (!canToggle || isToggling) return;
     setIsToggling(true);
     try {
       const res = await toggleCurrentAwaiting({ ref: data.ref });
-      if (
-        res &&
-        res.ok &&
-        (res.tag === "current" || res.tag === "awaiting-feedback")
-      ) {
-        setLocalStatus(res.tag);
-        // Optional: also call upstream handler if provided
+      console.log("toggleCurrentAwaiting response", res);
+      // Let live query handle state updates - no local state management
+      if (res?.ok && res.tag === "awaiting-feedback") {
         if (onSendForFeedback) onSendForFeedback();
       }
     } catch (e) {
@@ -101,6 +107,32 @@ export default function TaskModule({
     } finally {
       setIsToggling(false);
     }
+  };
+
+  const handleMarkAsFinishedClick = () => {
+    setShowConfirmDone(true);
+  };
+
+  const handleConfirmFinish = async () => {
+    if (!data.ref) return;
+
+    setIsFinishing(true);
+    try {
+      const res = await markAsFinished({ ref: data.ref });
+      if (res && res.ok) {
+        // Call upstream handler for UI updates
+        if (onMarkAsFinished) onMarkAsFinished();
+      }
+    } catch (e) {
+      console.error("Failed to mark ticket as finished for", data.ref, e);
+    } finally {
+      setIsFinishing(false);
+      setShowConfirmDone(false);
+    }
+  };
+
+  const handleCancelFinish = () => {
+    setShowConfirmDone(false);
   };
 
   // Show placeholder when no data is available THIS IS A PLACEHOLDER! EDIT BELOW IT
@@ -124,11 +156,14 @@ export default function TaskModule({
 
   const firstLink = data.attachments?.[0];
 
-  const toggleCollapse = () => setIsCollapsed(!isCollapsed); // NEW: Toggle function
+  const toggleCollapse = () => {
+    if (isModal) return; // Disable collapse in modal usage
+    setIsCollapsed((prev) => !prev);
+  };
 
   return (
     <section className={`flex flex-col gap-6 text-text  ${className}`}>
-      {/* UPDATED: Make title clickable with chevron */}
+      {/* Title row with optional collapse on non-modal usage */}
       <button
         onClick={toggleCollapse}
         className="flex items-center justify-between w-full text-left border-b border-gray-subtle"
@@ -137,20 +172,23 @@ export default function TaskModule({
         <h2 className="text-xl tracking-tight font-mono font-bold pb-2 ">
           TASK DETAILS:
         </h2>
-        {!isModal && ( // NEW: Hide chevron in modal
+        {!isModal && (
           <span
-            className={`text-xs text-gray-subtle transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
+            className={`text-xs text-gray-subtle transition-transform duration-300 ${
+              isCollapsed ? "rotate-180" : ""
+            }`}
           >
             ▼
           </span>
         )}
       </button>
 
-      {/* NEW: Wrap content for collapse */}
+      {/* Content wrapper: collapsible only when not in modal */}
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${isCollapsed ? "max-h-0" : "max-h-auto"}`}
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          !isModal && isCollapsed ? "max-h-0" : "max-h-none"
+        }`}
       >
-        {/* Component Title */}
         {/* Main Content Wrapper */}
         <div className="flex md:flex-row md:gap-8 flex-col gap-4">
           {/* Left Content Wrapper */}
@@ -194,8 +232,8 @@ export default function TaskModule({
                 <h3 className="text-2xl font-mono break-words min-w-0">
                   {data.needText || "—"}
                 </h3>
-                <TagBase variant={localStatus as TaskTag}>
-                  {String(localStatus).replace("-", " ").toUpperCase()}
+                <TagBase variant={statusTag as TaskTag}>
+                  {String(statusTag).replace("-", " ").toUpperCase()}
                 </TagBase>
               </div>
 
@@ -203,7 +241,7 @@ export default function TaskModule({
               <div className="mt-6">
                 <div className="text-coral">DESCRIPTION</div>
                 <p className="mt-2 font-mono text-sm whitespace-pre-wrap break-words">
-                  {data.needText || "—"}
+                  {data.message || data.needText || "—"}
                 </p>
               </div>
             </div>
@@ -267,28 +305,54 @@ export default function TaskModule({
 
             {/* Action buttons */}
             <div className="flex gap-2">
-              <ButtonBase
-                variant={isAwaiting ? "primary" : "primary"}
-                size="sm"
-                className={`flex-1 ${isAwaiting ? "bg-purple text-text hover:bg-purple" : ""}`}
-                onClick={handleStatusButtonClick}
-                disabled={!canToggle || isToggling}
-                loading={isToggling}
-              >
-                {String(localStatus).replace("-", " ").toUpperCase()}
-              </ButtonBase>
-              <ButtonBase
-                variant="neutral"
-                size="sm"
-                className="flex-1"
-                onClick={onMarkAsFinished}
-              >
-                MARK AS FINISHED{" "}
-              </ButtonBase>
+              {isClosed ? (
+                <ButtonBase
+                  variant="neutral"
+                  size="sm"
+                  className="flex-1 cursor-default bg-gray-subtle text-text-muted"
+                  disabled
+                >
+                  THIS TICKET IS CLOSED
+                </ButtonBase>
+              ) : (
+                <>
+                  <ButtonBase
+                    variant="primary"
+                    size="sm"
+                    className={`flex-1 ${
+                      isAwaiting
+                        ? "bg-purple text-text hover:bg-purple"
+                        : ""
+                    }`}
+                    onClick={handleStatusButtonClick}
+                    disabled={!canToggle || isToggling}
+                    loading={isToggling}
+                  >
+                    {String(statusTag).replace("-", " ").toUpperCase()}
+                  </ButtonBase>
+                  <ButtonBase
+                    variant="neutral"
+                    size="sm"
+                    className="flex-1"
+                    onClick={handleMarkAsFinishedClick}
+                    disabled={isFinishing}
+                  >
+                    MARK AS FINISHED
+                  </ButtonBase>
+                </>
+              )}
             </div>
           </aside>
         </div>
       </div>
+
+      {/* Confirm Done Modal */}
+      <ConfirmDone
+        isOpen={showConfirmDone}
+        onCancel={handleCancelFinish}
+        onConfirm={handleConfirmFinish}
+        isSubmitting={isFinishing}
+      />
     </section>
   );
 }

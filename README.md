@@ -1,7 +1,3 @@
-# Ticketing System Migration Plan
-
-This document outlines the comprehensive migration plan for rebuilding a ticketing/favor request system using Next.js 15 and Convex, replacing the original Supabase/Postgres implementation.
-
 ## Project Overview
 
 This is a creator queue management system where people can submit tickets for personal or priority favors. The system features:
@@ -121,12 +117,6 @@ CONVEX_DEPLOYMENT=your_convex_deployment
 - `SubmitClient.tsx` - Ticket submission form
 - `TicketApprovalCard.tsx` - Dashboard approval interface
 - `globals.css` - Global styles and theme
-
-### New Components
-
-- `DashboardClient.tsx` - Main dashboard component
-- `TicketList.tsx` - Filterable ticket list
-- `QueueStats.tsx` - Queue statistics display
 
 ### Convex Functions
 

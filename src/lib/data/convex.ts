@@ -126,12 +126,30 @@ export class ConvexDataProvider implements DataProvider {
   }
 
   async createTicket(input: CreateTicketInput): Promise<{ ref: string }> {
-    const res = await client.mutation(api.tickets.create, input);
+    // Filter out general queue tickets for table display
+    const filteredInput = {
+      ...input,
+      queueKind: input.queueKind === "general" ? "personal" : input.queueKind as "personal" | "priority"
+    };
+    const res = await client.mutation(api.tickets.create, filteredInput);
     return res as { ref: string };
   }
 
   async approveTicket(ref: string): Promise<{ ok: true }> {
     const res = await client.mutation(api.tickets.approve, { ref });
+
+    // After approval, recompute workflow tags so current/next-up are persisted.
+    try {
+      const ticket = await client.query(api.tickets.getByRef, { ref });
+      if (ticket && ticket.creatorSlug) {
+        await client.mutation(api.tickets.recomputeWorkflowTagsForCreator, {
+          creatorSlug: ticket.creatorSlug,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to recompute workflow tags after approve", error);
+    }
+
     return res as { ok: true };
   }
 
@@ -143,69 +161,13 @@ export class ConvexDataProvider implements DataProvider {
   async getAllTicketsForTable(
     creatorSlug: string
   ): Promise<CellComponentData[]> {
+    // Deprecated: TableComponent now uses engine positions directly via api.dashboard.getAllTicketsWithPositions
+    // Keeping this as a thin passthrough for any remaining callers until fully removed.
     const tickets = await client.query(
       api.dashboard.getAllTicketsWithPositions,
       { creatorSlug }
     );
-    // Debug: Log raw tickets from Convex
-    console.log(
-      "🔍 Convex Debug - Raw tickets from getAllTicketsWithPositions:",
-      tickets
-    );
-    console.log("🔍 Convex Debug - Raw tickets length:", tickets?.length);
 
-    // Filter out "general" queue tickets and map to CellComponentData format
-    const mappedData = tickets
-      .filter(
-        (ticket: any) =>
-          ticket.queueKind === "personal" || ticket.queueKind === "priority"
-      )
-      .map((ticket: any) => ({
-        generalNumber: ticket.generalNumber,
-        ticketNumber: ticket.ticketNumber,
-        queueKind: ticket.queueKind as "personal" | "priority",
-        task: ticket.taskTitle || "",
-        submitterName: ticket.name || "Anonymous",
-        requestDate: ticket.createdAt,
-        ref: ticket.ref,
-        status: ticket.status as "open" | "approved" | "rejected" | "closed",
-      }));
-
-    // Debug: Log mapped data
-    console.log(
-      "🔍 Convex Debug - Mapped data for TableComponent:",
-      mappedData
-    );
-    console.log("🔍 Convex Debug - Mapped data length:", mappedData?.length);
-
-    // TEMP: If no data, add test data to verify rendering works
-    if (mappedData.length === 0) {
-      console.log("🔍 Convex Debug - No tickets found, adding test data");
-      const testData = [
-        {
-          generalNumber: 1,
-          ticketNumber: 1,
-          queueKind: "priority" as const,
-          task: "Test priority task",
-          submitterName: "Test User",
-          requestDate: Date.now(),
-          ref: "TEST-REF-123",
-          status: "open" as const,
-        },
-        {
-          generalNumber: 2,
-          ticketNumber: 2,
-          queueKind: "personal" as const,
-          task: "Test personal task",
-          submitterName: "Another User",
-          requestDate: Date.now(),
-          ref: "TEST-REF-456",
-          status: "approved" as const,
-        },
-      ];
-      return testData;
-    }
-
-    return mappedData;
+    return (tickets || []) as unknown as CellComponentData[];
   }
 }

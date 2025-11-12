@@ -30,6 +30,7 @@ export interface TaskCardData {
   location?: string;
   social?: string;
   needText: string;
+  message: string;
   attachments: string[];
   tipCents: number;
   queueKind?: "personal" | "priority";

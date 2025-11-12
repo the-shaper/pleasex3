@@ -12,7 +12,12 @@ export default function CreatorQueuesPage() {
   const minPriorityTipCents = 1500;
   // Reactive queries (auto-update on DB changes)
   const queueSnapshot = useQuery(api.queues.getSnapshot, { creatorSlug: slug });
-  const creatorInfo = useQuery(api.dashboard.getCreator, { creatorSlug: slug }) || { displayName: slug };
+  const creatorInfo =
+    useQuery(api.dashboard.getCreator, { creatorSlug: slug }) ||
+    ({ displayName: slug } as any);
+  const nextNumbers = useQuery(api.dashboard.getNextTicketNumbers, {
+    creatorSlug: slug,
+  });
 
   if (!queueSnapshot) {  // Loading (useQuery handles)
     return (
@@ -70,12 +75,14 @@ export default function CreatorQueuesPage() {
               kind="personal"
               slug={slug}
               data={queueSnapshot.personal}
+              nextTicketNumber={nextNumbers?.nextPersonalNumber}
               minPriorityTipCents={minPriorityTipCents}
             />
             <QueueCard
               kind="priority"
               slug={slug}
               data={queueSnapshot.priority}
+              nextTicketNumber={nextNumbers?.nextPriorityNumber}
               minPriorityTipCents={minPriorityTipCents}
             />
           </div>

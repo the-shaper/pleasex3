@@ -24,14 +24,28 @@ export type QueueKind = "personal" | "priority";
 export interface QueueCardProps {
   kind: QueueKind;
   slug: string;
-  data: { activeTurn: number | null; nextTurn: number; etaMins: number | null; enabled: boolean };
+  data: {
+    currentTicketNumber?: number;
+    nextTicketNumber?: number;
+    etaMins: number | null;
+    enabled: boolean;
+  };
   minPriorityTipCents: number;
+  nextTicketNumber?: number;
 }
 
-export default function QueueCard({ kind, slug, data, minPriorityTipCents }: QueueCardProps) {
+export default function QueueCard({
+  kind,
+  slug,
+  data,
+  minPriorityTipCents,
+  nextTicketNumber,
+}: QueueCardProps) {
   const isPriority = kind === "priority";
   const accentBg = isPriority ? "bg-gold" : "bg-greenlite";
-  const tipBanner = isPriority ? "CHOOSE TIPPING AMOUNT" : "WOULD YOU LIKE TO TIP ME?";
+  const tipBanner = isPriority
+    ? "CHOOSE TIPPING AMOUNT"
+    : "WOULD YOU LIKE TO TIP ME?";
   const tipLeftBg = isPriority ? "bg-gold" : "bg-greenlite";
   const tipFieldBg = "#412c2c";
   const tipTextClass = isPriority ? "text-gold" : "text-greenlite";
@@ -54,7 +68,8 @@ export default function QueueCard({ kind, slug, data, minPriorityTipCents }: Que
     return base;
   }, [slug, kind, tipCents, isPriority]);
 
-  const claimDisabled = isPriority && data.enabled && tipCents < minPriorityTipCents;
+  const claimDisabled =
+    isPriority && data.enabled && tipCents < minPriorityTipCents;
 
   return (
     <section className="space-y-2">
@@ -76,24 +91,43 @@ export default function QueueCard({ kind, slug, data, minPriorityTipCents }: Que
               className="bg-[#412c2c] box-border content-stretch flex flex-row gap-2.5 items-center justify-center px-[30px] py-2.5 w-full text-center"
               style={{ fontFamily: "var(--font-body)" }}
             >
-              <span className="text-[14.386px] tracking-[-0.2877px] text-coral leading-4  ">Current Turn</span>
+              <span className="text-[14.386px] tracking-[-0.2877px] text-coral leading-4  ">
+                Current Turn
+              </span>
             </div>
-            <div
-              className="bg-[#412c2c] box-border content-stretch flex flex-row gap-2.5 items-center justify-center min-w-px px-[37px] py-2.5 w-full"
-            >
-              <span className="text-[55px] text-coral font-mono">{data.activeTurn ?? 0}</span>
+            <div className="bg-[#412c2c] box-border content-stretch flex flex-row gap-2.5 items-center justify-center min-w-px px-[37px] py-2.5 w-full">
+              <span className="text-[55px] text-coral font-mono">
+                {data.currentTicketNumber ?? "—"}
+              </span>
             </div>
           </div>
-          <div className={`${accentBg} flex-1 self-stretch relative pl-3 py-3 pr-6 min-h-[200px]`}>
+          <div
+            className={`${accentBg} flex-1 self-stretch relative pl-3 py-3 pr-6 min-h-[200px]`}
+          >
             <div className="flex justify-between items-start">
-              <span className="text-[11px] tracking-[0.1em] text-coral" style={{ fontFamily: "var(--font-heading)" }}>
-                {isPriority ? `$${(minPriorityTipCents / 100).toFixed(0)} USD` : "GRATIS"}
+              <span
+                className="text-[11px] tracking-[0.1em] text-coral"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {isPriority
+                  ? `$${(minPriorityTipCents / 100).toFixed(0)} USD`
+                  : "GRATIS"}
               </span>
-              <span className="text-[22px]" style={{ fontFamily: "var(--font-body)" }}>Next Available</span>
+              <span
+                className="text-[22px]"
+                style={{ fontFamily: "var(--font-body)" }}
+              >
+                Next Available
+              </span>
             </div>
             <div className="flex items-center justify-between mt-1">
-              <span className="text-[111px] leading-none text-coral font-mono">{data.nextTurn}</span>
-              <div className="flex-1 ml-[-6px] mr-2 text-[11px] uppercase text-text text-left max-w-[44%]" style={{ fontFamily: "var(--font-body)" }}>
+              <span className="text-[111px] leading-none text-coral font-mono">
+                {nextTicketNumber ?? data.nextTicketNumber ?? "—"}
+              </span>
+              <div
+                className="flex-1 ml-[-6px] mr-2 text-[11px] uppercase text-text text-left max-w-[44%]"
+                style={{ fontFamily: "var(--font-body)" }}
+              >
                 <p>
                   {isPriority
                     ? "PRIORITY QUEUE PRIORITIZES WORK AND BUSINESS-RELATED FAVORS"
@@ -101,9 +135,17 @@ export default function QueueCard({ kind, slug, data, minPriorityTipCents }: Que
                 </p>
                 <p className="text-coral underline">"READ WHY"</p>
               </div>
-              <span className="text-[22px]" style={{ fontFamily: "var(--font-heading)" }}>&gt;</span>
+              <span
+                className="text-[22px]"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                &gt;
+              </span>
             </div>
-            <div className="flex gap-6 mt-2 text-[10px] text-text" style={{ fontFamily: "var(--font-body)" }}>
+            <div
+              className="flex gap-6 mt-2 text-[10px] text-text"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
               <div>
                 <div className="font-bold">Average Time / Favor</div>
                 <div>{formatEtaMins(data.etaMins)}</div>
@@ -116,19 +158,37 @@ export default function QueueCard({ kind, slug, data, minPriorityTipCents }: Que
           </div>
         </div>
         <div className="space-y-2">
-          <div className="bg-[#412c2c] text-[16px] text-bg text-center uppercase py-2" style={{ fontFamily: "var(--font-body)" }}>
+          <div
+            className="bg-[#412c2c] text-[16px] text-bg text-center uppercase py-2"
+            style={{ fontFamily: "var(--font-body)" }}
+          >
             {tipBanner}
           </div>
           <div className="flex gap-2">
-            <div className={`${tipLeftBg} flex-1 py-5 text-center uppercase`} style={{ fontFamily: "var(--font-body)" }}>
+            <div
+              className={`${tipLeftBg} flex-1 py-5 text-center uppercase`}
+              style={{ fontFamily: "var(--font-body)" }}
+            >
               CHOOSE AMOUNT (USD)
             </div>
-            <div className="flex-1 py-5 text-center" style={{ backgroundColor: tipFieldBg, fontFamily: "var(--font-body)" }}>
-              <div className={`inline-flex items-center gap-2 text-[16px] ${tipTextClass}`}>
+            <div
+              className="flex-1 py-5 text-center"
+              style={{
+                backgroundColor: tipFieldBg,
+                fontFamily: "var(--font-body)",
+              }}
+            >
+              <div
+                className={`inline-flex items-center gap-2 text-[16px] ${tipTextClass}`}
+              >
                 <button
                   type="button"
                   className="px-2 py-1 border border-gray-subtle"
-                  onClick={() => setAmountDollars((v) => (Math.max(0, (parseFloat(v || "0") - 1)).toFixed(2)))}
+                  onClick={() =>
+                    setAmountDollars((v) =>
+                      Math.max(0, parseFloat(v || "0") - 1).toFixed(2)
+                    )
+                  }
                   aria-label="Decrease tip by one dollar"
                 >
                   −
@@ -149,7 +209,11 @@ export default function QueueCard({ kind, slug, data, minPriorityTipCents }: Que
                 <button
                   type="button"
                   className="px-2 py-1 border border-gray-subtle"
-                  onClick={() => setAmountDollars((v) => ((parseFloat(v || "0") + 1).toFixed(2)))}
+                  onClick={() =>
+                    setAmountDollars((v) =>
+                      (parseFloat(v || "0") + 1).toFixed(2)
+                    )
+                  }
                   aria-label="Increase tip by one dollar"
                 >
                   +
@@ -164,7 +228,9 @@ export default function QueueCard({ kind, slug, data, minPriorityTipCents }: Que
               aria-label={`Claim a ${kind} ticket`}
               style={{ fontFamily: "var(--font-body)" }}
             >
-              <span className=" text-center">{isPriority ? "CLAIM PRIORITY TICKET" : "CLAIM PERSONAL TICKET"}</span>
+              <span className=" text-center">
+                {isPriority ? "CLAIM PRIORITY TICKET" : "CLAIM PERSONAL TICKET"}
+              </span>
               <span>&gt;</span>
             </Link>
           ) : (
@@ -175,5 +241,3 @@ export default function QueueCard({ kind, slug, data, minPriorityTipCents }: Que
     </section>
   );
 }
-
-

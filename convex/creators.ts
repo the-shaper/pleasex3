@@ -13,6 +13,7 @@ export const create = mutation({
       slug: args.slug,
       displayName: args.displayName,
       minPriorityTipCents: args.minPriorityTipCents,
+      showAutoqueueCard: true,
     });
 
     // Insert personal queue (enabled by default)
@@ -38,5 +39,32 @@ export const create = mutation({
     });
 
     return { success: true, creatorId };
+  },
+});
+
+export const upsertBySlug = mutation({
+  args: {
+    slug: v.string(),
+    displayName: v.string(),
+    minPriorityTipCents: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("creators")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .unique();
+
+    if (existing) {
+      return { creatorId: existing._id };
+    }
+
+    const creatorId = await ctx.db.insert("creators", {
+      slug: args.slug,
+      displayName: args.displayName,
+      minPriorityTipCents: args.minPriorityTipCents,
+      showAutoqueueCard: true,
+    });
+
+    return { creatorId };
   },
 });

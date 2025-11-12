@@ -8,6 +8,8 @@ interface QueueSettingsProps {
   setPersonalEnabled: (enabled: boolean) => void;
   priorityEnabled: boolean;
   setPriorityEnabled: (enabled: boolean) => void;
+  showAutoqueueCard?: boolean;
+  onToggleAutoqueueCard?: (value: boolean) => void;
 }
 
 export function QueueSettings({
@@ -18,6 +20,8 @@ export function QueueSettings({
   setPersonalEnabled,
   priorityEnabled,
   setPriorityEnabled,
+  showAutoqueueCard,
+  onToggleAutoqueueCard,
 }: QueueSettingsProps) {
   if (!queueSnapshot) {
     return (
@@ -62,6 +66,20 @@ export function QueueSettings({
               Toggle
             </button>
           </div>
+
+          {onToggleAutoqueueCard && (
+            <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+              <label className="text-sm font-medium">
+                Show autoqueue card in NEXT UP: {showAutoqueueCard ? "On" : "Off"}
+              </label>
+              <button
+                onClick={() => onToggleAutoqueueCard(!showAutoqueueCard)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+              >
+                Toggle
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

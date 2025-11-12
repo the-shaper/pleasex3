@@ -62,18 +62,18 @@ export default function DashboardHeader({
             <p className="text-sm bg-purple text-text-bright w-fit py-1 px-2">
               DASHBOARD
             </p>
+            <SignedIn>
+              <p className="uppercase text-text-muted -mt-2">
+                Hello,{user?.firstName || user?.fullName || "User"}!
+              </p>
+            </SignedIn>
+            <SignedOut>
+              <p className="uppercase text-text-muted text-sm">
+                Sign in to continue
+              </p>
+            </SignedOut>
           </div>
           <h1 className="text-xl md:text-3xl text-nowrap font-bold">{title}</h1>
-          <SignedIn>
-            <p className="uppercase text-text-muted -mt-2">
-              Hello,{user?.firstName || user?.fullName || "User"}!
-            </p>
-          </SignedIn>
-          <SignedOut>
-            <p className="uppercase text-text-muted text-sm">
-              Sign in to continue
-            </p>
-          </SignedOut>
         </div>
         <div
           data-element="HEADER-CONTROLS-WRAPPER"

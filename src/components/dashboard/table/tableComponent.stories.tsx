@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { TableComponent, type CellComponentData } from "./tableComponent";
+import { TableComponent, type CellComponentData, type TableVariant } from "./tableComponent";
 
 const meta: Meta<typeof TableComponent> = {
   component: TableComponent,
@@ -12,6 +12,10 @@ const meta: Meta<typeof TableComponent> = {
       control: { type: "object" },
     },
     onOpen: { action: "opened" },
+    variant: {
+      control: { type: "select" },
+      options: ["active", "past", "all"] as TableVariant[],
+    },
   },
 };
 
@@ -30,6 +34,8 @@ const mockData: CellComponentData[] = [
     requestDate: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
     ref: "DEMO-12345",
     status: "open",
+    tipCents: 500,
+    tags: ["design"],
   },
   {
     generalNumber: 2,

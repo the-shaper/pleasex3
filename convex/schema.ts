@@ -6,6 +6,7 @@ export default defineSchema({
     slug: v.string(),
     displayName: v.string(),
     minPriorityTipCents: v.number(),
+    showAutoqueueCard: v.optional(v.boolean()),
   }).index("by_slug", ["slug"]),
 
   queues: defineTable({
@@ -41,7 +42,18 @@ export default defineSchema({
     social: v.optional(v.string()),
     attachments: v.optional(v.array(v.string())),
     consentEmail: v.optional(v.boolean()),
+    // Engine-assigned numbers (optional)
+    ticketNumber: v.optional(v.number()),
+    queueNumber: v.optional(v.number()),
   })
     .index("by_ref", ["ref"])
     .index("by_creator", ["creatorSlug"]),
+
+  // Monotonic counters per creator for safe ticket numbering
+  counters: defineTable({
+    creatorSlug: v.string(),
+    nextTicketNumber: v.number(),
+    nextPersonalNumber: v.number(),
+    nextPriorityNumber: v.number(),
+  }).index("by_creator", ["creatorSlug"]),
 });

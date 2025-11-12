@@ -358,7 +358,6 @@ export default function DashboardPage() {
           <TableComponent
             data={tableData}
             onOpen={handleOpenTicket}
-            currentTurn={autoqueueCardData?.currentTurn}
           />
         </div>
       </div>

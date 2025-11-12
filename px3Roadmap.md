@@ -10,11 +10,11 @@
 
 **Key URLs working with live data:**
 
-- Queue status: `http://localhost:3000/demo`
-- Submit tickets: `http://localhost:3000/demo/submit`
-- Approve tickets: `http://localhost:3000/demo/approval`
+- Queue status/creator landing page: `http://localhost:3000/[slug]`
+- Submit tickets: `http://localhost:3000/[slug]/submit`
+- Submit tickets success: `http://localhost:3000/[slug]/submit/success`
+- Approve tickets: `http://localhost:3000/[slug]/dashboard`
 - Dashboard: `http://localhost:3000/demo/dashboard` (includes approval functionality)
-- Check status: `http://localhost:3000/status/[ticket-ref]`
 
 ---
 
@@ -93,34 +93,28 @@
 - **Status**: All core functionality working! Tickets persist in Convex, approval/rejection flows work, status tracking is live.
 
 - Data model
-
   - [ ] `tickets`: { ref, creatorSlug, queue: "personal"|"priority", form fields, attachments[], priorityTipCents, status: "pending"|"approved"|"rejected"|"completed", submittedAt, approvedAt? }
   - [ ] `creators`: { slug, displayName, minPriorityTipCents }
 
 - Step 1: Replace mock API routes with Convex calls ✅ COMPLETED
-
   - [x] Update `/api/tickets` route to use `ConvexDataProvider.createTicket()`
   - [x] Update `/api/tickets/[ref]/approve` route to use `ConvexDataProvider.approveTicket()`
   - [x] Update `/api/tickets/[ref]/reject` route to use `ConvexDataProvider.rejectTicket()`
 
 - Step 2: Connect success/status pages to real data ✅ COMPLETED
-
   - [x] Update success page (`/demo/submit/success`) to fetch ticket via `ConvexDataProvider.getTicketByRef()`
   - [x] Update status page (`/status/[ref]`) to display actual ticket data and status
 
 - Step 3: Wire up approval page with live actions ✅ COMPLETED
-
   - [x] Update approval page (`/demo/approval`) to use real approve/reject endpoints
   - [x] Test full submit → approve/reject → view flow
 
 - Step 4: Clean up and verification ✅ COMPLETED
-
   - [x] Remove mock data fallbacks from UI components
   - [x] Test edge cases (invalid refs, double approvals, etc.)
   - [x] Verify data persistence across page refreshes
 
 - Keep mocked for now
-
   - [ ] Queue metrics and positions (counts/ETAs) remain mocked during this slice
 
 - After this slice
@@ -215,8 +209,6 @@
   - `implementation-plan-glm/creator-page-plan.md`
   - `implementation-plan-glm/notification-system-plan.md`
 
-
-
 - TASK DETAIL
 
 Based on the current state and the implementation plan, here's a comprehensive plan to set up the dashboard page:
@@ -236,13 +228,11 @@ Based on the current state and the implementation plan, here's a comprehensive p
 ### **Phase 1: Connect Dashboard to Real Data**
 
 1. **Replace Mock Queue Data with Live Calculations**
-
    - Update dashboard to fetch real queue metrics from `ConvexDataProvider.getQueueSnapshot('alejandro')`
    - Remove hardcoded queue objects and use calculated data
    - Show real `activeTurn`, `nextTurn`, `etaMins` based on approved tickets
 
 2. **Connect Ticket Data to Real Backend**
-
    - Replace mock TaskCard data with actual ticket data
    - Fetch open tickets from `ConvexDataProvider.getDashboardOverview('alejandro')`
    - Display real ticket information (names, emails, descriptions, tips)
@@ -257,13 +247,11 @@ Based on the current state and the implementation plan, here's a comprehensive p
 **Approval functionality successfully integrated into dashboard!**
 
 4. **Create ApprovalPanel Component** ✅
-
    - Extract approval logic from `/demo/approval/page.tsx` (updated to use 'alejandro' slug)
    - Create reusable `ApprovalPanel.tsx` component in `checkout/` folder
    - Handle approve/reject actions with loading states
 
 5. **Add Approval Section to Dashboard Layout** ✅
-
    - Modified dashboard grid layout to include "PENDING APPROVALS" column
    - Positioned approval panel alongside existing "NEXT UP" and "ALL FAVORS" sections
    - Made approval section scrollable with proper height management
@@ -276,13 +264,11 @@ Based on the current state and the implementation plan, here's a comprehensive p
 ### **Phase 3: Enhanced Dashboard Features**
 
 7. **Add Ticket Management Actions**
-
    - Approve/reject buttons directly in ticket list
    - Bulk actions for multiple tickets
    - Status filtering (pending, approved, rejected)
 
 8. **Implement Queue Statistics**
-
    - Show real-time queue metrics in dashboard header
    - Display active counts, wait times, processing rates
    - Add visual indicators for queue health
@@ -295,13 +281,11 @@ Based on the current state and the implementation plan, here's a comprehensive p
 ### **Phase 4: Polish and Testing**
 
 10. **Error Handling and Loading States**
-
     - Add proper loading spinners for data fetching
     - Handle network errors gracefully
     - Show empty states when no tickets exist
 
 11. **Responsive Design Updates**
-
     - Ensure dashboard works on mobile/tablet
     - Adjust layout for different screen sizes
     - Test touch interactions for approval actions
@@ -311,11 +295,10 @@ Based on the current state and the implementation plan, here's a comprehensive p
     - Verify real-time updates across browser tabs
     - Test edge cases (no tickets, network errors, etc.)
 
-
 **N M I T**
 
-
 13. **Task Expanded View BUILD**
+
 - [ ]Design component in figma
 - [ ]Build React component
 - [ ]Integrate component into dashboard
@@ -323,14 +306,11 @@ Based on the current state and the implementation plan, here's a comprehensive p
 
 14. **Clerk UI Dashboard**
 
-
 - [ ] CLERK
   - [ ] Fit UI buttons within my own components
   - [ ] Customize clerk ui elements
 
-
 ---
-
 
 ## 🔧 **Technical Implementation Details**
 

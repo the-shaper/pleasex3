@@ -4,6 +4,22 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import SubmitClient from "./SubmitClient";
 import { ConvexDataProvider } from "@/lib/data/convex";
+import { api } from "@convex/_generated/api";
+import { ConvexHttpClient } from "convex/browser";
+
+const httpClient = new ConvexHttpClient(
+  process.env.NEXT_PUBLIC_CONVEX_URL as string
+);
+
+type QueuePayload = {
+  creator: { slug: string; displayName: string; minPriorityTipCents: number };
+  personal: any;
+  priority: any;
+  general: any;
+  nextTicketNumber?: number;
+  nextPersonalNumber?: number;
+  nextPriorityNumber?: number;
+};
 
 const dataProvider = new ConvexDataProvider();
 
@@ -16,9 +32,14 @@ export default function SubmitPage() {
   useEffect(() => {
     const fetchQueueData = async () => {
       try {
-        const [snapshot, creatorInfo] = await Promise.all([
+        const [snapshot, creatorInfo, nextNumbers] = await Promise.all([
           dataProvider.getQueueSnapshot(slug),
-          dataProvider.getCreatorInfo?.(slug) || Promise.resolve({ displayName: slug, minPriorityTipCents: 1500 })
+          dataProvider.getCreatorInfo?.(slug) ||
+            Promise.resolve({
+              displayName: slug,
+              minPriorityTipCents: 1500,
+            }),
+          httpClient.query(api.dashboard.getNextTicketNumbers, { creatorSlug: slug }),
         ]);
 
         const creator = {
@@ -32,6 +53,9 @@ export default function SubmitPage() {
           personal: snapshot.personal,
           priority: snapshot.priority,
           general: snapshot.general,
+          nextTicketNumber: nextNumbers.nextTicketNumber,
+          nextPersonalNumber: nextNumbers.nextPersonalNumber,
+          nextPriorityNumber: nextNumbers.nextPriorityNumber,
         });
       } catch (error) {
         console.error("Error fetching queue data:", error);

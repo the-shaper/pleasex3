@@ -26,6 +26,9 @@ type QueuePayload = {
     activeCount: number;
     enabled: boolean;
   };
+  nextTicketNumber?: number;
+  nextPersonalNumber?: number;
+  nextPriorityNumber?: number;
 };
 
 export default function SubmitClient({
@@ -157,6 +160,14 @@ export default function SubmitClient({
   const activeQueue = isPriority
     ? queueMetrics?.priority
     : queueMetrics?.personal;
+
+  const nextPersonalNumber =
+    queueMetrics?.nextPersonalNumber ?? queueMetrics?.nextTicketNumber;
+  const nextPriorityNumber =
+    queueMetrics?.nextPriorityNumber ?? queueMetrics?.nextTicketNumber;
+  const displayedNextNumber = isPriority
+    ? nextPriorityNumber
+    : nextPersonalNumber;
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -312,7 +323,7 @@ export default function SubmitClient({
                 YOUR TICKET NUMBER
               </div>
               <div className="mt-1 text-[96px] leading-none text-coral font-mono">
-                {activeQueue?.nextTurn ?? "—"}
+                {displayedNextNumber ?? "—"}
               </div>
               <div className="mt-3 text-[12px]">
                 THERE ARE {activeQueue?.activeCount ?? 0} TICKETS BEFORE YOU,
@@ -350,7 +361,9 @@ export default function SubmitClient({
             } text-text uppercase text-[24px] px-3 py-3.5 w-full flex items-center justify-between`}
             style={{ fontFamily: "var(--font-body)" }}
           >
-            <span>CLAIM TICKET {activeQueue?.nextTurn ?? ""}</span>
+            <span>
+              CLAIM TICKET {displayedNextNumber ?? ""}
+            </span>
             <span>&gt;</span>
           </button>
         </aside>

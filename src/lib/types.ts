@@ -41,7 +41,7 @@ export interface Ticket {
   taskTitle?: string;
   message?: string;  // We'll map to needText in data layer if fetching
   status: "open" | "approved" | "rejected" | "closed";
-  tags?: TaskTag[];
+  tags?: string[]; // Changed from TaskTag[] to match Convex schema
   createdAt: number;
   // User contact fields
   name?: string;

@@ -16,6 +16,7 @@ import type {
 import type * as creators from "../creators.js";
 import type * as dashboard from "../dashboard.js";
 import type * as internal_seed from "../internal/seed.js";
+import type * as lib_ticketEngine from "../lib/ticketEngine.js";
 import type * as queues from "../queues.js";
 import type * as tickets from "../tickets.js";
 
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   creators: typeof creators;
   dashboard: typeof dashboard;
   "internal/seed": typeof internal_seed;
+  "lib/ticketEngine": typeof lib_ticketEngine;
   queues: typeof queues;
   tickets: typeof tickets;
 }>;

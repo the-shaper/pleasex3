@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import TicketApprovalCard from "@/components/checkout/ticketApprovalCreatorCard";
 import { ConvexDataProvider } from "@/lib/data/convex";
 import type { Ticket } from "@/lib/types";
+import { api } from "@convex/_generated/api";
+import { useQuery } from "convex/react";
 
 const dataProvider = new ConvexDataProvider();
 
@@ -13,6 +15,11 @@ export default function SuccessPage() {
   const slug = params.slug as string;
   const sp = useSearchParams();
   const referenceNumber = sp.get("ref") || "DEMO-123";
+
+  const position = useQuery(api.dashboard.getTicketPositionByRef, {
+    creatorSlug: slug,
+    ref: referenceNumber,
+  });
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [queueSnapshot, setQueueSnapshot] = useState<Record<
@@ -89,18 +96,6 @@ export default function SuccessPage() {
     );
   }
 
-  // Calculate the actual ticket position
-  const getTicketPosition = () => {
-    if (!queueSnapshot || !ticket) return 1;
-
-    const queueType = ticket.queueKind as "personal" | "priority";
-    // The ticket got the position that was nextTurn when submitted
-    // Since nextTurn shows position for next person, this ticket got nextTurn - 1
-    // But if this was the first ticket, it should be position 1
-    const currentNextTurn = queueSnapshot[queueType]?.nextTurn || 1;
-    return Math.max(1, currentNextTurn - 1);
-  };
-
   // Map ticket data to the format expected by TicketApprovalCard
   const ticketData = {
     form: {
@@ -112,7 +107,12 @@ export default function SuccessPage() {
     },
     isPriority: ticket?.queueKind === "priority",
     activeQueue: {
-      nextTurn: getTicketPosition(),
+      // If approved and engine has assigned numbers, show the real queueNumber.
+      // Otherwise leave as 1 (informational only for open tickets).
+      nextTurn:
+        (position && position.status === "approved"
+          ? position.queueNumber || position.ticketNumber || 1
+          : 1),
       activeCount:
         queueSnapshot?.[ticket?.queueKind as "personal" | "priority"]
           ?.activeCount || 0,
@@ -124,7 +124,10 @@ export default function SuccessPage() {
       priority: { etaMins: queueSnapshot?.priority?.etaMins || 60 },
     },
     userName: creatorInfo?.displayName || slug,
-    referenceNumber: ticket?.ref || referenceNumber,
+    referenceNumber:
+      (position && position.ticketNumber
+        ? `#${position.ticketNumber}`
+        : ticket?.ref || referenceNumber),
   };
 
   return (

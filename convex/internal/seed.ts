@@ -23,6 +23,7 @@ export const upsertCreator = internalMutation({
       slug: args.slug,
       displayName: args.displayName,
       minPriorityTipCents: args.minPriorityTipCents,
+      showAutoqueueCard: true,
     });
   },
 });
