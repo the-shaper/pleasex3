@@ -8,42 +8,41 @@ export type TaskTag =
   | "finished"
   | "current";
 
+export type TicketStatus = "open" | "approved" | "rejected" | "closed";
+
 export interface Creator {
   slug: string;
   displayName: string;
   minPriorityTipCents: number;
 }
 
-export interface QueueSnapshot {
-  kind: QueueKind;
-  activeTurn: number;
-  nextTurn: number;
-  etaMins: number;
-  activeCount: number;
+// Engine-aligned queue metrics snapshot
+export interface QueueMetrics {
   enabled: boolean;
+  activeCount: number;
+  currentTicketNumber?: number;
+  nextTicketNumber?: number;
+  etaMins?: number | null;
 }
 
-export interface FormData {
-  name: string;
-  email: string;
-  taskTitle?: string;  // Optional short title (from Convex 'taskTitle')
-  needText: string;    // Long description (maps to Convex 'message')
-  attachments: string;
-  priorityTipCents: number;
+// Engine-aligned snapshot: per-queue and general
+export interface QueueSnapshot {
+  personal: QueueMetrics;
+  priority: QueueMetrics;
+  general: QueueMetrics;
 }
 
-// Update Ticket if needed (for fetched data)
+// Shared Ticket type for Convex docs (raw ticket)
 export interface Ticket {
   ref: string;
   creatorSlug: string;
   queueKind: QueueKind;
   tipCents: number;
   taskTitle?: string;
-  message?: string;  // We'll map to needText in data layer if fetching
-  status: "open" | "approved" | "rejected" | "closed";
-  tags?: string[]; // Changed from TaskTag[] to match Convex schema
+  message?: string;
+  status: TicketStatus;
+  tags?: string[];
   createdAt: number;
-  // User contact fields
   name?: string;
   email?: string;
   phone?: string;
@@ -53,9 +52,22 @@ export interface Ticket {
   consentEmail?: boolean;
 }
 
+// Engine TicketPosition exposed to clients
+export interface TicketPosition {
+  ref: string;
+  queueKind: Exclude<QueueKind, "general">;
+  status: TicketStatus;
+  ticketNumber?: number;
+  queueNumber?: number;
+  tag?: TaskTag;
+  activeBeforeYou?: number;
+}
+
 export interface DashboardOverview {
   creator: Creator;
-  queues: Record<QueueKind, QueueSnapshot>;
+  // Note: Overview.queues is kept as-is for now where used; components that need
+  // canonical metrics should prefer QueueSnapshot from api.queues.getSnapshot.
+  queues: Record<QueueKind, any>;
   openTickets: Ticket[];
   approvedTickets: Ticket[];
 }
@@ -67,7 +79,6 @@ export interface CreateTicketInput {
   taskTitle?: string;
   message?: string;
   tags?: TaskTag[];
-  // User contact fields
   name?: string;
   email?: string;
   phone?: string;
@@ -90,7 +101,7 @@ export interface SidebarSectionProps {
 export interface SideBarProps {
   sections: SidebarSectionProps[];
   initialActiveLink?: string;
-  currentTab?: string; // Add this for highlighting based on current tab
+  currentTab?: string;
   isOpen?: boolean;
   onClose?: () => void;
   mobileOverlay?: boolean;

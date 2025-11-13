@@ -58,7 +58,7 @@
 
 ## Engine Responsibilities (ticketEngine)
 
-Location: `convex/lib/ticketEngine.ts` (new module).
+Location: `convex/lib/ticketEngine.ts`.
 
 ### Input
 
@@ -109,7 +109,7 @@ The engine exposes pure helpers that other Convex functions call:
 - `assignNumbersOnApprove(ctx, ticket)`
   - Assigns `ticketNumber` and `queueNumber` when a ticket transitions to `approved`.
 - `computeSchedule(ctx, creatorSlug, pattern?)`
-  - Filters to active tickets (approved, not closed, not awaiting-feedback).
+  - Filters to active tickets (approved, not closed).
   - Respects existing `current` if still valid.
   - Applies the 3:1 (or configured) interleave to produce an ordered list.
 - `computeTagsForCreator(ctx, creatorSlug)`
@@ -122,6 +122,8 @@ The engine exposes pure helpers that other Convex functions call:
   - Returns `TicketPosition[]` with static numbers + dynamic tags/activeBeforeYou.
 - `getTicketPosition(ctx, ref)`
   - Returns a single `TicketPosition` for a ticket, for success page / detail views.
+- `getNextTicketNumbersForCreator(ctx, creatorSlug)`
+  - Returns the next ticket and per-queue numbers for display.
 
 These helpers are deterministic and side-effect-free except where they explicitly patch tags or assign numbers.
 
@@ -131,117 +133,112 @@ These helpers are deterministic and side-effect-free except where they explicitl
 
 ### Phase 1 — Implement `ticketEngine`
 
-- Create `convex/lib/ticketEngine.ts` with:
-  - Data loaders for a creator’s tickets.
-  - `assignNumbersOnApprove` used by `tickets.approve`.
-  - `computeSchedule` implementing 3:1 (or configured) interleave.
-  - `computeTagsForCreator`, `getQueueSnapshot`, `getTicketPositions`, `getTicketPosition`.
-- Keep logic minimal and well-typed; no UI concerns.
+- [x] Create `convex/lib/ticketEngine.ts` with:
+  - [x] Data loaders for a creator’s tickets.
+  - [x] `assignNumbersOnApprove` used by `tickets.approve`.
+  - [x] `computeSchedule` implementing 3:1 (or configured) interleave.
+  - [x] `computeTagsForCreator`, `getQueueSnapshot`, `getTicketPositions`, `getTicketPosition`.
+- [x] Keep logic minimal and well-typed; no UI concerns.
 
 ### Phase 2 — Wire Convex APIs to the Engine
 
 Refactor existing Convex functions to delegate to `ticketEngine`:
 
-- `convex/tickets.ts`
-  - `create`:
-    - Creates `open` ticket with no queue/ticketNumber.
-  - `approve`:
-    - Calls `assignNumbersOnApprove`.
-    - Calls `computeTagsForCreator`.
-  - `reject`:
-    - If rejecting an `open` ticket: just mark as rejected (never numbered).
-  - `markAsFinished`:
-    - Marks as `closed` and then calls `computeTagsForCreator`.
-  - Expose `getByRef` so it returns engine-enriched `TicketPosition` (or we add `tickets.getPosition`).
+- [x] `convex/tickets.ts`
+  - [x] `create` creates `open` tickets without numbers.
+  - [x] `approve` calls `assignNumbersOnApprove` and `computeTagsForCreator`.
+  - [x] `reject` keeps open tickets unnumbered.
+  - [x] `markAsFinished` marks as `closed` then calls `computeTagsForCreator`.
+  - [x] Expose `getByRef` and `recomputeWorkflowTagsForCreator` to work with engine.
 
-- `convex/queues.ts`
-  - `getSnapshot`:
-    - Returns `QueueSnapshot` from `ticketEngine.getQueueSnapshot`.
+- [x] `convex/queues.ts`
+  - [x] `getSnapshot` returns `QueueSnapshot` from `ticketEngine.getQueueSnapshot`.
 
-- `convex/dashboard.ts`
-  - `getOverview` / `getAllTicketsWithPositions`:
-    - Use `ticketEngine.getTicketPositions`.
-    - Remove any local 3:1 or tag logic.
+- [x] `convex/dashboard.ts`
+  - [x] `getOverview` uses `ticketEngine.getQueueSnapshot` for queues.
+  - [x] `getAllTicketsWithPositions` uses `ticketEngine.getTicketPositions`.
+  - [x] `getNextTicketNumbers` uses engine counters.
+  - [x] `getTicketPositionByRef` wraps `ticketEngine.getTicketPosition`.
 
 ### Phase 3 — Types & Data Providers
 
-- `src/lib/types.ts`
-  - Define shared `TicketPosition` and `QueueSnapshot` to mirror engine outputs.
-- `src/lib/data/convex.ts`
-  - Map Convex responses directly to these types.
-  - No client-side ordering or `nextTurn - 1` patches.
-- `src/lib/data/mock.ts`
-  - Implement a lightweight mock engine so Storybook/tests behave like production.
+- [ ] `src/lib/types.ts`
+  - [ ] Define shared `TicketPosition` and `QueueSnapshot` that mirror engine outputs.
+  - [ ] Remove legacy `QueueSnapshot` fields (`kind`, `activeTurn`, `nextTurn`) from new codepaths.
+
+- [ ] `src/lib/data/convex.ts`
+  - [ ] Return engine-shaped `QueueSnapshot` from `queues.getSnapshot`.
+  - [ ] Remove legacy fallbacks that use `activeTurn` / `nextTurn`.
+  - [ ] Ensure any helpers that power tables / dashboard use `TicketPosition` from engine or are clearly marked deprecated.
+
+- [ ] `src/lib/data/mock.ts`
+  - [ ] Implement a lightweight mock engine so Storybook/tests behave like production.
 
 ### Phase 4 — Frontend Integration (Key Surfaces)
 
 All of these should consume engine-driven data only:
 
-- `src/app/[slug]/page.tsx`
-  - Uses `queues.getSnapshot` for `QueueCard` data.
-  - Displays consistent `currentTicketNumber`, `nextTicketNumber`, `activeCount`, `etaMins`.
+- [ ] `src/app/[slug]/page.tsx`
+  - [ ] Uses `queues.getSnapshot` for `QueueCard` data with engine `QueueSnapshot` shape.
+  - [ ] Displays `currentTicketNumber`, `nextTicketNumber`, `activeCount`, `etaMins` without recomputing.
 
-- Submit flow: `submit/page.tsx`, `SubmitClient.tsx`, `submit/success/page.tsx`
-  - On create/approve, use API response that includes `ticketNumber`/`queueNumber`.
-  - Success page shows “You are ticket X in Y queue (global #Z)” without doing math.
+- [ ] Submit flow: `submit/page.tsx`, `SubmitClient.tsx`, `submit/success/page.tsx`
+  - [ ] On create/approve, use API responses that include engine-assigned numbers.
+  - [ ] Success page shows ticket details using `dashboard.getTicketPositionByRef` + engine snapshot only (no inferred math).
 
-- Dashboard: `src/app/[slug]/dashboard/page.tsx`
-  - Replace local `sortTicketsByPriorityRatio` and manual tag calculations with `TicketPosition` from engine.
-  - `NextUpSection`, `TaskModule`, `ApprovalPanel`, `TableComponent`, `cellComponent`:
-    - Render `tag`, `ticketNumber`, `queueNumber`, `activeBeforeYou` as provided.
-    - Do not recompute 3:1 or `current`/`next-up` locally.
+- [ ] Dashboard: `src/app/[slug]/dashboard/page.tsx`
+  - [ ] Remove `sortTicketsByPriorityRatio` and any local 3:1 / tag logic.
+  - [ ] Use `TicketPosition` from engine for:
+    - NextUpSection
+    - TaskModule
+    - ApprovalPanel
+    - TableComponent
+    - CellComponent
+  - [ ] Do not recompute `current` / `next-up` / `pending` locally.
 
 ### Phase 5 — QA & Guardrails
 
-- Seed Convex with:
+- [ ] Seed Convex with:
   - Mixed personal/priority tickets.
   - Various statuses (open, approved, awaiting-feedback, closed, rejected).
-- Manual checks:
+- [ ] Manual checks:
   - Landing page, submit, success, dashboard Next Up, approval panel, and table all show consistent numbers.
-  - Approvals, rejections, and closes update tags & metrics everywhere.
-- Tests:
+  - Approvals, rejections, closes, and awaiting-feedback toggles update tags & metrics everywhere.
+- [ ] Tests:
   - Unit tests for `ticketEngine` (deterministic inputs → outputs).
   - Basic flow tests to ensure no client diverges from engine data.
 
 ---
 
-## Notes / Non-Goals for v1
-
-- No client should implement or duplicate 3:1 logic. If you see `sortTicketsByPriorityRatio` or manual `current/next-up` logic in the UI or providers, it should be refactored to rely on `ticketEngine` outputs.
-- ETAs can start simple (e.g. fixed minutes per ticket) and be refined later without changing consumers.
-- Configurable patterns (2:1, 1:1, etc.) are supported by design but only 3:1 is required now.
-
 ## Pending Cleanup (Critical for Single Source of Truth)
 
-These must be completed to avoid "ghost" behavior and duplicated logic:
+These are the concrete pending tasks as of now:
 
-1. Data cleanup (run once per environment)
-   - Run `tickets.cleanupTicketNumbers`.
-   - Ensure no `ticketNumber`/`queueNumber` exist on tickets with `status` in `{"open","rejected"}`.
-   - Remove or fix any legacy approved tickets with duplicate `ticketNumber` for the same creator.
+1. Align shared types
+   - Update `src/lib/types.ts` so `QueueSnapshot` / `QueueMetrics` / `TicketPosition` mirror `convex/lib/ticketEngine.ts`.
+   - Remove usage of legacy `activeTurn`, `nextTurn`, and `kind` from new codepaths.
 
-2. Success page uses engine, not math
-   - Add a Convex query (e.g. `dashboard.getTicketPositionByRef`) that wraps `ticketEngine.getTicketPosition`.
-   - Update `src/app/[slug]/submit/success/page.tsx` to:
-     - fetch that position by `ref`;
-     - display `ticketNumber` / `queueNumber` from engine only;
-     - never infer position from `nextTurn` or snapshots.
+2. Remove dashboard 3:1 and tag logic from client
+   - In `src/app/[slug]/dashboard/page.tsx`:
+     - Remove `sortTicketsByPriorityRatio`.
+     - Stop computing `current` / `next-up` / `pending` based on local arrays.
+     - Derive all ordering, tags, and numbers from `api.dashboard.getAllTicketsWithPositions`.
 
-3. Remove legacy queue fields from UI logic
-   - Stop reading `activeTurn` / `nextTurn` from the `queues` table in any UI.
-   - `QueueCard`:
-     - `Current Turn` = `queueSnapshot.*.currentTicketNumber`.
-     - `Next Available` = `dashboard.getNextTicketNumbers` output.
+3. Fix submit flow to trust engine
+   - Ensure `submit/page.tsx`, `SubmitClient.tsx`, and `submit/success/page.tsx`:
+     - Use engine-backed `QueueSnapshot` for wait-time/queue displays.
+     - Use `dashboard.getTicketPositionByRef` for final ticket numbers instead of any inferred math.
 
-4. Table & NextUp use engine positions only
-   - `TableComponent` rows come solely from `dashboard.getAllTicketsWithPositions` (`TicketPosition[]`).
-   - `NextUpSection` uses `TicketPosition`/`TaskCardData` derived from engine; no local 3:1 or tag math.
+4. Clean up `ConvexDataProvider`
+   - Make `getQueueSnapshot` return the engine `QueueSnapshot` shape.
+   - Remove legacy fallbacks (`activeTurn`, `nextTurn`), or confine them to explicit, deprecated helpers.
+   - Prefer direct usage of Convex queries in components where possible to keep UIs “dumb”.
 
-5. Delete / stop calling old helpers
-   - Remove any remaining usages of:
-     - `sortTicketsByPriorityRatio`.
-     - manual `current`/`next-up`/`pending` calculations in React.
-     - any computation of "ticket #" based on `nextTurn - 1` or array index.
+5. Remove all remaining client-side position/numbering computation
+   - Search for and eliminate:
+     - Local 3:1 scheduling logic.
+     - Any `current`/`next-up`/`pending` calculations not based on engine tags.
+     - Any ticket numbering derived from indexes or `nextTurn - 1`.
    - If a component needs order, tags, or numbers, it must call ticketEngine-backed Convex functions.
 
-Only once these are done is `ticketEngine` the true, enforced single source of truth.
+Only once these are done is `ticketEngine` the enforced single source of truth.

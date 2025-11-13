@@ -363,9 +363,40 @@ export async function getTicketPositions(
   pattern: SchedulePattern = DEFAULT_PATTERN
 ): Promise<TicketPosition[]> {
   const tickets = await getAllTicketsForCreator(ctx, creatorSlug);
+  
+  // Return ALL tickets with basic positions (not just active ones)
+  // This allows PAST/ALL tabs to see closed/rejected tickets
+  return tickets.map((ticket, index) => {
+    let tag: TicketTag | undefined = getTag(ticket.tags);
+    
+    // Only compute tags for approved tickets that participate in scheduling
+    if (ticket.status !== "approved") {
+      tag = undefined;
+    }
+    
+    return {
+      ref: ticket.ref,
+      queueKind: ticket.queueKind,
+      status: ticket.status,
+      ticketNumber: ticket.ticketNumber,
+      queueNumber: ticket.queueNumber,
+      tag,
+      activeBeforeYou: index,
+    };
+  });
+}
+
+export async function getActiveTicketPositions(
+  ctx: QueryCtx,
+  creatorSlug: string,
+  pattern: SchedulePattern = DEFAULT_PATTERN
+): Promise<TicketPosition[]> {
+  const tickets = await getAllTicketsForCreator(ctx, creatorSlug);
   const ordered = computeSchedule(tickets, pattern);
   return computeTagsForSchedule(ordered);
 }
+
+
 
 export async function getTicketPosition(
   ctx: QueryCtx,
@@ -385,7 +416,7 @@ export async function getNextTicketNumbersForCreator(
   nextPersonalNumber: number;
   nextPriorityNumber: number;
 }> {
-  let counter = await ctx.db
+  const counter = await ctx.db
     .query("counters")
     .withIndex("by_creator", (q) => q.eq("creatorSlug", creatorSlug))
     .unique();

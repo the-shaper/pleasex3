@@ -1,6 +1,6 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
-import { getQueueSnapshot, getTicketPositions, getNextTicketNumbersForCreator, getTicketPosition } from "./lib/ticketEngine";
+import { getQueueSnapshot, getTicketPositions, getActiveTicketPositions as getActiveTicketPositionsEngine, getNextTicketNumbersForCreator, getTicketPosition, type TicketPosition } from "./lib/ticketEngine";
 
 export const getCreator = query({
   args: { creatorSlug: v.string() },
@@ -26,7 +26,7 @@ export const getOverview = query({
 
     const allTickets = await ctx.db
       .query("tickets")
-      .withIndex("by_creator", (q: any) =>
+      .withIndex("by_creator", (q) =>
         q.eq("creatorSlug", args.creatorSlug)
       )
       .collect();
@@ -50,6 +50,14 @@ export const getAllTicketsWithPositions = query({
   args: { creatorSlug: v.string() },
   handler: async (ctx, args) => {
     const positions = await getTicketPositions(ctx, args.creatorSlug);
+    return positions;
+  },
+});
+
+export const getActiveTicketPositions = query({
+  args: { creatorSlug: v.string() },
+  handler: async (ctx, args): Promise<TicketPosition[]> => {
+    const positions = await getActiveTicketPositionsEngine(ctx, args.creatorSlug);
     return positions;
   },
 });

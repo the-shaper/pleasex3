@@ -2,76 +2,43 @@
 
 import { useSearchParams, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import TicketApprovalCard from "@/components/checkout/ticketApprovalCreatorCard";
+import FormSubmitCard from "@/components/checkout/formSubmitCard";
 import { ConvexDataProvider } from "@/lib/data/convex";
 import type { Ticket } from "@/lib/types";
-import { api } from "@convex/_generated/api";
-import { useQuery } from "convex/react";
 
 const dataProvider = new ConvexDataProvider();
 
-export default function SuccessPage() {
+export default function FormSubmittedPage() {
   const params = useParams();
   const slug = params.slug as string;
   const sp = useSearchParams();
-  const referenceNumber = sp.get("ref") || "DEMO-123";
-
-  const position = useQuery(api.dashboard.getTicketPositionByRef, {
-    creatorSlug: slug,
-    ref: referenceNumber,
-  });
+  const referenceNumber = sp.get("ref") || "";
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
-  const [queueSnapshot, setQueueSnapshot] = useState<Record<
-    string,
-    {
-      activeTurn: number | null;
-      nextTurn: number;
-      etaMins: number | null;
-      activeCount: number;
-      enabled: boolean;
-    }
-  > | null>(null);
-  const [creatorInfo, setCreatorInfo] = useState<{
-    displayName: string;
-    minPriorityTipCents: number;
-  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        // Fetch ticket, queue data, and creator info in parallel
-        const [ticketData, queueData, creatorData] = await Promise.all([
-          dataProvider.getTicketByRef(referenceNumber),
-          dataProvider.getQueueSnapshot(slug),
-          dataProvider.getCreatorInfo?.(slug) ||
-            Promise.resolve({ displayName: slug, minPriorityTipCents: 1500 }),
-        ]);
+      if (!referenceNumber) {
+        setLoading(false);
+        setError("Missing ticket reference.");
+        return;
+      }
 
+      try {
+        const ticketData = await dataProvider.getTicketByRef(referenceNumber);
         setTicket(ticketData);
-        setQueueSnapshot(queueData);
-        setCreatorInfo(creatorData);
       } catch (err) {
-        console.error("Error fetching data:", err);
+        console.error("Error fetching ticket:", err);
         setError("Failed to load ticket data");
       } finally {
         setLoading(false);
       }
     };
 
-    if (referenceNumber && slug) {
-      fetchData();
-    }
-  }, [referenceNumber, slug]);
-
-  const formatEtaMins = (mins: number): string => {
-    if (!mins || mins <= 0) return "—";
-    if (mins < 60) return "<1h";
-    const hours = Math.round(mins / 60);
-    return `${hours}h`;
-  };
+    fetchData();
+  }, [referenceNumber]);
 
   if (loading) {
     return (
@@ -89,67 +56,45 @@ export default function SuccessPage() {
     return (
       <div className="min-h-screen bg-bg py-8 px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-2xl font-bold mb-4 text-text">Error</h1>
-          <p className="text-text-muted">{error || "Ticket not found"}</p>
+          <h1 className="text-2xl font-bold mb-4 text-text">Ticket submitted</h1>
+          <p className="text-text-muted">
+            {error ||
+              "Your form was submitted. If you saved your reference number, you can check back later."}
+          </p>
         </div>
       </div>
     );
   }
 
-  // Map ticket data to the format expected by TicketApprovalCard
-  const ticketData = {
-    form: {
-      name: ticket?.name || "Anonymous",
-      email: ticket?.email || "user@example.com",
-      needText: ticket?.message || "No description provided",
-      attachments: ticket?.attachments ? ticket.attachments.join(", ") : "",
-      priorityTipCents: ticket?.tipCents || 0,
-    },
-    isPriority: ticket?.queueKind === "priority",
-    activeQueue: {
-      // If approved and engine has assigned numbers, show the real queueNumber.
-      // Otherwise leave as 1 (informational only for open tickets).
-      nextTurn:
-        (position && position.status === "approved"
-          ? position.queueNumber || position.ticketNumber || 1
-          : 1),
-      activeCount:
-        queueSnapshot?.[ticket?.queueKind as "personal" | "priority"]
-          ?.activeCount || 0,
-    },
-    tipDollarsInt: Math.floor((ticket?.tipCents || 0) / 100),
-    minPriorityTipCents: creatorInfo?.minPriorityTipCents || 1500,
-    queueMetrics: {
-      personal: { etaMins: queueSnapshot?.personal?.etaMins || 240 },
-      priority: { etaMins: queueSnapshot?.priority?.etaMins || 60 },
-    },
-    userName: creatorInfo?.displayName || slug,
-    referenceNumber:
-      (position && position.ticketNumber
-        ? `#${position.ticketNumber}`
-        : ticket?.ref || referenceNumber),
+  const form = {
+    name: ticket.name || "Anonymous",
+    email: ticket.email || "user@example.com",
+    taskTitle: ticket.taskTitle,
+    needText: ticket.message || "No description provided",
+    attachments: ticket.attachments ? ticket.attachments.join(", ") : "",
+    priorityTipCents: ticket.tipCents || 0,
   };
+
+  const isPriority = ticket.queueKind === "priority";
 
   return (
     <div className="min-h-screen bg-bg py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto flex flex-col items-center gap-6">
         <h1 className="text-2xl font-bold text-center mb-1 text-text uppercase">
           Ticket Submission Successful!
         </h1>
-        <h2 className="text-center mb-8 text-coral uppercase">
-          You can close this page now
+        <p className="mt-2 text-center text-xs text-text-muted max-w-md">
+          This confirms we received your request. Keep your reference number to
+          track this ticket or share it if needed. The creator will review and,
+          if approved, it will be assigned an official queue number.
+        </p>
+        <h2 className="text-center mb-2 text-coral uppercase">
+          Save this reference number
         </h2>
-        <TicketApprovalCard
-          form={ticketData.form}
-          isPriority={ticketData.isPriority}
-          activeQueue={ticketData.activeQueue}
-          tipDollarsInt={ticketData.tipDollarsInt}
-          minPriorityTipCents={ticketData.minPriorityTipCents}
-          queueMetrics={ticketData.queueMetrics}
-          formatEtaMins={formatEtaMins}
-          onChange={() => {}}
-          userName={ticketData.userName}
-          referenceNumber={ticketData.referenceNumber}
+        <FormSubmitCard
+          form={form}
+          isPriority={isPriority}
+          referenceNumber={ticket.ref}
         />
       </div>
     </div>

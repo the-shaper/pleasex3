@@ -33,8 +33,25 @@ export const create = mutation({
     consentEmail: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const seq = Date.now();
-    const ref = `${args.creatorSlug.toUpperCase()}-${seq}`;
+    const prefix = args.creatorSlug.toUpperCase();
+
+    // Human-friendly reference: CREATOR-PPP-1234
+    // 4-digit segment is enforced unique per creator via a quick lookup.
+    let ref: string;
+    while (true) {
+      const rand = Math.floor(1000 + Math.random() * 9000); // 1000-9999
+      const candidate = `${prefix}-PPP-${rand}`;
+
+      const existing = await ctx.db
+        .query("tickets")
+        .withIndex("by_ref", (q) => q.eq("ref", candidate))
+        .unique();
+
+      if (!existing) {
+        ref = candidate;
+        break;
+      }
+    }
     await ctx.db.insert("tickets", {
       ref,
       creatorSlug: args.creatorSlug,

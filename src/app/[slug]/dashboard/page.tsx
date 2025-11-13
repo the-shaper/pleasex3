@@ -3,10 +3,9 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SideBar } from "@/components/sidebar/sideBar";
-import { MenuButton } from "@/components/sidebar/menuButton"; // New import for mobile toggle
+
 import { TableComponent } from "@/components/dashboard/table/tableComponent";
-import TaskCard from "@/components/taskcard";
-import ApprovalPanel from "@/components/dashboard/approvalPanel";
+
 import {
   TaskTag,
   QueueSnapshot,
@@ -14,6 +13,7 @@ import {
   Ticket,
   SidebarSectionProps,
 } from "@/lib/types";
+import type { TicketPosition } from "../../../../convex/lib/ticketEngine";
 import { useSearchParams } from "next/navigation";
 import { QueueSettings } from "@/components/dashboard/QueueSettings";
 import DashHeaderOG from "@/components/dashboard/DashHeaderOG";
@@ -42,16 +42,16 @@ export default function DashboardPage() {
   > | null>(null);
   const [dashboardOverview, setDashboardOverview] =
     useState<DashboardOverview | null>(null);
-  const [tableData, setTableData] = useState<CellComponentData[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const queueSnapshot = useQuery(api.queues.getSnapshot, { creatorSlug: slug });
-  const settings = useQuery(api.queues.getSettings, { creatorSlug: slug });
+
   const overviewLive = useQuery(api.dashboard.getOverview, {
     creatorSlug: slug,
   });
   const toggleQueue = useMutation(api.queues.toggleEnabled);
-  const updateSettings = useMutation(api.queues.updateSettings);
+
   const recomputeWorkflowTags = useMutation(
     api.tickets.recomputeWorkflowTagsForCreator
   );
@@ -59,6 +59,9 @@ export default function DashboardPage() {
   const [priorityEnabled, setPriorityEnabled] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskCardData | null>(null);
   const positions = useQuery(api.dashboard.getAllTicketsWithPositions, {
+    creatorSlug: slug,
+  });
+  const activePositions = useQuery(api.dashboard.getActiveTicketPositions, {
     creatorSlug: slug,
   });
 
@@ -146,15 +149,13 @@ export default function DashboardPage() {
         setError(null);
 
         // Fetch queue snapshot and dashboard overview in parallel
-        const [queueSnapshot, overview, tableTickets] = await Promise.all([
+        const [queueSnapshot, overview] = await Promise.all([
           dataProvider.getQueueSnapshot(slug),
           dataProvider.getDashboardOverview(slug),
-          dataProvider.getAllTicketsForTable(slug),
         ]);
 
         setQueueData(queueSnapshot);
         setDashboardOverview(overview);
-        setTableData(tableTickets);
 
         // Ensure workflow tags (current / next-up) are persisted based on latest data.
         try {
@@ -166,24 +167,18 @@ export default function DashboardPage() {
           );
         }
 
-        // Debug: Log tableData to verify structure
-        console.log("🔍 TableComponent Debug - tableTickets:", tableTickets);
-        console.log(
-          "🔍 TableComponent Debug - tableTickets length:",
-          tableTickets?.length
-        );
+
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
         setError("Failed to load dashboard data");
         // Set empty data to prevent crashes
-        setTableData([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [slug, isSignedIn]); // Re-run on auth change
+  }, [slug, isSignedIn, recomputeWorkflowTags]); // Re-run on auth change
 
   // New useEffect for body overflow on mobile sidebar open
   useEffect(() => {
@@ -239,24 +234,20 @@ export default function DashboardPage() {
     return null;
   }
 
-  const handleTicketUpdate = async (updatedTicket: Ticket) => {
+  const handleTicketUpdate = async () => {
     if (!dashboardOverview) return;
 
     // Refresh queue data and full ticket data after approval
     try {
-      const [queueSnapshot, overview, tableTickets] = await Promise.all([
+      const [queueSnapshot, overview] = await Promise.all([
         dataProvider.getQueueSnapshot(slug),
         dataProvider.getDashboardOverview(slug),
-        dataProvider.getAllTicketsForTable(slug),
       ]);
 
       setQueueData(queueSnapshot);
       setDashboardOverview(overview);
-      setTableData(tableTickets);
     } catch (err) {
       console.error("Error refreshing dashboard data:", err);
-      // Set empty data to prevent crashes
-      setTableData([]);
     }
   };
 
@@ -440,7 +431,7 @@ export default function DashboardPage() {
 
   // Helper to map engine positions + ticket docs into CellComponentData
   const mapPositionsToCellData = (
-    posList: any[] | null | undefined
+    posList: TicketPosition[] | null | undefined
   ): CellComponentData[] => {
     if (!posList || !overview) return [];
 
@@ -479,14 +470,8 @@ export default function DashboardPage() {
     });
   };
 
-  // For PAST/ALL we now prefer engine positions for the table
-  const tableRowsForPastAll: CellComponentData[] =
-    tab === "past" || tab === "all"
-      ? mapPositionsToCellData(positions)
-      : tableData;
-
-  // For ACTIVE, use engine positions only so we see canonical ordering/numbers
-  const tableRowsForActive: CellComponentData[] = mapPositionsToCellData(positions);
+  // Unified table data for all tabs - TableComponent will handle visual filtering
+  const tableRows: CellComponentData[] = mapPositionsToCellData(positions);
 
   // Show error state
   if (error || !queueData || !overview) {
@@ -541,7 +526,7 @@ export default function DashboardPage() {
   );
 
   // Build TaskCardData list for NextUpSection with awaiting-feedback tickets at top
-  const approvedPositions = enginePositions.filter((p) => p.status === "approved");
+  const approvedPositions = activePositions?.filter((p) => p.status === "approved") || [];
   
   // Separate tickets into groups for prioritized ordering
   const awaitingTickets = approvedPositions.filter((p) => p.tag === "awaiting-feedback");
@@ -601,8 +586,8 @@ export default function DashboardPage() {
       attachments: t?.attachments || [],
       tipCents: t?.tipCents || 0,
       queueKind: p.queueKind,
-      status: (p.tag as any) || "pending",
-      tags: p.tag ? [p.tag as any] : (t?.tags as any) || [],
+      status: (p.tag as TaskTag) || "pending",
+      tags: p.tag ? [p.tag as TaskTag] : (t?.tags as TaskTag[]) || [],
       createdAt: t?.createdAt || 0,
       ref: p.ref,
     } satisfies TaskCardData;
@@ -712,7 +697,7 @@ export default function DashboardPage() {
             // PAST + ALL: table view backed by engine positions
             <div className="flex flex-col w-full h-full">
               <TableComponent
-                data={tableRowsForPastAll}
+                data={tableRows}
                 onOpen={handleOpenTicket}
                 activeTaskRef={selectedTask?.ref}
                 enableClickToScroll={false}
@@ -749,16 +734,14 @@ export default function DashboardPage() {
                       data={selectedTask || autoqueueCardData}
                       onMarkAsFinished={async () => {
                         try {
-                          const [queueSnapshot, overview, tableTickets] =
+                          const [queueSnapshot, overview] =
                             await Promise.all([
                               dataProvider.getQueueSnapshot(slug),
                               dataProvider.getDashboardOverview(slug),
-                              dataProvider.getAllTicketsForTable(slug),
                             ]);
 
                           setQueueData(queueSnapshot);
                           setDashboardOverview(overview);
-                          setTableData(tableTickets);
                           setSelectedTask(null);
 
                           // Recompute workflow tags so NEXT UP reflects closed ticket removal.
@@ -771,11 +754,10 @@ export default function DashboardPage() {
                             );
                           }
                         } catch (err) {
-                          console.error(
-                            "Error refreshing dashboard data after finish:",
-                            err
-                          );
-                          setTableData([]);
+                           console.error(
+                             "Error refreshing dashboard data after finish:",
+                             err
+                           );
                         }
                       }}
                     />
@@ -787,7 +769,7 @@ export default function DashboardPage() {
                   className="md:h-1/2 h-full overflow-y-auto"
                 >
                   <TableComponent
-                    data={tableRowsForActive}
+                    data={tableRows}
                     onOpen={handleOpenTicket}
                     activeTaskRef={selectedTask?.ref}
                     enableClickToScroll={true}
@@ -838,38 +820,35 @@ export default function DashboardPage() {
                 onSendForFeedback={() => {
                   closeModal();
                 }}
-                onMarkAsFinished={async () => {
-                  try {
-                    const [queueSnapshot, overview, tableTickets] =
-                      await Promise.all([
-                        dataProvider.getQueueSnapshot(slug),
-                        dataProvider.getDashboardOverview(slug),
-                        dataProvider.getAllTicketsForTable(slug),
-                      ]);
+                 onMarkAsFinished={async () => {
+                   try {
+                       const [queueSnapshot, overview] =
+                         await Promise.all([
+                           dataProvider.getQueueSnapshot(slug),
+                           dataProvider.getDashboardOverview(slug),
+                         ]);
 
-                    setQueueData(queueSnapshot);
-                    setDashboardOverview(overview);
-                    setTableData(tableTickets);
-                    closeModal();
+                     setQueueData(queueSnapshot);
+                     setDashboardOverview(overview);
+                     closeModal();
 
-                    // Recompute workflow tags so NEXT UP reflects closed ticket removal.
-                    try {
-                      await recomputeWorkflowTags({ creatorSlug: slug });
-                    } catch (err) {
-                      console.error(
-                        "Failed to recompute workflow tags after modal finish",
-                        err
-                      );
-                    }
-                  } catch (err) {
-                    console.error(
-                      "Error refreshing dashboard data after finish:",
-                      err
-                    );
-                    setTableData([]);
-                  }
-                }}
-              />
+                     // Recompute workflow tags so NEXT UP reflects closed ticket removal.
+                     try {
+                       await recomputeWorkflowTags({ creatorSlug: slug });
+                     } catch (err) {
+                       console.error(
+                         "Failed to recompute workflow tags after modal finish",
+                         err
+                       );
+                     }
+                   } catch (err) {
+                     console.error(
+                       "Error refreshing dashboard data after finish:",
+                       err
+                     );
+                   }
+                 }}
+                />
             </div>
           </div>
         </div>
