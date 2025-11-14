@@ -107,6 +107,9 @@ Create a `.env.local` file:
 ```env
 NEXT_PUBLIC_CONVEX_URL=your_convex_url
 CONVEX_DEPLOYMENT=your_convex_deployment
+STRIPE_API_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ```
 
 ## Key Components

@@ -59,14 +59,17 @@ export default function DashboardHeader({
                 className="md:hidden self-start mb-2"
               />
             )}
-            <p className="text-sm bg-purple text-text-bright w-fit py-1 px-2">
-              DASHBOARD
-            </p>
-            <SignedIn>
-              <p className="uppercase text-text-muted -mt-2">
-                Hello,{user?.firstName || user?.fullName || "User"}!
+
+            <div className="flex flex-col items-start gap-2">
+              <p className="text-sm bg-purple text-text-bright w-fit py-1 px-2">
+                DASHBOARD
               </p>
-            </SignedIn>
+              <SignedIn>
+                <p className="uppercase text-text-muted -mt-2">
+                  Hello,{user?.firstName || user?.fullName || "User"}!
+                </p>
+              </SignedIn>
+            </div>
             <SignedOut>
               <p className="uppercase text-text-muted text-sm">
                 Sign in to continue

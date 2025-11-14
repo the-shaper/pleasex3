@@ -25,7 +25,8 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api"; // Generated Convex API via path alias
 import { TaskCardData } from "@/components/taskcard";
-import NextUpSection from "@/components/dashboard/NextUpSection"; // NEW: Add import
+import NextUpSection from "@/components/dashboard/NextUpSection";
+import { EarningsPanel } from "@/components/dashboard/earnings/EarningsPanel";
 
 const dataProvider = new ConvexDataProvider();
 
@@ -51,6 +52,9 @@ export default function DashboardPage() {
     creatorSlug: slug,
   });
   const toggleQueue = useMutation(api.queues.toggleEnabled);
+  const connectStripeMutation = useMutation(
+    api.stripeOnboarding.createStripeAccountLink
+  );
 
   const recomputeWorkflowTags = useMutation(
     api.tickets.recomputeWorkflowTagsForCreator
@@ -64,6 +68,12 @@ export default function DashboardPage() {
   const activePositions = useQuery(api.dashboard.getActiveTicketPositions, {
     creatorSlug: slug,
   });
+  const earningsData = useQuery(
+    api["lib/stripeEngine"].getEarningsDashboardData,
+    {
+      creatorSlug: slug,
+    }
+  );
 
   useEffect(() => {
     console.log("DEBUG engine positions", positions);
@@ -125,6 +135,10 @@ export default function DashboardPage() {
         { href: "?tab=queue-settings", label: "Queue Settings" },
         { href: "/skills", label: "My Skills" },
       ],
+    },
+    {
+      title: "Earnings",
+      links: [{ href: "?tab=earnings", label: "Earnings" }],
     },
   ];
 
@@ -703,6 +717,26 @@ export default function DashboardPage() {
                 enableClickToScroll={false}
                 disableFocusStyling={false}
                 variant={tab === "past" ? "past" : "all"}
+              />
+            </div>
+          ) : tab === "earnings" ? (
+            <div className="flex flex-col w-full gap-6">
+              <EarningsPanel
+                data={earningsData}
+                onConnectStripe={async () => {
+                  if (!slug) return;
+                  try {
+                    const { url } = await connectStripeMutation({
+                      creatorSlug: slug,
+                    });
+                    if (url && typeof window !== "undefined") {
+                      window.open(url, "_blank");
+                      router.refresh();
+                    }
+                  } catch (error) {
+                    console.error("Failed to create Stripe account link", error);
+                  }
+                }}
               />
             </div>
           ) : (

@@ -7,6 +7,9 @@ export default defineSchema({
     displayName: v.string(),
     minPriorityTipCents: v.number(),
     showAutoqueueCard: v.optional(v.boolean()),
+    // Stripe / payouts integration
+    stripeAccountId: v.optional(v.string()),
+    payoutEnabled: v.optional(v.boolean()),
   }).index("by_slug", ["slug"]),
 
   queues: defineTable({
@@ -34,7 +37,7 @@ export default defineSchema({
     ),
     tags: v.optional(v.array(v.string())),
     createdAt: v.number(),
-    // Add new user contact fields
+    // User contact fields
     name: v.optional(v.string()),
     email: v.optional(v.string()),
     phone: v.optional(v.string()),
@@ -56,4 +59,40 @@ export default defineSchema({
     nextPersonalNumber: v.number(),
     nextPriorityNumber: v.number(),
   }).index("by_creator", ["creatorSlug"]),
+
+  // Payment records attributed to creators (Stripe and future providers)
+  payments: defineTable({
+    creatorSlug: v.string(),
+    amountGross: v.number(), // in cents
+    currency: v.string(),
+    status: v.string(), // e.g. "succeeded", "refunded"
+    provider: v.string(), // e.g. "stripe"
+    externalId: v.string(), // e.g. Stripe payment_intent id
+    ticketRef: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_creator", ["creatorSlug"])
+    .index("by_creator_createdAt", ["creatorSlug", "createdAt"])
+    .index("by_externalId", ["externalId"]),
+
+  // Payout records per creator per period
+  payouts: defineTable({
+    creatorSlug: v.string(),
+    periodStart: v.number(),
+    periodEnd: v.number(),
+    grossCents: v.number(),
+    platformFeeCents: v.number(),
+    payoutCents: v.number(),
+    currency: v.string(),
+    stripeTransferId: v.optional(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("processing"),
+      v.literal("paid"),
+      v.literal("failed")
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_creator_period", ["creatorSlug", "periodStart", "periodEnd"])
+    .index("by_creator_createdAt", ["creatorSlug", "createdAt"]),
 });

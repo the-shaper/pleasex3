@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import TaskCard, {
   type TaskCardData,
-  type TaskCardVariant,
 } from "@/components/taskcard";
 import ApprovalPanel from "@/components/dashboard/approvalPanel"; // Import for Pending
 import { type Ticket } from "@/lib/types"; // For tickets prop
@@ -163,6 +162,7 @@ export default function NextUpSection({
                       data={taskCardData}
                       isActive={taskCardData.ref === activeTaskRef}
                       onOpen={onOpen}
+                      forceExpanded={true}
                     />
                   </div>
                 );

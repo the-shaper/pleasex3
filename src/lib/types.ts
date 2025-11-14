@@ -14,6 +14,9 @@ export interface Creator {
   slug: string;
   displayName: string;
   minPriorityTipCents: number;
+  // Stripe / payouts integration
+  stripeAccountId?: string;
+  payoutEnabled?: boolean;
 }
 
 // Engine-aligned queue metrics snapshot
@@ -105,4 +108,51 @@ export interface SideBarProps {
   isOpen?: boolean;
   onClose?: () => void;
   mobileOverlay?: boolean;
+}
+
+// Stripe / Earnings types (shared between Convex and frontend)
+
+export interface CreatorEarningsSummary {
+  creatorSlug: string;
+  periodStart: number; // timestamp (inclusive)
+  periodEnd: number; // timestamp (exclusive)
+  grossCents: number;
+  thresholdCents: number; // e.g. 5000 for $50
+  platformFeeRateBps: number; // 330 = 3.3%
+  platformFeeCents: number;
+  payoutCents: number;
+  thresholdReached: boolean;
+}
+
+export type PayoutStatus = "pending" | "processing" | "paid" | "failed";
+
+export interface PayoutRecord {
+  id: string;
+  creatorSlug: string;
+  periodStart: number;
+  periodEnd: number;
+  grossCents: number;
+  platformFeeCents: number;
+  payoutCents: number;
+  currency: string;
+  stripeTransferId?: string;
+  status: PayoutStatus;
+  createdAt: number;
+}
+
+export interface StripeConnectionStatus {
+  connected: boolean;
+  stripeAccountId?: string;
+  detailsSubmitted?: boolean;
+}
+
+export interface EarningsDashboardData {
+  connection: StripeConnectionStatus;
+  currentPeriod: CreatorEarningsSummary;
+  lastThreePeriods: CreatorEarningsSummary[];
+  allTimeGrossCents: number;
+  allTimePlatformFeeCents: number;
+  allTimePayoutCents: number;
+  upcomingPayout?: PayoutRecord | null;
+  payoutHistory: PayoutRecord[];
 }

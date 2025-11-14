@@ -149,10 +149,49 @@ export default function SubmitClient({
       }),
     });
     const json = await res.json();
-    if (res.ok) {
-      router.push(`/${slug}/submit/success?ref=${encodeURIComponent(json.ref)}`);
-    } else {
+    if (!res.ok) {
       alert(`Error: ${JSON.stringify(json.error)}`);
+      return;
+    }
+
+    const origin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : `${router.basePath || ""}`;
+
+    if (form.priorityTipCents <= 0) {
+      router.push(
+        `/${slug}/submit/success?ref=${encodeURIComponent(json.ref)}`
+      );
+      return;
+    }
+
+    const sessionRes = await fetch("/api/payments/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        creatorSlug: slug,
+        ticketRef: json.ref,
+        amountCents: form.priorityTipCents,
+        successUrl: `${origin}/${slug}/submit/success?ref=${encodeURIComponent(
+          json.ref
+        )}`,
+        cancelUrl: `${origin}/${slug}/submit?ref=${encodeURIComponent(
+          json.ref
+        )}&canceled=1`,
+      }),
+    });
+
+    const sessionJson = await sessionRes.json();
+    if (!sessionRes.ok) {
+      alert(`Payment setup error: ${sessionJson.error ?? "Unknown error"}`);
+      return;
+    }
+
+    if (sessionJson.url && typeof window !== "undefined") {
+      window.location.href = sessionJson.url;
+    } else {
+      alert("Failed to start payment.");
     }
   }
 

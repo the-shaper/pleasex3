@@ -53,23 +53,24 @@ export interface TaskCardProps {
   className?: string;
   isActive?: boolean; // Is this card currently active in TaskModule?
   onOpen?: (data: TaskCardData) => void; // NEW: Callback for opening task in module
+  forceExpanded?: boolean; // Force card to always be expanded, overriding default behavior
 }
 
 const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
-  ({ variant, data, className = "", isActive = false, onOpen }, ref) => {
-    const [isExpanded, setIsExpanded] = useState(variant === "autoqueue");
+  ({ variant, data, className = "", isActive = false, onOpen, forceExpanded = false }, ref) => {
+    const [isExpanded, setIsExpanded] = useState(variant === "autoqueue" || forceExpanded);
 
     const isPriority = variant === "priority";
     const isPersonal = variant === "personal";
     const isAutoqueue = variant === "autoqueue";
 
-    // Auto-expand when active, collapse when inactive (desktop only, not autoqueue)
+    // Auto-expand when active, collapse when inactive (desktop only, not autoqueue, not forceExpanded)
     useEffect(() => {
       const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-      if (isDesktop && !isAutoqueue) {
+      if (isDesktop && !isAutoqueue && !forceExpanded) {
         setIsExpanded(isActive);
       }
-    }, [isActive, isAutoqueue]);
+    }, [isActive, isAutoqueue, forceExpanded]);
 
     // Determine colors based on variant
     const queueBadgeBg = isPriority
@@ -89,7 +90,7 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
           : "text-white";
     // Toggle expanded state
     const toggleExpanded = () => {
-      if (!isAutoqueue) {
+      if (!isAutoqueue && !forceExpanded) {
         setIsExpanded(!isExpanded);
       }
     };
@@ -244,8 +245,8 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
             </div>
           )}
 
-          {/* Expand/Collapse Button (not for autoqueue) */}
-          {!isAutoqueue && (
+          {/* Expand/Collapse Button (not for autoqueue or forceExpanded) */}
+          {!isAutoqueue && !forceExpanded && (
             <div className="flex justify-center p-2">
               <ButtonBase
                 variant="secondary"
