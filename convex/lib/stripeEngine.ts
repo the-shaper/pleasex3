@@ -5,8 +5,8 @@ import { v } from "convex/values";
 // Stripe webhook handlers and payout runners should call into these helpers
 // but live in their own Convex functions.
 
-const FEE_RATE_BPS = 330; // 3.3%
-const THRESHOLD_CENTS = 5000; // $50
+const THRESHOLD_CENTS = 5000; // $50 per block
+const FEE_PER_BLOCK_CENTS = 333; // $3.33 keeps per $50 block
 
 function getMonthRangeUtc(year: number, month: number) {
   const start = Date.UTC(year, month - 1, 1, 0, 0, 0, 0);
@@ -23,22 +23,30 @@ function computePlatformFee(grossCents: number): {
   platformFeeCents: number;
   payoutCents: number;
   thresholdReached: boolean;
+  platformFeeRateBps: number;
 } {
   if (grossCents < THRESHOLD_CENTS) {
     return {
       platformFeeCents: 0,
       payoutCents: grossCents,
       thresholdReached: false,
+      platformFeeRateBps: 0,
     };
   }
 
-  const platformFeeCents = Math.round((grossCents * FEE_RATE_BPS) / 10000);
+  const blocks = Math.floor(grossCents / THRESHOLD_CENTS);
+  const platformFeeCents = blocks * FEE_PER_BLOCK_CENTS;
   const payoutCents = grossCents - platformFeeCents;
+  const platformFeeRateBps =
+    grossCents > 0
+      ? Math.round((platformFeeCents / grossCents) * 10000)
+      : 0;
 
   return {
     platformFeeCents,
     payoutCents,
     thresholdReached: true,
+    platformFeeRateBps,
   };
 }
 
@@ -83,7 +91,7 @@ async function getCurrentPeriodSummaryInternal(
     periodEnd,
   });
 
-  const { platformFeeCents, payoutCents, thresholdReached } =
+  const { platformFeeCents, payoutCents, thresholdReached, platformFeeRateBps } =
     computePlatformFee(grossCents);
 
   return {
@@ -92,7 +100,7 @@ async function getCurrentPeriodSummaryInternal(
     periodEnd,
     grossCents,
     thresholdCents: THRESHOLD_CENTS,
-    platformFeeRateBps: FEE_RATE_BPS,
+    platformFeeRateBps,
     platformFeeCents,
     payoutCents,
     thresholdReached,
@@ -126,7 +134,12 @@ async function getLastThreePeriodsSummariesInternal(
       periodEnd: range.periodEnd,
     });
 
-    const { platformFeeCents, payoutCents, thresholdReached } =
+    const {
+      platformFeeCents,
+      payoutCents,
+      thresholdReached,
+      platformFeeRateBps,
+    } =
       computePlatformFee(grossCents);
 
     results.push({
@@ -135,7 +148,7 @@ async function getLastThreePeriodsSummariesInternal(
       periodEnd: range.periodEnd,
       grossCents,
       thresholdCents: THRESHOLD_CENTS,
-      platformFeeRateBps: FEE_RATE_BPS,
+      platformFeeRateBps,
       platformFeeCents,
       payoutCents,
       thresholdReached,

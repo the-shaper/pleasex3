@@ -22,7 +22,7 @@ import { CellComponentData } from "@/components/dashboard/table/cellComponent";
 import TaskModule from "@/components/dashboard/taskModule/taskModule";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@convex/_generated/api"; // Generated Convex API via path alias
 import { TaskCardData } from "@/components/taskcard";
 import NextUpSection from "@/components/dashboard/NextUpSection";
@@ -52,7 +52,7 @@ export default function DashboardPage() {
     creatorSlug: slug,
   });
   const toggleQueue = useMutation(api.queues.toggleEnabled);
-  const connectStripeMutation = useMutation(
+  const connectStripeAction = useAction(
     api.stripeOnboarding.createStripeAccountLink
   );
 
@@ -78,7 +78,9 @@ export default function DashboardPage() {
   useEffect(() => {
     console.log("DEBUG engine positions", positions);
     // Log detailed info about awaiting-feedback tickets
-    const awaitingTickets = positions?.filter(p => p.tag === "awaiting-feedback");
+    const awaitingTickets = positions?.filter(
+      (p) => p.tag === "awaiting-feedback"
+    );
     if (awaitingTickets?.length > 0) {
       console.log("DEBUG awaiting-feedback tickets:", awaitingTickets);
     }
@@ -180,8 +182,6 @@ export default function DashboardPage() {
             err
           );
         }
-
-
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
         setError("Failed to load dashboard data");
@@ -455,9 +455,9 @@ export default function DashboardPage() {
         (t?.status as CellComponentData["status"]) ?? p.status ?? "open";
       const isNumbered = status === "approved" || status === "closed";
 
-      const generalNumber = isNumbered ? p.ticketNumber ?? null : null;
+      const generalNumber = isNumbered ? (p.ticketNumber ?? null) : null;
       const ticketNumber = isNumbered
-        ? p.queueNumber ?? p.ticketNumber ?? null
+        ? (p.queueNumber ?? p.ticketNumber ?? null)
         : null;
 
       const mergedTags = p.tag
@@ -539,37 +539,49 @@ export default function DashboardPage() {
       .map((p) => p.queueNumber as number)
   );
 
-  // Build TaskCardData list for NextUpSection with awaiting-feedback tickets at top
-  const approvedPositions = activePositions?.filter((p) => p.status === "approved") || [];
-  
-  // Separate tickets into groups for prioritized ordering
-  const awaitingTickets = approvedPositions.filter((p) => p.tag === "awaiting-feedback");
-  const currentTicket = approvedPositions.find((p) => p.tag === "current");
-  const otherTickets = approvedPositions.filter((p) => 
-    p.tag !== "awaiting-feedback" && p.tag !== "current"
-  );
-  
-  // Combine in desired order: awaiting-feedback first, then current, then others
-  const orderedPositions = [
-    ...awaitingTickets,    // Top: awaiting-feedback tickets (need attention)
-    ...(currentTicket ? [currentTicket] : []), // Then: current ticket being worked on
-    ...otherTickets         // Bottom: all other active tickets
-  ];
-  
-  // Debug: Log the reordering
-  console.log("DEBUG ticket reordering:", {
-    original: approvedPositions.map(p => ({ ref: p.ref, tag: p.tag })),
-    awaiting: awaitingTickets.map(p => ({ ref: p.ref, tag: p.tag })),
-    current: currentTicket ? { ref: currentTicket.ref, tag: currentTicket.tag } : null,
-    others: otherTickets.map(p => ({ ref: p.ref, tag: p.tag })),
-    final: orderedPositions.map(p => ({ ref: p.ref, tag: p.tag }))
+  // Build TaskCardData list for NextUpSection with 3:1 priority-to-personal ratio as primary ordering
+  const approvedPositions =
+    activePositions?.filter((p) => p.status === "approved") || [];
+
+  // Convert TicketPosition[] to Ticket[] to use existing sortTicketsByPriorityRatio function
+  const approvedTickets: Ticket[] = approvedPositions.map((p) => {
+    const ticket = ticketByRef[p.ref];
+    return ticket || {
+      ref: p.ref,
+      queueKind: p.queueKind,
+      createdAt: p.createdAt || 0,
+      status: p.status,
+      taskTitle: "",
+      message: "",
+      name: "",
+      email: "",
+      tipCents: 0,
+      tags: [],
+    } as Ticket;
   });
-  
-  // Debug: Log the reordering
 
-  
+  // Apply 3:1 sorting to ALL approved tickets (primary ordering)
+  const orderedTickets = sortTicketsByPriorityRatio(approvedTickets);
 
-  
+  // Convert back to TicketPosition[] for mapping to TaskCardData
+  const orderedPositions = orderedTickets.map((ticket) => 
+    approvedPositions.find((p) => p.ref === ticket.ref) || {
+      ref: ticket.ref,
+      queueKind: ticket.queueKind,
+      status: ticket.status,
+      tag: "pending" as const,
+      createdAt: ticket.createdAt,
+      ticketNumber: null,
+      queueNumber: null,
+    }
+  );
+
+  // Debug: Log the 3:1 ordering
+  console.log("DEBUG 3:1 ticket ordering:", {
+    original: approvedPositions.map((p) => ({ ref: p.ref, tag: p.tag, queueKind: p.queueKind })),
+    sorted: orderedPositions.map((p) => ({ ref: p.ref, tag: p.tag, queueKind: p.queueKind })),
+  });
+
   const nextUpTaskCards: TaskCardData[] = orderedPositions.map((p, index) => {
     const t = ticketByRef[p.ref];
     const displayNumber = p.queueNumber ?? p.ticketNumber ?? index + 1;
@@ -577,9 +589,9 @@ export default function DashboardPage() {
       p.queueKind === "personal"
         ? maxPersonalQueueNumber
         : maxPriorityQueueNumber;
-    
+
     const needText = t?.taskTitle || "No description provided";
-    
+
     return {
       // Use static engine-assigned number for display
       currentTurn: displayNumber,
@@ -693,7 +705,7 @@ export default function DashboardPage() {
         {/* Main Content Area */}
         <div
           data-element="MAIN-CONTENT-WRAPPER"
-          className="flex md:w-full w-[calc(100svw-4rem)] flex-col md:col-start-2 md:row-start-2 md:overflow-hidden md:grid gap-4 md:p-4 md:h-[86svh] h-full md:overflow-y-hidden overflow-y-auto"
+          className="flex md:w-full w-[calc(100svw-4rem)] flex-col md:col-start-2 md:row-start-2 md:overflow-hidden md:grid gap-4 md:p-4 md:h-[86svh] h-full md:overflow-y-hidden overflow-y-auto min-h-0 md:min-h-0"
         >
           {tab === "queue-settings" ? (
             <div className="col-span-2">
@@ -709,7 +721,7 @@ export default function DashboardPage() {
             </div>
           ) : tab === "past" || tab === "all" ? (
             // PAST + ALL: table view backed by engine positions
-            <div className="flex flex-col w-full h-full">
+            <div className="flex flex-col w-full flex-1 overflow-hidden">
               <TableComponent
                 data={tableRows}
                 onOpen={handleOpenTicket}
@@ -717,6 +729,7 @@ export default function DashboardPage() {
                 enableClickToScroll={false}
                 disableFocusStyling={false}
                 variant={tab === "past" ? "past" : "all"}
+                className="flex-1"
               />
             </div>
           ) : tab === "earnings" ? (
@@ -726,7 +739,7 @@ export default function DashboardPage() {
                 onConnectStripe={async () => {
                   if (!slug) return;
                   try {
-                    const { url } = await connectStripeMutation({
+                    const { url } = await connectStripeAction({
                       creatorSlug: slug,
                     });
                     if (url && typeof window !== "undefined") {
@@ -734,14 +747,17 @@ export default function DashboardPage() {
                       router.refresh();
                     }
                   } catch (error) {
-                    console.error("Failed to create Stripe account link", error);
+                    console.error(
+                      "Failed to create Stripe account link",
+                      error
+                    );
                   }
                 }}
               />
             </div>
           ) : (
             <div
-              className={`flex flex-col w-full no-scrollbar md:grid gap-4 h-full md:h-[86svh] ${
+              className={`flex flex-col w-full no-scrollbar md:grid gap-4 h-full md:h-[86svh] min-h-0 md:min-h-0 ${
                 hasPendingApprovals
                   ? "w-full md:grid-cols-[400px_1fr]"
                   : "w-full md:grid-cols-[400px_1fr]"
@@ -761,18 +777,17 @@ export default function DashboardPage() {
                 onTicketUpdate={handleTicketUpdate}
               />
 
-              <div className="flex flex-col h-full gap-4">
+              <div className="flex flex-col h-full gap-4 min-h-0">
                 {(selectedTask || autoqueueCardData) && (
                   <div data-element="TASK-MODULE" className="hidden md:block">
                     <TaskModule
                       data={selectedTask || autoqueueCardData}
                       onMarkAsFinished={async () => {
                         try {
-                          const [queueSnapshot, overview] =
-                            await Promise.all([
-                              dataProvider.getQueueSnapshot(slug),
-                              dataProvider.getDashboardOverview(slug),
-                            ]);
+                          const [queueSnapshot, overview] = await Promise.all([
+                            dataProvider.getQueueSnapshot(slug),
+                            dataProvider.getDashboardOverview(slug),
+                          ]);
 
                           setQueueData(queueSnapshot);
                           setDashboardOverview(overview);
@@ -788,10 +803,10 @@ export default function DashboardPage() {
                             );
                           }
                         } catch (err) {
-                           console.error(
-                             "Error refreshing dashboard data after finish:",
-                             err
-                           );
+                          console.error(
+                            "Error refreshing dashboard data after finish:",
+                            err
+                          );
                         }
                       }}
                     />
@@ -800,7 +815,7 @@ export default function DashboardPage() {
 
                 <div
                   data-element="FAVORS-TABLE"
-                  className="md:h-1/2 h-full overflow-y-auto"
+                  className="md:h-1/2 h-full overflow-hidden min-h-0"
                 >
                   <TableComponent
                     data={tableRows}
@@ -810,6 +825,7 @@ export default function DashboardPage() {
                     clickToScrollBreakpoint="desktop"
                     disableFocusStyling={true}
                     variant="active"
+                    className="h-full"
                   />
                 </div>
               </div>
@@ -854,35 +870,34 @@ export default function DashboardPage() {
                 onSendForFeedback={() => {
                   closeModal();
                 }}
-                 onMarkAsFinished={async () => {
-                   try {
-                       const [queueSnapshot, overview] =
-                         await Promise.all([
-                           dataProvider.getQueueSnapshot(slug),
-                           dataProvider.getDashboardOverview(slug),
-                         ]);
+                onMarkAsFinished={async () => {
+                  try {
+                    const [queueSnapshot, overview] = await Promise.all([
+                      dataProvider.getQueueSnapshot(slug),
+                      dataProvider.getDashboardOverview(slug),
+                    ]);
 
-                     setQueueData(queueSnapshot);
-                     setDashboardOverview(overview);
-                     closeModal();
+                    setQueueData(queueSnapshot);
+                    setDashboardOverview(overview);
+                    closeModal();
 
-                     // Recompute workflow tags so NEXT UP reflects closed ticket removal.
-                     try {
-                       await recomputeWorkflowTags({ creatorSlug: slug });
-                     } catch (err) {
-                       console.error(
-                         "Failed to recompute workflow tags after modal finish",
-                         err
-                       );
-                     }
-                   } catch (err) {
-                     console.error(
-                       "Error refreshing dashboard data after finish:",
-                       err
-                     );
-                   }
-                 }}
-                />
+                    // Recompute workflow tags so NEXT UP reflects closed ticket removal.
+                    try {
+                      await recomputeWorkflowTags({ creatorSlug: slug });
+                    } catch (err) {
+                      console.error(
+                        "Failed to recompute workflow tags after modal finish",
+                        err
+                      );
+                    }
+                  } catch (err) {
+                    console.error(
+                      "Error refreshing dashboard data after finish:",
+                      err
+                    );
+                  }
+                }}
+              />
             </div>
           </div>
         </div>

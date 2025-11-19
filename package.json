@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.33.7",
+    "@stripe/react-stripe-js": "^5.3.0",
+    "@stripe/stripe-js": "^8.5.1",
     "@tanstack/react-table": "^8.21.3",
     "convex": "1.27.5",
     "gsap": "^3.13.0",

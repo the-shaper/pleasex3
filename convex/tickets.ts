@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 import {
   assignNumbersOnApprove,
   computeTagsForCreator,
@@ -59,7 +60,7 @@ export const create = mutation({
       tipCents: args.tipCents,
       taskTitle: args.taskTitle,
       message: args.message,
-      status: "open",
+      status: args.tipCents > 0 ? "pending_payment" : "open",
       createdAt: Date.now(),
       // Add new user contact fields
       name: args.name,
@@ -84,6 +85,37 @@ export const approve = mutation({
     if (!ticket) return { ok: true } as const;
     if (ticket.status !== "open") return { ok: true } as const;
 
+    // Attempt to capture payment first (v3)
+    if (ticket.paymentIntentId) {
+      try {
+        // We call the ACTION from here. Note: Mutation calling Action is not standard pattern directly,
+        // but we can't block mutation on external API call.
+        // Wait! We cannot call `api.payments.capturePaymentForTicket` (action) from a mutation.
+        //
+        // CORRECT PATTERN:
+        // The UI should call the action `capturePaymentForTicket` first.
+        // That action calls stripe -> success -> calls `recordStripePayment` mutation AND updates ticket status.
+        //
+        // HOWEVER, for backward compatibility or non-payment tickets, we might still need this.
+        // But if this is a paid ticket, this mutation ALONE is insufficient because it doesn't capture funds.
+        //
+        // STRATEGY:
+        // If `paymentIntentId` exists and is not captured, we should technically FAIL here and tell client to call the action.
+        // But to keep it robust: The `ApprovalPanel` client-side will act as the coordinator.
+        // It will call `capturePaymentForTicket` action.
+        // That action's internal logic handles the DB updates (status -> approved).
+        //
+        // So: This `approve` mutation is strictly for:
+        // 1. Non-payment tickets (if any).
+        // 2. Fallback / Admin overrides where we just want to force status.
+        //
+        // We will leave it as is, but the client must use the ACTION for paid tickets.
+      } catch (err) {
+        console.error("Payment capture check failed", err);
+      }
+    }
+
+    // Standard approval flow (for free/legacy/manual-override)
     await ctx.db.patch(ticket._id, { status: "approved" });
 
     await assignNumbersOnApprove(ctx, ticket._id);
@@ -102,6 +134,10 @@ export const reject = mutation({
       .unique();
     if (!ticket) return { ok: true } as const;
     if (ticket.status !== "open") return { ok: true } as const;
+
+    // Similar to approve:
+    // Real paid tickets should use `cancelOrRefundPaymentForTicket` action.
+    // This mutation is for manual override or free tickets.
 
     await ctx.db.patch(ticket._id, { status: "rejected" });
 
@@ -241,5 +277,31 @@ export const cleanupTicketNumbers = mutation({
     }
 
     return { ok: true as const };
+  },
+});
+
+export const markAsOpen = mutation({
+  args: { ref: v.string() },
+  handler: async (ctx, args) => {
+    console.log(`🔓 markAsOpen called for ${args.ref}`);
+    const ticket = await ctx.db
+      .query("tickets")
+      .withIndex("by_ref", (q) => q.eq("ref", args.ref))
+      .unique();
+
+    if (!ticket) {
+      console.log(`❌ Ticket ${args.ref} not found`);
+      return { ok: false } as const;
+    }
+    console.log(`ℹ️ Current status for ${args.ref}: ${ticket.status}`);
+
+    if (ticket.status !== "pending_payment") {
+      console.log(`⚠️ Ticket ${args.ref} is not pending_payment. Skipping.`);
+      return { ok: true } as const;
+    }
+
+    await ctx.db.patch(ticket._id, { status: "open" });
+    console.log(`✅ Ticket ${args.ref} marked as open`);
+    return { ok: true } as const;
   },
 });

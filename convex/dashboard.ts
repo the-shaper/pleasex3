@@ -14,6 +14,13 @@ export const getCreator = query({
   },
 });
 
+export const getAllCreators = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("creators").collect();
+  },
+});
+
 export const getOverview = query({
   args: { creatorSlug: v.string() },
   handler: async (ctx, args) => {
@@ -31,6 +38,12 @@ export const getOverview = query({
       )
       .collect();
 
+    const openTickets = allTickets.filter((t) => t.status === "open");
+    console.log(`📊 getOverview for ${args.creatorSlug}: Found ${allTickets.length} total, ${openTickets.length} open`);
+    if (openTickets.length > 0) {
+      console.log(`🔍 Open tickets: ${openTickets.map(t => t.ref).join(", ")}`);
+    }
+
     return {
       creator: creator ?? {
         slug: args.creatorSlug,
@@ -38,7 +51,7 @@ export const getOverview = query({
         minPriorityTipCents: 1500,
       },
       queues,
-      openTickets: allTickets.filter((t) => t.status === "open"),
+      openTickets,
       approvedTickets: allTickets.filter((t) => t.status === "approved"),
       closedTickets: allTickets.filter((t) => t.status === "closed"),
       rejectedTickets: allTickets.filter((t) => t.status === "rejected"),

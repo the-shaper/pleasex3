@@ -1,120 +1,121 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { ConvexHttpClient } from "convex/server";
+import { ConvexHttpClient } from "convex/browser";
 import { api } from "@convex/_generated/api";
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const stripeApiKey = process.env.STRIPE_API_KEY;
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 
-if (!stripeApiKey || !webhookSecret || !convexUrl) {
-  throw new Error(
-    "Stripe webhook route requires STRIPE_API_KEY, STRIPE_WEBHOOK_SECRET, and NEXT_PUBLIC_CONVEX_URL"
-  );
+if (!stripeApiKey) {
+  throw new Error("STRIPE_API_KEY is required for Stripe webhook");
+}
+if (!webhookSecret) {
+  throw new Error("STRIPE_WEBHOOK_SECRET is required for webhook verification");
+}
+if (!convexUrl) {
+  throw new Error("NEXT_PUBLIC_CONVEX_URL is required to call Convex");
 }
 
-const stripe = new Stripe(stripeApiKey, { apiVersion: "2024-08-23" });
-const convexClient = new ConvexHttpClient(convexUrl);
+const stripe = new Stripe(stripeApiKey, { apiVersion: "2022-11-15" });
+const client = new ConvexHttpClient(convexUrl);
+const logPrefix = "[StripeWebhook]";
 
-const recordPayment = async (
-  creatorSlug: string | undefined,
-  amountGross: number | null | undefined,
-  currency: string | undefined,
-  externalId: string,
-  metadata?: Stripe.Metadata
-) => {
-  if (!creatorSlug || amountGross == null || !currency) {
-    return;
-  }
+function log(...args: unknown[]) {
+  console.log(logPrefix, ...args);
+}
 
-  await convexClient.mutation(api.payments.recordStripePayment, {
-    creatorSlug,
-    amountGross,
-    currency,
-    externalId,
-    provider: "stripe",
-    status: "succeeded",
-    ticketRef: metadata?.ticketRef,
-    createdAt: Date.now(),
-  });
-};
+function logWarn(...args: unknown[]) {
+  console.warn(logPrefix, ...args);
+}
 
-const handleCheckoutSession = async (session: Stripe.Checkout.Session) => {
-  const creatorSlug = session.metadata?.creatorSlug;
-  const currency =
-    session.currency ?? session.customer_details?.currency ?? "usd";
-  const amountGross = session.amount_total ?? session.amount_subtotal ?? 0;
-  const externalId =
-    (session.payment_intent as string | undefined) ?? session.id;
-
-  if (!externalId) return;
-
-  await recordPayment(
-    creatorSlug,
-    amountGross,
-    currency,
-    externalId,
-    session.metadata
-  );
-};
-
-const handlePaymentIntent = async (intent: Stripe.PaymentIntent) => {
-  const creatorSlug = intent.metadata?.creatorSlug;
-  const currency = intent.currency ?? "usd";
-  const amountGross = intent.amount_received ?? intent.amount ?? 0;
-
-  await recordPayment(
-    creatorSlug,
-    amountGross,
-    currency,
-    intent.id,
-    intent.metadata
-  );
-};
+function logError(...args: unknown[]) {
+  console.error(logPrefix, ...args);
+}
 
 export async function POST(req: NextRequest) {
-  const signature = req.headers.get("stripe-signature");
-  if (!signature) {
-    return NextResponse.json(
-      { ok: false, error: "Missing Stripe signature" },
-      { status: 400 }
-    );
-  }
-
   const body = await req.text();
-  let event: Stripe.Event;
+  const signature = req.headers.get("stripe-signature") ?? "";
 
+  let event;
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-  } catch (error) {
-    console.error("Stripe webhook signature mismatch", error);
-    return NextResponse.json(
-      { ok: false, error: "Signature verification failed" },
-      { status: 400 }
-    );
+  } catch (err: any) {
+    console.error("Webhook signature verification failed:", err.message);
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
   try {
+    log("Event received", event.id, event.type);
+    // Handle the event
     switch (event.type) {
-      case "checkout.session.completed":
-        await handleCheckoutSession(
-          event.data.object as Stripe.Checkout.Session
-        );
-        break;
-      case "payment_intent.succeeded":
-        await handlePaymentIntent(event.data.object as Stripe.PaymentIntent);
-        break;
-      default:
-        // ignore other events for now
-        break;
-    }
-  } catch (error) {
-    console.error("Stripe webhook processing failed", error);
-    return NextResponse.json(
-      { ok: false, error: "Processing failed" },
-      { status: 500 }
-    );
-  }
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        log("Checkout session completed", {
+          id: session.id,
+          payment_status: session.payment_status,
+          amount_total: session.amount_total,
+          currency: session.currency,
+          metadata: session.metadata,
+        });
+        if (session.payment_status !== "paid") {
+          logWarn(
+            "Session not marked as paid, skipping",
+            session.id,
+            session.payment_status
+          );
+          break;
+        }
 
-  return NextResponse.json({ ok: true });
+        const { creatorSlug, ticketRef } = session.metadata ?? {};
+        if (!creatorSlug || !ticketRef) {
+          logWarn("Missing metadata, skipping payment record", {
+            sessionId: session.id,
+            metadata: session.metadata,
+          });
+          break;
+        }
+
+        try {
+          await client.mutation(api.payments.recordStripePayment, {
+            creatorSlug,
+            amountGross: session.amount_total ?? 0,
+            currency: session.currency ?? "usd",
+            externalId: session.id ?? "",
+            provider: "stripe",
+            status: "succeeded",
+            ticketRef,
+            createdAt: Date.now(),
+          });
+          log("Recorded payment", {
+            creatorSlug,
+            ticketRef,
+            amount: session.amount_total,
+            currency: session.currency,
+          });
+        } catch (mutationError) {
+          logError("Failed to record payment in Convex", mutationError);
+          throw mutationError;
+        }
+        break;
+      }
+      // Add more event types as needed, e.g., "payment_intent.succeeded"
+      case "payment_intent.succeeded": {
+        const intent = event.data.object as Stripe.PaymentIntent;
+        if (intent.status === "succeeded") {
+          // Similar extraction from intent if needed
+          log("Payment intent succeeded", intent.id);
+        }
+        break;
+      }
+      default:
+        log("Unhandled event type", event.type);
+    }
+
+    return NextResponse.json({ received: true });
+  } catch (err: any) {
+    logError("Webhook handler error", err);
+    // Still return 200 to acknowledge receipt, per Stripe best practices
+    return NextResponse.json({ received: true });
+  }
 }

@@ -2,6 +2,8 @@
 
 ## Commands
 
+- **RESTRICTION**: You NEVER EVER RUN PNPM ON YOUR OWN. YOU LEAVE THAT TO THE MAIN USER.
+
 - **Development**: `pnpm dev` (runs on localhost:3000)
 - **Build**: `pnpm build`
 - **Lint**: `pnpm lint` (ESLint with Next.js + Storybook rules)

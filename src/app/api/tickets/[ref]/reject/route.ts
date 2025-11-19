@@ -3,12 +3,22 @@ import { ConvexDataProvider } from "@/lib/data/convex";
 
 const dataProvider = new ConvexDataProvider();
 
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: { ref: string } }
-) {
+function extractRefFromUrl(url: string): string {
+  const segments = new URL(url).pathname.split("/");
+  return segments[segments.length - 2] || "";
+}
+
+export async function POST(req: NextRequest) {
   try {
-    const result = await dataProvider.rejectTicket(params.ref);
+    const ref = extractRefFromUrl(req.url);
+    if (!ref) {
+      return new Response(JSON.stringify({ error: "Missing ticket ref" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const result = await dataProvider.rejectTicket(ref);
 
     return new Response(JSON.stringify(result), {
       status: 200,

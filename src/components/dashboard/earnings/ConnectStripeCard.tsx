@@ -19,8 +19,9 @@ export function ConnectStripeCard({
           Connect Stripe to receive your earnings
         </div>
         <p className="text-sm text-text-muted max-w-xl">
-          We calculate earnings monthly and send payouts once your Stripe
-          account is connected. Stripe’s processing fees are separate.
+          Earnings are calculated in USD. We keep $3.33 for every $50 you make
+          (nothing below $50). Stripe charges a fixed 2.9% processing fee
+          separately.
         </p>
         <button
           type="button"
@@ -51,8 +52,9 @@ export function ConnectStripeCard({
           : "Verification in progress"}
       </div>
       <div className="text-xs text-text-muted">
-        Earnings are calculated monthly in USD. Once your gross reaches $50 or
-        more, we retain 3.3% and send the remainder.
+        Earnings are calculated in USD. We keep $3.33 per $50 you make—if you
+        earn less than $50 for the period, we keep nothing. Stripe’s fixed 2.9%
+        processing fee remains separate.
       </div>
     </section>
   );

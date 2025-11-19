@@ -2,6 +2,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import CheckoutDonation from "@/components/checkout/checkoutDonation";
+import { useAction } from "convex/react";
+import { api } from "@convex/_generated/api";
+import PaymentWrapper from "@/components/checkout/PaymentWrapper";
 
 type QueuePayload = {
   creator: { slug: string; displayName: string; minPriorityTipCents: number };
@@ -40,6 +43,12 @@ export default function SubmitClient({
 }) {
   const sp = useSearchParams();
   const router = useRouter();
+  const createManualPaymentIntent = useAction(api.payments.createManualPaymentIntent);
+
+  // Payment State
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [pendingTicketRef, setPendingTicketRef] = useState<string | null>(null);
 
   function formatEtaMins(etaMins: number | null | undefined): string {
     if (!etaMins || etaMins <= 0) return "—";
@@ -130,6 +139,8 @@ export default function SubmitClient({
       .split(/\s+/)
       .map((s) => s.trim())
       .filter(Boolean);
+      
+    // 1. Create Ticket First
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -154,11 +165,7 @@ export default function SubmitClient({
       return;
     }
 
-    const origin =
-      typeof window !== "undefined"
-        ? window.location.origin
-        : `${router.basePath || ""}`;
-
+    // 2. If Free, Redirect Immediately
     if (form.priorityTipCents <= 0) {
       router.push(
         `/${slug}/submit/success?ref=${encodeURIComponent(json.ref)}`
@@ -166,34 +173,30 @@ export default function SubmitClient({
       return;
     }
 
-    const sessionRes = await fetch("/api/payments/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    // 3. If Paid, Create Payment Intent & Show Modal
+    try {
+      setPendingTicketRef(json.ref);
+      const result = await createManualPaymentIntent({
         creatorSlug: slug,
         ticketRef: json.ref,
         amountCents: form.priorityTipCents,
-        successUrl: `${origin}/${slug}/submit/success?ref=${encodeURIComponent(
-          json.ref
-        )}`,
-        cancelUrl: `${origin}/${slug}/submit?ref=${encodeURIComponent(
-          json.ref
-        )}&canceled=1`,
-      }),
-    });
-
-    const sessionJson = await sessionRes.json();
-    if (!sessionRes.ok) {
-      alert(`Payment setup error: ${sessionJson.error ?? "Unknown error"}`);
-      return;
-    }
-
-    if (sessionJson.url && typeof window !== "undefined") {
-      window.location.href = sessionJson.url;
-    } else {
-      alert("Failed to start payment.");
+      });
+      
+      setClientSecret(result.clientSecret);
+      setShowPaymentModal(true);
+    } catch (err: any) {
+      console.error("Payment setup failed", err);
+      alert(`Payment setup failed: ${err.message}`);
     }
   }
+
+  const handlePaymentSuccess = () => {
+    if (pendingTicketRef) {
+      router.push(
+        `/${slug}/submit/success?ref=${encodeURIComponent(pendingTicketRef)}`
+      );
+    }
+  };
 
   const isPriority = queue === "priority";
   const activeQueue = isPriority
@@ -337,7 +340,7 @@ export default function SubmitClient({
               </div>
               <div className="text-coral">TASK</div>
               <div className="font-mono text-sm min-w-0 break-words whitespace-pre-wrap">
-                {form.needText || "—"}
+                {form.favorTitle || "—"}
               </div>
               <div className="text-coral">LINKS</div>
               <div className="text-sm space-y-1 min-w-0 break-words">
@@ -407,6 +410,14 @@ export default function SubmitClient({
           </button>
         </aside>
       </div>
+
+      {showPaymentModal && clientSecret && (
+        <PaymentWrapper
+          clientSecret={clientSecret}
+          onSuccess={handlePaymentSuccess}
+          onCancel={() => setShowPaymentModal(false)}
+        />
+      )}
     </div>
   );
 }

@@ -36,10 +36,10 @@ export function EarningsSummaryCard({
             <div className="text-text-muted text-xs uppercase">Platform fee</div>
             <div className="text-text font-semibold">
               {currentPeriod.platformFeeCents === 0
-                ? "0 (below threshold)"
-                : `${formatMoney(currentPeriod.platformFeeCents)} (${(
-                    currentPeriod.platformFeeRateBps / 100
-                  ).toFixed(1)}%)`}
+                ? "0 (below $50)"
+                : `${formatMoney(
+                    currentPeriod.platformFeeCents
+                  )} ($3.33 per $50 block)`}
             </div>
           </div>
           <div>
@@ -108,6 +108,10 @@ export function EarningsSummaryCard({
           </div>
         </div>
       </div>
+      <p className="text-[11px] text-text-muted">
+        Platform fees follow the $3.33-per-$50 rule above. Stripe’s payment
+        processing fee (fixed 2.9%) is charged separately.
+      </p>
     </section>
   );
 }

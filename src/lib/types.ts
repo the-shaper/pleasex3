@@ -118,7 +118,7 @@ export interface CreatorEarningsSummary {
   periodEnd: number; // timestamp (exclusive)
   grossCents: number;
   thresholdCents: number; // e.g. 5000 for $50
-  platformFeeRateBps: number; // 330 = 3.3%
+  platformFeeRateBps: number; // effective rate for the period (derived from $3.33 per $50 blocks)
   platformFeeCents: number;
   payoutCents: number;
   thresholdReached: boolean;

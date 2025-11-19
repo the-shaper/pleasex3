@@ -3,6 +3,8 @@
 import { useState } from "react";
 import TicketApprovalCreatorCard from "../checkout/ticketApprovalCreatorCard";
 import { ConvexDataProvider } from "@/lib/data/convex";
+import { useAction } from "convex/react";
+import { api } from "@convex/_generated/api";
 import type { Ticket } from "@/lib/types";
 
 const dataProvider = new ConvexDataProvider();
@@ -25,22 +27,27 @@ export default function ApprovalPanel({
     return `${hours}h`;
   };
 
+  const capturePayment = useAction(api.payments.capturePaymentForTicket);
+  const cancelOrRefund = useAction(api.payments.cancelOrRefundPaymentForTicket);
+
   const handleApprove = async (ticket: Ticket) => {
     setActionLoading(ticket.ref);
     try {
-      await fetch(`/api/tickets/${ticket.ref}/approve`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
+      // V3: Capture payment first
+      const result = await capturePayment({ ticketRef: ticket.ref });
+
+      if (!result.ok) {
+        throw new Error(`Capture failed: ${result.status}`);
+      }
 
       // Refresh ticket data
       const updatedTicket = await dataProvider.getTicketByRef(ticket.ref);
       if (onTicketUpdate && updatedTicket) {
         onTicketUpdate(updatedTicket);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error approving ticket:", err);
-      alert("Failed to approve ticket");
+      alert(`Failed to approve ticket: ${err.message}`);
     } finally {
       setActionLoading(null);
     }
@@ -49,19 +56,21 @@ export default function ApprovalPanel({
   const handleReject = async (ticket: Ticket) => {
     setActionLoading(ticket.ref);
     try {
-      await fetch(`/api/tickets/${ticket.ref}/reject`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
+      // V3: Cancel/Refund payment
+      const result = await cancelOrRefund({ ticketRef: ticket.ref });
+
+      if (!result.ok) {
+        throw new Error(`Rejection failed: ${result.status}`);
+      }
 
       // Refresh ticket data
       const updatedTicket = await dataProvider.getTicketByRef(ticket.ref);
       if (onTicketUpdate && updatedTicket) {
         onTicketUpdate(updatedTicket);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error rejecting ticket:", err);
-      alert("Failed to reject ticket");
+      alert(`Failed to reject ticket: ${err.message}`);
     } finally {
       setActionLoading(null);
     }
@@ -143,7 +152,7 @@ export default function ApprovalPanel({
                 minPriorityTipCents={ticketData.minPriorityTipCents}
                 queueMetrics={ticketData.queueMetrics}
                 formatEtaMins={formatEtaMins}
-                onChange={() => {}}
+                onChange={() => { }}
                 userName={ticketData.userName}
                 referenceNumber={ticketData.referenceNumber}
                 approvedContext={isApprovedOrRejected}

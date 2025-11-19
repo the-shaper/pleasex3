@@ -33,7 +33,8 @@ export default defineSchema({
       v.literal("open"),
       v.literal("approved"),
       v.literal("rejected"),
-      v.literal("closed")
+      v.literal("closed"),
+      v.literal("pending_payment")
     ),
     tags: v.optional(v.array(v.string())),
     createdAt: v.number(),
@@ -48,6 +49,16 @@ export default defineSchema({
     // Engine-assigned numbers (optional)
     ticketNumber: v.optional(v.number()),
     queueNumber: v.optional(v.number()),
+    // Payment status tracking (v3)
+    paymentIntentId: v.optional(v.string()),
+    paymentStatus: v.optional(
+      v.union(
+        v.literal("requires_capture"),
+        v.literal("succeeded"),
+        v.literal("canceled"),
+        v.literal("refunded")
+      )
+    ),
   })
     .index("by_ref", ["ref"])
     .index("by_creator", ["creatorSlug"]),

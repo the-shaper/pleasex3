@@ -299,10 +299,10 @@ Based on the current state and the implementation plan, here's a comprehensive p
 
 13. **Task Expanded View BUILD**
 
-- [ ]Design component in figma
-- [ ]Build React component
-- [ ]Integrate component into dashboard
-- [ ]Connect component to database (convex)
+- [x]Design component in figma
+- [x]Build React component
+- [x]Integrate component into dashboard
+- [x]Connect component to database (convex)
 
 14. **Clerk UI Dashboard**
 
@@ -382,3 +382,28 @@ Approval Actions → API Routes → Convex Mutations → Dashboard Updates
 **Option B (Full Implementation):** Complete dashboard integration with approval panel
 
 Which approach would you prefer? The quick win would give us a functional dashboard immediately, while the full implementation would create the unified creator workflow we discussed earlier.
+
+## **PENDING STUFF**
+
+- [ ] Homepage
+  - [ ] Design and build homepage
+  - [ ] Add a sign-in option to the dashboard
+
+- [ ] Creator page
+ - [ ] Create and wire up "tracking number" follow up
+ - [ ] Add logo with link to homepage
+ - [ ] Add auth-aware buttons
+  - [ ] sign-out
+  - [ ] go to dashboard
+
+- [ ] E-mail routing
+  - [ ] Creator sign up
+  - [ ] Task Submission notifications
+  - [ ] Requester task approval
+
+- [ ] Personalize Stripe Screens
+  - [ ] Remove HAND branding. Figure out how to make it Pleasepleaseplease specific
+
+- [ ] Personalize Clerk Screens
+  - [ ] Login Screen
+  - [ ] Logout Screen

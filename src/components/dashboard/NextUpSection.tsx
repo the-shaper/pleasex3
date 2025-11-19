@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import TaskCard, {
-  type TaskCardData,
-} from "@/components/taskcard";
+import TaskCard, { type TaskCardData } from "@/components/taskcard";
 import ApprovalPanel from "@/components/dashboard/approvalPanel"; // Import for Pending
 import { type Ticket } from "@/lib/types"; // For tickets prop
 import { gsap } from "gsap";
@@ -69,8 +67,8 @@ export default function NextUpSection({
         const trigger = ScrollTrigger.create({
           trigger: cardElement,
           scroller: scrollContainer, // Track this container's scroll, not window
-          start: "top 50%", // When card's top hits 50% of container
-          end: "bottom 50%", // When card's bottom leaves 50% of container
+          start: "top 45%", // When card's top hits 50% of container
+          end: "bottom 55%", // When card's bottom leaves 50% of container
           onEnter: () => {
             if (lastActiveRef.current === card.ref) return;
             lastActiveRef.current = card.ref;
