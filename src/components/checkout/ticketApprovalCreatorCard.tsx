@@ -34,6 +34,7 @@ interface TicketApprovalCreatorCardProps {
   // New optional fields for engine-aligned display
   ticketNumber?: number | string;
   hideOutOf?: boolean;
+  status?: string;
 }
 
 export default function TicketApprovalCreatorCard({
@@ -53,9 +54,14 @@ export default function TicketApprovalCreatorCard({
   isLoading = false,
   ticketNumber,
   hideOutOf = false,
+  status,
 }: TicketApprovalCreatorCardProps) {
   const queueBadgeBg = isPriority ? "bg-gold" : "bg-greenlite";
-  const statusVariant = approvedContext ? "approved" : "pending";
+
+  let statusVariant = approvedContext ? "approved" : "pending";
+  if (status === "closed") statusVariant = "finished";
+  if (status === "rejected") statusVariant = "rejected";
+
   const etaMins =
     queueMetrics?.[isPriority ? "priority" : "personal"]?.etaMins || 0;
   const etaText = formatEtaMins(etaMins);
@@ -102,8 +108,14 @@ export default function TicketApprovalCreatorCard({
             </TagBase>
             <div className="flex items-center gap-1">
               <p className="bg-gray-subtle px-3 py-0.5">STATUS</p>
-              <TagBase variant={statusVariant}>
-                {approvedContext ? "APPROVED" : "PENDING"}
+              <TagBase variant={statusVariant as any}>
+                {statusVariant === "finished"
+                  ? "FINISHED"
+                  : statusVariant === "rejected"
+                    ? "REJECTED"
+                    : approvedContext
+                      ? "APPROVED"
+                      : "PENDING"}
               </TagBase>
             </div>
           </div>

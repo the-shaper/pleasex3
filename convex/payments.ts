@@ -519,6 +519,10 @@ export const cancelOrRefundPaymentForTicket = action({
           paymentIntentId: ticket.paymentIntentId,
           status: "canceled",
         });
+
+        // Mark ticket as rejected in the main table
+        await ctx.runMutation(api.tickets.reject, { ref: args.ticketRef });
+
         return { ok: true, action: "canceled" };
       } else if (pi.status === "succeeded") {
         // Already captured -> Refund
@@ -530,7 +534,20 @@ export const cancelOrRefundPaymentForTicket = action({
           paymentIntentId: ticket.paymentIntentId,
           status: "refunded",
         });
+
+        // Mark ticket as rejected in the main table
+        await ctx.runMutation(api.tickets.reject, { ref: args.ticketRef });
+
         return { ok: true, action: "refunded" };
+      } else if (pi.status === "canceled") {
+        // Already canceled - ensure DB is in sync
+        await ctx.runMutation(api.payments.setPaymentIntentForTicket, {
+          ticketRef: args.ticketRef,
+          paymentIntentId: ticket.paymentIntentId,
+          status: "canceled",
+        });
+        await ctx.runMutation(api.tickets.reject, { ref: args.ticketRef });
+        return { ok: true, action: "canceled" };
       } else {
         return { ok: true, status: pi.status };
       }

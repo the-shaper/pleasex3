@@ -2,16 +2,16 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-function formatEtaMins(etaMins: number | null | undefined): string {
-  if (!etaMins || etaMins <= 0) return "—";
-  if (etaMins < 60) return "<1h";
-  const hours = Math.round(etaMins / 60);
-  return `${hours}h`;
+function formatEtaDays(etaDays: number | null | undefined): string {
+  if (!etaDays || etaDays <= 0) return "—";
+  if (etaDays < 1) return "<1 day";
+  if (etaDays === 1) return "1 day";
+  return `${etaDays} days`;
 }
 
-function formatEtaDate(etaMins: number | null | undefined): string {
-  if (!etaMins || etaMins <= 0) return "—";
-  const ms = etaMins * 60 * 1000;
+function formatEtaDate(etaDays: number | null | undefined): string {
+  if (!etaDays || etaDays <= 0) return "—";
+  const ms = etaDays * 24 * 60 * 60 * 1000;
   const d = new Date(Date.now() + ms);
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
@@ -27,7 +27,8 @@ export interface QueueCardProps {
   data: {
     currentTicketNumber?: number;
     nextTicketNumber?: number;
-    etaMins: number | null;
+    etaDays: number | null;
+    avgDaysPerTicket?: number;
     enabled: boolean;
   };
   minPriorityTipCents: number;
@@ -148,11 +149,11 @@ export default function QueueCard({
             >
               <div>
                 <div className="font-bold">Average Time / Favor</div>
-                <div>{formatEtaMins(data.etaMins)}</div>
+                <div>{formatEtaDays(data.avgDaysPerTicket)}</div>
               </div>
               <div>
                 <div className="font-bold">Estimated Delivery</div>
-                <div>{formatEtaDate(data.etaMins)}</div>
+                <div>{formatEtaDate(data.etaDays)}</div>
               </div>
             </div>
           </div>

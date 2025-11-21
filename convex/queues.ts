@@ -68,7 +68,8 @@ export const toggleEnabled = mutation({
         kind: args.kind,
         activeTurn: 0,
         nextTurn: 1,
-        etaMins: 0,
+
+        etaDays: 0,
         activeCount: 0,
         enabled: true,
       });
@@ -88,5 +89,43 @@ export const toggleEnabled = mutation({
     await ctx.db.patch(queue._id, { enabled: newEnabled });
 
     return { success: true, enabled: newEnabled, queue };
+  },
+});
+
+export const updateQueueSettings = mutation({
+  args: {
+    creatorSlug: v.string(),
+    kind: v.union(v.literal("personal"), v.literal("priority")),
+    avgDaysPerTicket: v.number(),
+  },
+  handler: async (ctx, args) => {
+    let queue = await ctx.db
+      .query("queues")
+      .withIndex("by_creator_kind", (q) =>
+        q.eq("creatorSlug", args.creatorSlug).eq("kind", args.kind)
+      )
+      .unique();
+
+    if (!queue) {
+      // Create if missing (similar to toggleEnabled logic, but maybe safer to just error if it should exist? 
+      // For now, let's create it to be safe as settings might be accessed before toggle)
+      const id = await ctx.db.insert("queues", {
+        creatorSlug: args.creatorSlug,
+        kind: args.kind,
+        activeTurn: 0,
+        nextTurn: 1,
+        etaDays: 0,
+        activeCount: 0,
+        enabled: true,
+        avgDaysPerTicket: args.avgDaysPerTicket,
+      });
+      return { success: true };
+    }
+
+    await ctx.db.patch(queue._id, {
+      avgDaysPerTicket: args.avgDaysPerTicket,
+    });
+
+    return { success: true };
   },
 });

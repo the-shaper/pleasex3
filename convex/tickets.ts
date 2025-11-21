@@ -1,6 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import {
   assignNumbersOnApprove,
   computeTagsForCreator,
@@ -71,6 +71,36 @@ export const create = mutation({
       attachments: args.attachments,
       consentEmail: args.consentEmail,
     });
+
+    // Trigger emails
+    if (args.email) {
+      // 1. Receipt to User
+      await ctx.scheduler.runAfter(0, internal.emails.sendTicketReceipt, {
+        email: args.email,
+        userName: args.name || "User",
+        ticketRef: ref,
+        trackingUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/tracking/${ref}`,
+        creatorName: args.creatorSlug, // Ideally fetch display name, but slug works for now
+        ticketType: args.queueKind,
+      });
+
+      // 2. Alert to Creator
+      const creator = await ctx.db
+        .query("creators")
+        .withIndex("by_slug", (q) => q.eq("slug", args.creatorSlug))
+        .unique();
+
+      if (creator && creator.email) {
+        await ctx.scheduler.runAfter(0, internal.emails.sendCreatorAlert, {
+          email: creator.email,
+          creatorName: creator.displayName || args.creatorSlug,
+          userName: args.name || "User",
+          ticketType: args.queueKind,
+          tipAmount: args.tipCents ? args.tipCents / 100 : 0,
+          dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
+        });
+      }
+    }
     return { ref } as const;
   },
 });
@@ -121,6 +151,20 @@ export const approve = mutation({
     await assignNumbersOnApprove(ctx, ticket._id);
     await computeTagsForCreator(ctx, ticket.creatorSlug);
 
+    // Trigger Email: Ticket Approved
+    if (ticket.email) {
+      // Fetch updated ticket to get queue number (if assigned)
+      const updatedTicket = await ctx.db.get(ticket._id);
+      await ctx.scheduler.runAfter(0, internal.emails.sendTicketApproved, {
+        email: ticket.email,
+        userName: ticket.name || "User",
+        ticketRef: ticket.ref,
+        queueNumber: updatedTicket?.queueNumber || 0,
+        trackingUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/tracking/${ticket.ref}`,
+        ticketType: ticket.queueKind,
+      });
+    }
+
     return { ok: true } as const;
   },
 });
@@ -139,7 +183,27 @@ export const reject = mutation({
     // Real paid tickets should use `cancelOrRefundPaymentForTicket` action.
     // This mutation is for manual override or free tickets.
 
-    await ctx.db.patch(ticket._id, { status: "rejected" });
+    const currentTags = ticket.tags || [];
+    // Remove status-related tags if any (though open tickets shouldn't have them usually)
+    const nextTags = currentTags.filter(t => t !== "current" && t !== "next-up" && t !== "awaiting-feedback");
+    if (!nextTags.includes("rejected")) {
+      nextTags.push("rejected");
+    }
+
+    await ctx.db.patch(ticket._id, {
+      status: "rejected",
+      tags: nextTags
+    });
+
+    // Trigger Email: Ticket Rejected
+    if (ticket.email) {
+      await ctx.scheduler.runAfter(0, internal.emails.sendTicketRejected, {
+        email: ticket.email,
+        userName: ticket.name || "User",
+        ticketRef: ticket.ref,
+        creatorName: ticket.creatorSlug,
+      });
+    }
 
     return { ok: true } as const;
   },
@@ -249,6 +313,11 @@ export const markAsFinished = mutation({
       (t) => t !== "current" && t !== "awaiting-feedback"
     );
 
+    // Add "finished" tag
+    if (!cleanedTags.includes("finished")) {
+      cleanedTags.push("finished");
+    }
+
     await ctx.db.patch(ticket._id, {
       status: "closed",
       tags: cleanedTags.length > 0 ? cleanedTags : undefined,
@@ -283,25 +352,15 @@ export const cleanupTicketNumbers = mutation({
 export const markAsOpen = mutation({
   args: { ref: v.string() },
   handler: async (ctx, args) => {
-    console.log(`🔓 markAsOpen called for ${args.ref}`);
     const ticket = await ctx.db
       .query("tickets")
       .withIndex("by_ref", (q) => q.eq("ref", args.ref))
       .unique();
 
-    if (!ticket) {
-      console.log(`❌ Ticket ${args.ref} not found`);
-      return { ok: false } as const;
-    }
-    console.log(`ℹ️ Current status for ${args.ref}: ${ticket.status}`);
-
-    if (ticket.status !== "pending_payment") {
-      console.log(`⚠️ Ticket ${args.ref} is not pending_payment. Skipping.`);
-      return { ok: true } as const;
-    }
+    if (!ticket) return { ok: false } as const;
+    if (ticket.status !== "pending_payment") return { ok: true } as const;
 
     await ctx.db.patch(ticket._id, { status: "open" });
-    console.log(`✅ Ticket ${args.ref} marked as open`);
     return { ok: true } as const;
   },
 });

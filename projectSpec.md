@@ -146,3 +146,7 @@
 - page.tsx - Marketing/creator landing page
 - submit-page.tsx - Server wrapper for submission form
 - globals.css - Global styles and theme
+
+
+## HOW TO
+- run and test stripe: CLI 'stripe listen --forward-to localhost:3000/api/webhooks/stripe'

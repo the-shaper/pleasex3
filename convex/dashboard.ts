@@ -39,10 +39,6 @@ export const getOverview = query({
       .collect();
 
     const openTickets = allTickets.filter((t) => t.status === "open");
-    console.log(`📊 getOverview for ${args.creatorSlug}: Found ${allTickets.length} total, ${openTickets.length} open`);
-    if (openTickets.length > 0) {
-      console.log(`🔍 Open tickets: ${openTickets.map(t => t.ref).join(", ")}`);
-    }
 
     return {
       creator: creator ?? {

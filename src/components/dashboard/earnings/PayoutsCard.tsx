@@ -63,7 +63,7 @@ export function PayoutsCard({ upcomingPayout, payoutHistory }: PayoutsCardProps)
           <div className="mt-1 flex flex-col gap-1 text-xs">
             {payoutHistory.map((p) => (
               <div
-                key={p.id}
+                key={p._id}
                 className="flex justify-between border-t border-text/10 pt-1"
               >
                 <div className="flex flex-col gap-0.5">

@@ -5,9 +5,9 @@ import { TagBase } from "../../general/tagBase";
 
 export interface CellComponentData {
   // General number - combined position across all queues
-  generalNumber: number;
+  generalNumber: number | null;
   // Ticket number - position in specific queue (priority or personal)
-  ticketNumber: number;
+  ticketNumber: number | null;
   // Queue type
   queueKind: "personal" | "priority";
   // Task description
@@ -88,11 +88,9 @@ export function CellComponent({
   return (
     // UPDATED: Make entire row clickable; remove button column
     <div
-      className={`grid gap-4 items-center p-3 border-b border-gray-subtle cursor-pointer hover:bg-gray-subtle/50 transition-colors ${className} ${
-        isClickable ? "focus:bg-gray-subtle" : ""
-      } ${
-        isActive ? "bg-gray-subtle" : "" // NEW: Highlight when active from ScrollTrigger
-      }`}
+      className={`grid gap-4 items-center p-3 border-b border-gray-subtle cursor-pointer hover:bg-gray-subtle/50 transition-colors ${className} ${isClickable ? "focus:bg-gray-subtle" : ""
+        } ${isActive ? "bg-gray-subtle" : "" // NEW: Highlight when active from ScrollTrigger
+        }`}
       style={{
         gridTemplateColumns: getGridColumns(variant),
       }}
@@ -114,10 +112,10 @@ export function CellComponent({
       {/* General Number */}
       <div className="flex justify-center">
         {data.generalNumber != null ? (
-        <GeneralNumber
-          data={{ activeTurn: data.generalNumber }}
-          variant={isActive ? "active" : "default"}
-        />
+          <GeneralNumber
+            data={{ activeTurn: data.generalNumber }}
+            variant={isActive ? "active" : "default"}
+          />
         ) : (
           <span className="text-sm text-text-muted">—</span>
         )}
@@ -126,7 +124,7 @@ export function CellComponent({
       {/* Ticket Number */}
       <div className="flex justify-center">
         {data.ticketNumber != null ? (
-        <TagBase variant={data.queueKind}>{data.ticketNumber}</TagBase>
+          <TagBase variant={data.queueKind}>{data.ticketNumber}</TagBase>
         ) : (
           <TagBase variant={data.queueKind}>—</TagBase>
         )}

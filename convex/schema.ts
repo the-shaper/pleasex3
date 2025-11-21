@@ -6,6 +6,7 @@ export default defineSchema({
     slug: v.string(),
     displayName: v.string(),
     minPriorityTipCents: v.number(),
+    email: v.optional(v.string()),
     showAutoqueueCard: v.optional(v.boolean()),
     // Stripe / payouts integration
     stripeAccountId: v.optional(v.string()),
@@ -17,9 +18,10 @@ export default defineSchema({
     kind: v.union(v.literal("personal"), v.literal("priority")),
     activeTurn: v.number(),
     nextTurn: v.number(),
-    etaMins: v.number(),
+    etaDays: v.number(),
     activeCount: v.number(),
     enabled: v.boolean(),
+    avgDaysPerTicket: v.optional(v.number()),
   }).index("by_creator_kind", ["creatorSlug", "kind"]),
 
   tickets: defineTable({

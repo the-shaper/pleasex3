@@ -6,9 +6,10 @@ export type TaskTag =
   | "next-up"
   | "awaiting-feedback"
   | "finished"
-  | "current";
+  | "current"
+  | "rejected";
 
-export type TicketStatus = "open" | "approved" | "rejected" | "closed";
+export type TicketStatus = "open" | "approved" | "rejected" | "closed" | "pending_payment";
 
 export interface Creator {
   slug: string;
@@ -25,7 +26,8 @@ export interface QueueMetrics {
   activeCount: number;
   currentTicketNumber?: number;
   nextTicketNumber?: number;
-  etaMins?: number | null;
+  etaDays?: number | null;
+  avgDaysPerTicket?: number;
 }
 
 // Engine-aligned snapshot: per-queue and general
@@ -53,6 +55,8 @@ export interface Ticket {
   social?: string;
   attachments?: string[];
   consentEmail?: boolean;
+  queueNumber?: number;
+  ticketNumber?: number;
 }
 
 // Engine TicketPosition exposed to clients
@@ -127,7 +131,7 @@ export interface CreatorEarningsSummary {
 export type PayoutStatus = "pending" | "processing" | "paid" | "failed";
 
 export interface PayoutRecord {
-  id: string;
+  _id: string;
   creatorSlug: string;
   periodStart: number;
   periodEnd: number;

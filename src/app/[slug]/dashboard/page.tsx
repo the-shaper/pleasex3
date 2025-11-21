@@ -37,10 +37,7 @@ export default function DashboardPage() {
   // All hooks first: Consistent order every render
   const { isSignedIn, isLoaded, user } = useUser();
   const router = useRouter();
-  const [queueData, setQueueData] = useState<Record<
-    string,
-    QueueSnapshot
-  > | null>(null);
+  const [queueData, setQueueData] = useState<QueueSnapshot | null>(null);
   const [dashboardOverview, setDashboardOverview] =
     useState<DashboardOverview | null>(null);
 
@@ -69,7 +66,7 @@ export default function DashboardPage() {
     creatorSlug: slug,
   });
   const earningsData = useQuery(
-    api["lib/stripeEngine"].getEarningsDashboardData,
+    api.lib.stripeEngine.getEarningsDashboardData,
     {
       creatorSlug: slug,
     }
@@ -81,7 +78,7 @@ export default function DashboardPage() {
     const awaitingTickets = positions?.filter(
       (p) => p.tag === "awaiting-feedback"
     );
-    if (awaitingTickets?.length > 0) {
+    if (awaitingTickets && awaitingTickets.length > 0) {
       console.log("DEBUG awaiting-feedback tickets:", awaitingTickets);
     }
   }, [positions]);
@@ -356,7 +353,7 @@ export default function DashboardPage() {
       const taskCardData: TaskCardData = {
         currentTurn: ticketPosition,
         nextTurn: ticketPosition,
-        etaMins: queue.etaMins,
+        etaDays: queue.etaDays ?? null,
         activeCount: queue.activeCount,
         enabled: queue.enabled,
         name: ticket.name || "Anonymous",
@@ -549,7 +546,8 @@ export default function DashboardPage() {
     return ticket || {
       ref: p.ref,
       queueKind: p.queueKind,
-      createdAt: p.createdAt || 0,
+      createdAt: ticketByRef[p.ref]?.createdAt || 0,
+      creatorSlug: slug,
       status: p.status,
       taskTitle: "",
       message: "",
@@ -564,7 +562,7 @@ export default function DashboardPage() {
   const orderedTickets = sortTicketsByPriorityRatio(approvedTickets);
 
   // Convert back to TicketPosition[] for mapping to TaskCardData
-  const orderedPositions = orderedTickets.map((ticket) => 
+  const orderedPositions = orderedTickets.map((ticket) =>
     approvedPositions.find((p) => p.ref === ticket.ref) || {
       ref: ticket.ref,
       queueKind: ticket.queueKind,
@@ -599,7 +597,7 @@ export default function DashboardPage() {
       // Static "out of" based on highest queueNumber for this queueKind
       activeCount: totalInQueue,
       // Queue-level metrics from general snapshot
-      etaMins: queues?.general?.etaMins ?? null,
+      etaDays: queues?.general?.etaDays ?? null,
       enabled: queues?.general?.enabled ?? true,
       // Ticket details
       name: t?.name || "Anonymous",
@@ -623,36 +621,36 @@ export default function DashboardPage() {
   const currentPosition = enginePositions.find((p) => p.tag === "current");
   const autoqueueCardData: TaskCardData | null = currentPosition
     ? (() => {
-        const t = ticketByRef[currentPosition.ref];
-        const displayNumber =
-          currentPosition.queueNumber ?? currentPosition.ticketNumber ?? 0;
-        const totalInQueue =
-          currentPosition.queueKind === "personal"
-            ? maxPersonalQueueNumber
-            : maxPriorityQueueNumber;
-        return {
-          currentTurn: displayNumber,
-          nextTurn: displayNumber,
-          etaMins: queues?.general?.etaMins ?? null,
-          // Static "out of" for the queue this current ticket belongs to
-          activeCount: totalInQueue,
-          enabled: queues?.general?.enabled ?? true,
-          name: t?.name || "Anonymous",
-          email: t?.email || "user@example.com",
-          phone: t?.phone || "",
-          location: t?.location || "",
-          social: t?.social || "",
-          needText: t?.taskTitle || "No description provided",
-          message: t?.message || "No description provided",
-          attachments: t?.attachments || [],
-          tipCents: t?.tipCents || 0,
-          queueKind: currentPosition.queueKind,
-          status: "current",
-          tags: ["current" as TaskTag],
-          createdAt: t?.createdAt || 0,
-          ref: currentPosition.ref,
-        } satisfies TaskCardData;
-      })()
+      const t = ticketByRef[currentPosition.ref];
+      const displayNumber =
+        currentPosition.queueNumber ?? currentPosition.ticketNumber ?? 0;
+      const totalInQueue =
+        currentPosition.queueKind === "personal"
+          ? maxPersonalQueueNumber
+          : maxPriorityQueueNumber;
+      return {
+        currentTurn: displayNumber,
+        nextTurn: displayNumber,
+        etaDays: queues?.general?.etaDays ?? null,
+        // Static "out of" for the queue this current ticket belongs to
+        activeCount: totalInQueue,
+        enabled: queues?.general?.enabled ?? true,
+        name: t?.name || "Anonymous",
+        email: t?.email || "user@example.com",
+        phone: t?.phone || "",
+        location: t?.location || "",
+        social: t?.social || "",
+        needText: t?.taskTitle || "No description provided",
+        message: t?.message || "No description provided",
+        attachments: t?.attachments || [],
+        tipCents: t?.tipCents || 0,
+        queueKind: currentPosition.queueKind,
+        status: "current",
+        tags: ["current" as TaskTag],
+        createdAt: t?.createdAt || 0,
+        ref: currentPosition.ref,
+      } satisfies TaskCardData;
+    })()
     : null;
 
   // Approved task cards for NextUpSection = all engine-approved positions in UI order (awaiting-feedback first)
@@ -710,7 +708,7 @@ export default function DashboardPage() {
           {tab === "queue-settings" ? (
             <div className="col-span-2">
               <QueueSettings
-                queueSnapshot={queueSnapshot}
+                queueSnapshot={queueSnapshot ?? null}
                 toggleQueue={toggleQueue}
                 slug={slug}
                 personalEnabled={personalEnabled}
@@ -757,11 +755,10 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div
-              className={`flex flex-col w-full no-scrollbar md:grid gap-4 h-full md:h-[86svh] min-h-0 md:min-h-0 ${
-                hasPendingApprovals
-                  ? "w-full md:grid-cols-[400px_1fr]"
-                  : "w-full md:grid-cols-[400px_1fr]"
-              }`}
+              className={`flex flex-col w-full no-scrollbar md:grid gap-4 h-full md:h-[86svh] min-h-0 md:min-h-0 ${hasPendingApprovals
+                ? "w-full md:grid-cols-[400px_1fr]"
+                : "w-full md:grid-cols-[400px_1fr]"
+                }`}
             >
               <NextUpSection
                 approvedTaskCards={approvedTaskCards}
@@ -781,7 +778,7 @@ export default function DashboardPage() {
                 {(selectedTask || autoqueueCardData) && (
                   <div data-element="TASK-MODULE" className="hidden md:block">
                     <TaskModule
-                      data={selectedTask || autoqueueCardData}
+                      data={(selectedTask || autoqueueCardData) as TaskCardData}
                       onMarkAsFinished={async () => {
                         try {
                           const [queueSnapshot, overview] = await Promise.all([

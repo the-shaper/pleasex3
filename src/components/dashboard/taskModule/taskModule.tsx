@@ -57,6 +57,7 @@ export default function TaskModule({
       "attn",
       "awaiting-feedback",
       "finished",
+      "rejected",
       "pending",
     ] as const;
 
@@ -64,7 +65,7 @@ export default function TaskModule({
     const chosen = tagsSource?.find((t) =>
       priorityOrder.includes(t as TaskTag)
     );
-    
+
     const result = chosen ?? (data.status as TaskTag) ?? "pending";
     console.log("[TaskModule] statusTag calculation", {
       ref: data.ref,
@@ -74,7 +75,7 @@ export default function TaskModule({
       chosen,
       result
     });
-    
+
     return result;
   }, [data, liveTicket?.tags]);
 
@@ -174,9 +175,8 @@ export default function TaskModule({
         </h2>
         {!isModal && (
           <span
-            className={`text-xs text-gray-subtle transition-transform duration-300 ${
-              isCollapsed ? "rotate-180" : ""
-            }`}
+            className={`text-xs text-gray-subtle transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""
+              }`}
           >
             ▼
           </span>
@@ -185,9 +185,8 @@ export default function TaskModule({
 
       {/* Content wrapper: collapsible only when not in modal */}
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          !isModal && isCollapsed ? "max-h-0" : "max-h-none"
-        }`}
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${!isModal && isCollapsed ? "max-h-0" : "max-h-none"
+          }`}
       >
         {/* Main Content Wrapper */}
         <div className="flex md:flex-row md:gap-8 flex-col gap-4">
@@ -319,11 +318,10 @@ export default function TaskModule({
                   <ButtonBase
                     variant="primary"
                     size="sm"
-                    className={`flex-1 ${
-                      isAwaiting
-                        ? "bg-purple text-text hover:bg-purple"
-                        : ""
-                    }`}
+                    className={`flex-1 ${isAwaiting
+                      ? "bg-purple text-text hover:bg-purple"
+                      : ""
+                      }`}
                     onClick={handleStatusButtonClick}
                     disabled={!canToggle || isToggling}
                     loading={isToggling}

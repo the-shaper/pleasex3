@@ -11,7 +11,8 @@ type TagVariant =
   | "next-up"
   | "awaiting-feedback"
   | "finished"
-  | "current";
+  | "current"
+  | "rejected";
 
 export interface TagBaseProps extends HTMLAttributes<HTMLSpanElement> {
   children: ReactNode;
@@ -40,6 +41,8 @@ const getVariantClasses = (variant: TagVariant): string => {
       return "bg-blue text-text hover:outline hover:outline-1 hover:outline-text";
     case "current":
       return "bg-coral text-text hover:outline hover:outline-1 hover:outline-text";
+    case "rejected":
+      return "bg-red-100 text-red-600 hover:outline hover:outline-1 hover:outline-red-600";
     default:
       return "bg-gray-subtle text-text hover:outline hover:outline-1 hover:outline-text";
   }

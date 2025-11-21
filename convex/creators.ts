@@ -1,11 +1,13 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 
 export const create = mutation({
   args: {
     slug: v.string(),
     displayName: v.string(),
     minPriorityTipCents: v.number(),
+    email: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Insert creator
@@ -13,6 +15,7 @@ export const create = mutation({
       slug: args.slug,
       displayName: args.displayName,
       minPriorityTipCents: args.minPriorityTipCents,
+      email: args.email,
       showAutoqueueCard: true,
     });
 
@@ -22,9 +25,10 @@ export const create = mutation({
       kind: "personal",
       activeTurn: 0,
       nextTurn: 1,
-      etaMins: 0,
+      etaDays: 0,
       activeCount: 0,
       enabled: true,
+      avgDaysPerTicket: 1,
     });
 
     // Insert priority queue (enabled by default)
@@ -33,10 +37,17 @@ export const create = mutation({
       kind: "priority",
       activeTurn: 0,
       nextTurn: 1,
-      etaMins: 0,
+      etaDays: 0,
       activeCount: 0,
       enabled: true,
+      avgDaysPerTicket: 1,
     });
+
+    if (args.email) {
+      await ctx.scheduler.runAfter(0, internal.emails.sendWelcomeEmail, {
+        email: args.email,
+      });
+    }
 
     return { success: true, creatorId };
   },
@@ -47,6 +58,7 @@ export const upsertBySlug = mutation({
     slug: v.string(),
     displayName: v.string(),
     minPriorityTipCents: v.number(),
+    email: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -62,8 +74,15 @@ export const upsertBySlug = mutation({
       slug: args.slug,
       displayName: args.displayName,
       minPriorityTipCents: args.minPriorityTipCents,
+      email: args.email,
       showAutoqueueCard: true,
     });
+
+    if (args.email) {
+      await ctx.scheduler.runAfter(0, internal.emails.sendWelcomeEmail, {
+        email: args.email,
+      });
+    }
 
     return { creatorId };
   },

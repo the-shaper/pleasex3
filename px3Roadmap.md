@@ -228,72 +228,72 @@ Based on the current state and the implementation plan, here's a comprehensive p
 ### **Phase 1: Connect Dashboard to Real Data**
 
 1. **Replace Mock Queue Data with Live Calculations**
-   - Update dashboard to fetch real queue metrics from `ConvexDataProvider.getQueueSnapshot('alejandro')`
-   - Remove hardcoded queue objects and use calculated data
-   - Show real `activeTurn`, `nextTurn`, `etaMins` based on approved tickets
+   - [x] Update dashboard to fetch real queue metrics from `ConvexDataProvider.getQueueSnapshot('alejandro')`
+   - [x] Remove hardcoded queue objects and use calculated data
+   - [x] Show real `activeTurn`, `nextTurn`, `etaMins` based on approved tickets
 
 2. **Connect Ticket Data to Real Backend**
-   - Replace mock TaskCard data with actual ticket data
-   - Fetch open tickets from `ConvexDataProvider.getDashboardOverview('alejandro')`
-   - Display real ticket information (names, emails, descriptions, tips)
+   - [x] Replace mock TaskCard data with actual ticket data
+   - [x] Fetch open tickets from `ConvexDataProvider.getDashboardOverview('alejandro')`
+   - [x] Display real ticket information (names, emails, descriptions, tips)
 
 3. **Add Real-time Updates**
-   - Use Convex subscriptions to update dashboard when tickets change
-   - Show live updates when tickets are approved/rejected
-   - Refresh queue metrics automatically
+   - [x] Use Convex subscriptions to update dashboard when tickets change
+   - [x] Show live updates when tickets are approved/rejected
+   - [x] Refresh queue metrics automatically
 
 ## 🎯 **PHASE 2 COMPLETE: UNIFIED CREATOR DASHBOARD** ✅
 
 **Approval functionality successfully integrated into dashboard!**
 
 4. **Create ApprovalPanel Component** ✅
-   - Extract approval logic from `/demo/approval/page.tsx` (updated to use 'alejandro' slug)
-   - Create reusable `ApprovalPanel.tsx` component in `checkout/` folder
-   - Handle approve/reject actions with loading states
+   - [x] Extract approval logic from `/demo/approval/page.tsx` (updated to use 'alejandro' slug)
+   - [x] Create reusable `ApprovalPanel.tsx` component in `checkout/` folder
+   - [x] Handle approve/reject actions with loading states
 
 5. **Add Approval Section to Dashboard Layout** ✅
-   - Modified dashboard grid layout to include "PENDING APPROVALS" column
-   - Positioned approval panel alongside existing "NEXT UP" and "ALL FAVORS" sections
-   - Made approval section scrollable with proper height management
+   - [x] Modified dashboard grid layout to include "PENDING APPROVALS" column
+   - [x] Positioned approval panel alongside existing "NEXT UP" and "ALL FAVORS" sections
+   - [x] Made approval section scrollable with proper height management
 
 6. **Update Dashboard Navigation** ✅
-   - Approval functionality integrated into unified dashboard
-   - Standalone `/demo/approval` page now redirects to dashboard
-   - Updated navigation flow for unified creator workflow
+   - [x] Approval functionality integrated into unified dashboard
+   - [x] Standalone `/[slug]/approval` page now redirects to dashboard
+   - [x] Updated navigation flow for unified creator workflow
 
 ### **Phase 3: Enhanced Dashboard Features**
 
 7. **Add Ticket Management Actions**
-   - Approve/reject buttons directly in ticket list
-   - Bulk actions for multiple tickets
-   - Status filtering (pending, approved, rejected)
+   - [x] Approve/reject buttons directly in ticket list
+   - [x] Bulk actions for multiple tickets
+   - [x] Status filtering (pending, approved, rejected)
 
 8. **Implement Queue Statistics**
-   - Show real-time queue metrics in dashboard header
-   - Display active counts, wait times, processing rates
-   - Add visual indicators for queue health
+   - [x] Show real-time queue metrics in dashboard header
+   - [x] Display active counts, wait times, processing rates
+   - [x] Add visual indicators for queue health
 
 9. **Add Search and Filtering**
-   - Search tickets by name, email, or description
-   - Filter by queue type (personal/priority)
-   - Filter by status (open/approved/rejected)
+   - [ ] Search tickets by name, email, or description
+   - [ ] Filter by queue type (personal/priority)
+   - [ ] Filter by status (open/approved/rejected)
 
 ### **Phase 4: Polish and Testing**
 
 10. **Error Handling and Loading States**
-    - Add proper loading spinners for data fetching
-    - Handle network errors gracefully
-    - Show empty states when no tickets exist
+    - [ ] Add proper loading spinners for data fetching
+    - [ ] Handle network errors gracefully
+    - [ ] Show empty states when no tickets exist
 
 11. **Responsive Design Updates**
-    - Ensure dashboard works on mobile/tablet
-    - Adjust layout for different screen sizes
-    - Test touch interactions for approval actions
+    - [ ] Ensure dashboard works on mobile/tablet
+    - [ ] Adjust layout for different screen sizes
+    - [ ] Test touch interactions for approval actions
 
 12. **Integration Testing**
-    - Test full workflow: submit → dashboard → approve → status
-    - Verify real-time updates across browser tabs
-    - Test edge cases (no tickets, network errors, etc.)
+    - [ ] Test full workflow: submit → dashboard → approve → status
+    - [ ] Verify real-time updates across browser tabs
+    - [ ] Test edge cases (no tickets, network errors, etc.)
 
 **N M I T**
 
@@ -390,7 +390,7 @@ Which approach would you prefer? The quick win would give us a functional dashbo
   - [ ] Add a sign-in option to the dashboard
 
 - [ ] Creator page
- - [ ] Create and wire up "tracking number" follow up
+ - [ ] Create and wire up "tracking number" follow up  /docs/trackingNumberPlan.md
  - [ ] Add logo with link to homepage
  - [ ] Add auth-aware buttons
   - [ ] sign-out

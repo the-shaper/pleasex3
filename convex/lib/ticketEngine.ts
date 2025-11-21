@@ -33,7 +33,8 @@ export interface QueueMetrics {
   activeCount: number;
   currentTicketNumber?: number;
   nextTicketNumber?: number;
-  etaMins?: number | null;
+  etaDays?: number | null;
+  avgDaysPerTicket?: number;
 }
 
 export interface QueueSnapshot {
@@ -152,7 +153,7 @@ export function computeSchedule(
   // Separate awaiting-feedback for special handling
   const awaitingFeedback = active.filter((t) => isAwaitingFeedback(t.tags));
   const regularActive = active.filter((t) => !isAwaitingFeedback(t.tags));
-  
+
   const current = regularActive.find((t) => t.tags?.includes("current"));
   const remaining = regularActive.filter((t) => t._id !== current?._id);
 
@@ -165,15 +166,15 @@ export function computeSchedule(
     .sort(sortByCreatedAt);
 
   const ordered: TicketDoc[] = [];
-  
+
   // Start with current ticket
   if (current) ordered.push(current);
-  
+
   // Add awaiting-feedback tickets next (maintain their order)
   if (awaitingFeedback.length > 0) {
     ordered.push(...awaitingFeedback.sort(sortByCreatedAt));
   }
-  
+
   // Continue with 3:1 pattern for remaining tickets
   let pIdx = 0;
   let perIdx = 0;
@@ -188,7 +189,7 @@ export function computeSchedule(
       i++
     ) {
       ordered.push(priorityTickets[pIdx++]);
-}
+    }
 
     for (
       let i = 0;
@@ -264,7 +265,7 @@ export async function computeTagsForCreator(
   for (const t of tickets) {
     const nextTag = map.get(t.ref);
     const currentAwaitingFeedback = t.tags?.includes("awaiting-feedback");
-    
+
     // Preserve awaiting-feedback state - don't overwrite if already set
     if (currentAwaitingFeedback && nextTag !== "awaiting-feedback") {
       // Skip updating this ticket - keep its awaiting-feedback tag
@@ -299,6 +300,21 @@ export async function getQueueSnapshot(
   const tickets = await getAllTicketsForCreator(ctx, creatorSlug);
   const ordered = computeSchedule(tickets, pattern);
 
+  // Fetch queue settings
+  const personalQueue = await ctx.db
+    .query("queues")
+    .withIndex("by_creator_kind", (q) =>
+      q.eq("creatorSlug", creatorSlug).eq("kind", "personal")
+    )
+    .unique();
+
+  const priorityQueue = await ctx.db
+    .query("queues")
+    .withIndex("by_creator_kind", (q) =>
+      q.eq("creatorSlug", creatorSlug).eq("kind", "priority")
+    )
+    .unique();
+
   const active = ordered;
 
   // Debug: log ordered schedule for this creator
@@ -314,6 +330,7 @@ export async function getQueueSnapshot(
   });
 
   const buildMetrics = (
+    kind?: QueueKind,
     filter?: (t: TicketDoc) => boolean,
     useQueueNumber = false
   ): QueueMetrics => {
@@ -330,18 +347,31 @@ export async function getQueueSnapshot(
       ? nextBase?.queueNumber
       : nextBase?.ticketNumber;
 
-    const etaMins = activeCount > 0 ? activeCount * 5 : null;
+    // Determine settings based on kind
+    let avgDays = 1; // Default 1 day
+    let enabled = true;
+
+    if (kind === "personal" && personalQueue) {
+      avgDays = personalQueue.avgDaysPerTicket ?? 1;
+      enabled = personalQueue.enabled;
+    } else if (kind === "priority" && priorityQueue) {
+      avgDays = priorityQueue.avgDaysPerTicket ?? 1;
+      enabled = priorityQueue.enabled;
+    }
+
+    const etaDays = activeCount > 0 ? activeCount * avgDays : null;
 
     const metrics: QueueMetrics = {
-      enabled: true,
+      enabled,
       activeCount,
       currentTicketNumber,
       nextTicketNumber,
-      etaMins,
+      etaDays,
+      avgDaysPerTicket: avgDays,
     };
 
     console.log("[ticketEngine] getQueueSnapshot metrics", creatorSlug, {
-      scope: filter ? (useQueueNumber ? "per-queue" : "filtered") : "general",
+      scope: kind || "general",
       metrics,
     });
 
@@ -350,10 +380,10 @@ export async function getQueueSnapshot(
 
   return {
     // For per-queue cards, use queueNumber so "Current Turn" is queue-specific.
-    personal: buildMetrics((t) => t.queueKind === "personal", true),
-    priority: buildMetrics((t) => t.queueKind === "priority", true),
+    personal: buildMetrics("personal", (t) => t.queueKind === "personal", true),
+    priority: buildMetrics("priority", (t) => t.queueKind === "priority", true),
     // For general, keep using global ticketNumber.
-    general: buildMetrics(),
+    general: buildMetrics(undefined, undefined, false),
   };
 }
 
@@ -363,17 +393,17 @@ export async function getTicketPositions(
   pattern: SchedulePattern = DEFAULT_PATTERN
 ): Promise<TicketPosition[]> {
   const tickets = await getAllTicketsForCreator(ctx, creatorSlug);
-  
+
   // Return ALL tickets with basic positions (not just active ones)
   // This allows PAST/ALL tabs to see closed/rejected tickets
   return tickets.map((ticket, index) => {
     let tag: TicketTag | undefined = getTag(ticket.tags);
-    
+
     // Only compute tags for approved tickets that participate in scheduling
     if (ticket.status !== "approved") {
       tag = undefined;
     }
-    
+
     return {
       ref: ticket.ref,
       queueKind: ticket.queueKind,

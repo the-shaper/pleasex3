@@ -8,10 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "email": "email dev --dir convex/emails"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.33.7",
+    "@react-email/components": "^1.0.1",
+    "@react-email/render": "^2.0.0",
     "@stripe/react-stripe-js": "^5.3.0",
     "@stripe/stripe-js": "^8.5.1",
     "@tanstack/react-table": "^8.21.3",
@@ -20,11 +23,13 @@
     "next": "15.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "resend": "^6.5.2",
     "stripe": "^12.18.0"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.1.1",
     "@eslint/eslintrc": "^3",
+    "@react-email/preview-server": "5.0.4",
     "@storybook/addon-a11y": "^9.1.10",
     "@storybook/addon-actions": "^9.0.8",
     "@storybook/addon-docs": "^9.1.10",
@@ -42,6 +47,7 @@
     "eslint-config-next": "15.5.4",
     "eslint-plugin-storybook": "^9.1.10",
     "playwright": "^1.56.0",
+    "react-email": "^5.0.4",
     "storybook": "^9.1.10",
     "tailwindcss": "^4",
     "typescript": "^5",

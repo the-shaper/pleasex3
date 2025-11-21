@@ -6,7 +6,7 @@ import TaskCard, { TaskCardData } from "./taskcard";
 const autoqueueData: TaskCardData = {
   currentTurn: 1,
   nextTurn: 2,
-  etaMins: 45,
+  etaDays: 45,
   activeCount: 1,
   enabled: true,
   name: "Alex Johnson",
@@ -31,7 +31,7 @@ const autoqueueData: TaskCardData = {
 const priorityData: TaskCardData = {
   currentTurn: 5,
   nextTurn: 6,
-  etaMins: 30,
+  etaDays: 30,
   activeCount: 2,
   enabled: true,
   name: "Morgan Smith",
@@ -54,7 +54,7 @@ const priorityData: TaskCardData = {
 const personalData: TaskCardData = {
   currentTurn: 17,
   nextTurn: 18,
-  etaMins: 90,
+  etaDays: 90,
   activeCount: 5,
   enabled: true,
   name: "Taylor Wilson",
@@ -73,7 +73,7 @@ const personalData: TaskCardData = {
 const finishedData: TaskCardData = {
   currentTurn: 12,
   nextTurn: 13,
-  etaMins: 60,
+  etaDays: 60,
   activeCount: 0,
   enabled: true,
   name: "Casey Rivera",

@@ -36,6 +36,13 @@ export default function CreatorQueuesPage() {
     );
   }
 
+  // Ensure etaDays is number | null, not undefined
+  const safeQueueSnapshot = {
+    personal: { ...queueSnapshot.personal, etaDays: queueSnapshot.personal.etaDays ?? null },
+    priority: { ...queueSnapshot.priority, etaDays: queueSnapshot.priority.etaDays ?? null },
+    general: { ...queueSnapshot.general, etaDays: queueSnapshot.general.etaDays ?? null },
+  };
+
   return (
     <div className="bg-bg">
       <div className="max-w-6xl mx-auto p-8 min-h-screen flex flex-col">
@@ -62,7 +69,7 @@ export default function CreatorQueuesPage() {
             </p>
           </div>
           <Link
-            href={`/${slug}/submit`}
+            href={`/${slug}/tracking`}
             className="bg-blue-2 px-6 py-1 uppercase"
             style={{ fontFamily: "var(--font-body)" }}
           >
@@ -74,14 +81,14 @@ export default function CreatorQueuesPage() {
             <QueueCard
               kind="personal"
               slug={slug}
-              data={queueSnapshot.personal}
+              data={safeQueueSnapshot.personal}
               nextTicketNumber={nextNumbers?.nextPersonalNumber}
               minPriorityTipCents={minPriorityTipCents}
             />
             <QueueCard
               kind="priority"
               slug={slug}
-              data={queueSnapshot.priority}
+              data={safeQueueSnapshot.priority}
               nextTicketNumber={nextNumbers?.nextPriorityNumber}
               minPriorityTipCents={minPriorityTipCents}
             />

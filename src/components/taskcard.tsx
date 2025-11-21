@@ -19,7 +19,7 @@ export interface TaskCardData {
   // Queue information
   currentTurn: number | null;
   nextTurn: number;
-  etaMins: number | null;
+  etaDays: number | null;
   activeCount: number;
   enabled: boolean;
 
@@ -33,8 +33,8 @@ export interface TaskCardData {
   message: string;
   attachments: string[];
   tipCents: number;
-  queueKind?: "personal" | "priority";
-  status: "current" | "next-up" | "pending" | "awaiting-feedback" | "finished";
+  queueKind?: "personal" | "priority" | "general";
+  status: "current" | "next-up" | "pending" | "awaiting-feedback" | "finished" | "attn";
   tags?: TaskTag[];
   createdAt: number;
   ref: string;
@@ -110,9 +110,8 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
     return (
       <section
         ref={ref}
-        className={`space-y-1 ${className} bg-bg pb-4 min-w-[300px] md:w-full outline-1 transition-all ${
-          isActive ? "outline-2 outline-coral" : "outline-gray-subtle"
-        }`}
+        className={`space-y-1 ${className} bg-bg pb-4 min-w-[300px] md:w-full outline-1 transition-all ${isActive ? "outline-2 outline-coral" : "outline-gray-subtle"
+          }`}
       >
         {/* Queue Type Badge */}
         <div className={`flex justify-center ${queueBadgeBg}`}>
@@ -219,10 +218,10 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
                 <div className="text-xs space-y-1 min-w-0 break-words mb-2">
                   {data.attachments.length > 0
                     ? data.attachments.map((url, i) => (
-                        <div key={i} className="truncate" title={url}>
-                          {url}
-                        </div>
-                      ))
+                      <div key={i} className="truncate" title={url}>
+                        {url}
+                      </div>
+                    ))
                     : "—"}
                 </div>
                 <div className="text-coral">REFERENCE</div>

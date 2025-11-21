@@ -34,9 +34,10 @@ export const upsertQueue = internalMutation({
     kind: v.union(v.literal("personal"), v.literal("priority")),
     activeTurn: v.number(),
     nextTurn: v.number(),
-    etaMins: v.number(),
+    etaDays: v.number(),
     activeCount: v.number(),
     enabled: v.boolean(),
+    avgDaysPerTicket: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -49,9 +50,10 @@ export const upsertQueue = internalMutation({
       await ctx.db.patch(existing._id, {
         activeTurn: args.activeTurn,
         nextTurn: args.nextTurn,
-        etaMins: args.etaMins,
+        etaDays: args.etaDays,
         activeCount: args.activeCount,
         enabled: args.enabled,
+        avgDaysPerTicket: args.avgDaysPerTicket ?? 1,
       });
       return;
     }
@@ -60,9 +62,10 @@ export const upsertQueue = internalMutation({
       kind: args.kind,
       activeTurn: args.activeTurn,
       nextTurn: args.nextTurn,
-      etaMins: args.etaMins,
+      etaDays: args.etaDays,
       activeCount: args.activeCount,
       enabled: args.enabled,
+      avgDaysPerTicket: args.avgDaysPerTicket ?? 1,
     });
   },
 });

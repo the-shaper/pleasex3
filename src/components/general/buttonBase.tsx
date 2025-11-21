@@ -2,7 +2,7 @@
 
 import { ButtonHTMLAttributes, ReactNode } from "react";
 
-type ButtonVariant = "default" | "primary" | "secondary" | "ghost" | "outline";
+type ButtonVariant = "default" | "primary" | "secondary" | "ghost" | "outline" | "neutral";
 type ButtonSize = "sm" | "default" | "lg";
 
 export interface ButtonBaseProps
@@ -24,6 +24,8 @@ const getVariantClasses = (variant: ButtonVariant): string => {
       return "hover:bg-gray-subtle text-text";
     case "outline":
       return "border border-gray-subtle bg-transparent hover:bg-gray-subtle text-text";
+    case "neutral":
+      return "bg-gray-subtle text-text hover:bg-gray-200";
     default:
       return "bg-gray-subtle text-text hover:bg-coral hover:text-text-bright";
   }
