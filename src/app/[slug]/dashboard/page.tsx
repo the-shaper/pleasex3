@@ -71,6 +71,18 @@ export default function DashboardPage() {
       creatorSlug: slug,
     }
   );
+  // Unauth: redirect to Clerk sign-in with return URL
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      const redirectUrl =
+        typeof window !== "undefined"
+          ? window.location.pathname + window.location.search
+          : `/${slug}/dashboard`;
+
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`);
+    }
+  }, [isLoaded, isSignedIn, router, slug]);
+
 
   useEffect(() => {
     console.log("DEBUG engine positions", positions);
@@ -235,13 +247,10 @@ export default function DashboardPage() {
   }
 
   // Unauth: redirect to Clerk sign-in with return URL
-  if (!isSignedIn) {
-    const redirectUrl =
-      typeof window !== "undefined"
-        ? window.location.pathname + window.location.search
-        : `/${slug}/dashboard`;
+  // Unauth: redirect to Clerk sign-in with return URL
 
-    router.push(`/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`);
+
+  if (!isSignedIn) {
     return null;
   }
 
@@ -435,7 +444,12 @@ export default function DashboardPage() {
   // Build lookup map from tickets by ref using latest overview
   const ticketByRef: Record<string, Ticket> = {};
   if (overview) {
-    [...overview.openTickets, ...overview.approvedTickets].forEach((t) => {
+    [
+      ...overview.openTickets,
+      ...overview.approvedTickets,
+      ...overview.closedTickets,
+      ...overview.rejectedTickets,
+    ].forEach((t) => {
       ticketByRef[t.ref] = t;
     });
   }
@@ -477,6 +491,7 @@ export default function DashboardPage() {
         requestDate: t?.createdAt ?? 0,
         tipCents: t?.tipCents ?? 0,
         tags: mergedTags,
+        resolvedAt: t?.resolvedAt,
       };
     });
   };
@@ -715,6 +730,7 @@ export default function DashboardPage() {
                 setPersonalEnabled={setPersonalEnabled}
                 priorityEnabled={priorityEnabled}
                 setPriorityEnabled={setPriorityEnabled}
+                minPriorityTipCents={dashboardOverview?.creator?.minPriorityTipCents}
               />
             </div>
           ) : tab === "past" || tab === "all" ? (

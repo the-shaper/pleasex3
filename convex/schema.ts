@@ -61,6 +61,7 @@ export default defineSchema({
         v.literal("refunded")
       )
     ),
+    resolvedAt: v.optional(v.number()),
   })
     .index("by_ref", ["ref"])
     .index("by_creator", ["creatorSlug"]),

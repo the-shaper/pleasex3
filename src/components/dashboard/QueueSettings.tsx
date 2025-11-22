@@ -13,6 +13,7 @@ interface QueueSettingsProps {
   setPriorityEnabled: (enabled: boolean) => void;
   showAutoqueueCard?: boolean;
   onToggleAutoqueueCard?: (value: boolean) => void;
+  minPriorityTipCents?: number;
 }
 
 export function QueueSettings({
@@ -25,11 +26,21 @@ export function QueueSettings({
   setPriorityEnabled,
   showAutoqueueCard,
   onToggleAutoqueueCard,
+  minPriorityTipCents = 0,
 }: QueueSettingsProps) {
   const updateSettings = useMutation(api.queues.updateQueueSettings);
+  const updateMinPriorityFee = useMutation(api.creators.updateMinPriorityFee);
 
   const [personalDays, setPersonalDays] = useState(1);
   const [priorityDays, setPriorityDays] = useState(1);
+  const [minFee, setMinFee] = useState(50);
+
+  useEffect(() => {
+    if (minPriorityTipCents !== undefined) {
+      // Convert cents to dollars for display, default to 50 if 0
+      setMinFee(minPriorityTipCents > 0 ? minPriorityTipCents / 100 : 50);
+    }
+  }, [minPriorityTipCents]);
 
   useEffect(() => {
     if (queueSnapshot) {
@@ -46,6 +57,14 @@ export function QueueSettings({
       creatorSlug: slug,
       kind,
       avgDaysPerTicket: val,
+    });
+  };
+
+  const handleMinFeeChange = async (val: number) => {
+    setMinFee(val);
+    await updateMinPriorityFee({
+      slug,
+      minPriorityTipCents: val * 100,
     });
   };
 
@@ -115,6 +134,16 @@ export function QueueSettings({
                 min="1"
                 value={priorityDays}
                 onChange={(e) => handleDaysChange("priority", parseInt(e.target.value) || 0)}
+                className="w-20 px-2 py-1 border rounded text-right"
+              />
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+              <label className="text-sm text-gray-600">Min Priority Fee ($)</label>
+              <input
+                type="number"
+                min="1"
+                value={minFee}
+                onChange={(e) => handleMinFeeChange(parseInt(e.target.value) || 0)}
                 className="w-20 px-2 py-1 border rounded text-right"
               />
             </div>

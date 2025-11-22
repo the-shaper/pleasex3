@@ -139,7 +139,7 @@ export default function SubmitClient({
       .split(/\s+/)
       .map((s) => s.trim())
       .filter(Boolean);
-      
+
     // 1. Create Ticket First
     const res = await fetch("/api/tickets", {
       method: "POST",
@@ -181,7 +181,7 @@ export default function SubmitClient({
         ticketRef: json.ref,
         amountCents: form.priorityTipCents,
       });
-      
+
       setClientSecret(result.clientSecret);
       setShowPaymentModal(true);
     } catch (err: any) {
@@ -212,9 +212,9 @@ export default function SubmitClient({
     : nextPersonalNumber;
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-        <div className="md:sticky md:top-6 space-y-4">
+    <div className="max-w-5xl mx-auto p-6 min-h-screen flex items-center">
+      <div className="flex flex-col md:flex-row gap-6 w-full items-center">
+        <div className="w-full md:w-1/2 md:sticky md:top-6 space-y-4">
           <h1
             className="text-[32px] font-bold leading-none"
             style={{ fontFamily: "var(--font-heading)" }}
@@ -223,9 +223,8 @@ export default function SubmitClient({
           </h1>
           <div className="flex gap-2">
             <button
-              className={`px-3 py-1 rounded ${
-                queue === "personal" ? "bg-greenlite text-text" : "bg-slate-200"
-              }`}
+              className={`px-3 py-1 uppercase ${queue === "personal" ? "bg-greenlite text-text font-bold" : "bg-slate-200"
+                }`}
               onClick={() => {
                 // Restore last personal tip and switch tab
                 if (form.priorityTipCents !== lastPersonalTipCents) {
@@ -237,9 +236,8 @@ export default function SubmitClient({
               Personal
             </button>
             <button
-              className={`px-3 py-1 rounded ${
-                queue === "priority" ? "bg-gold text-text" : "bg-slate-200"
-              }`}
+              className={`px-3 py-1 uppercase ${queue === "priority" ? "bg-gold text-tex font-bold" : "bg-slate-200"
+                }`}
               onClick={() => {
                 const adjusted = Math.max(
                   form.priorityTipCents,
@@ -256,51 +254,51 @@ export default function SubmitClient({
           </div>
           <form id="ticket-form" onSubmit={onSubmit} className="space-y-3">
             <input
-              className="w-full border p-2 rounded"
+              className="w-full border p-2 "
               placeholder="Name"
               value={form.name}
               onChange={(e) => onChange("name", e.target.value)}
             />
             <input
-              className="w-full border p-2 rounded"
+              className="w-full border p-2 "
               placeholder="Email"
               value={form.email}
               onChange={(e) => onChange("email", e.target.value)}
             />
             <input
-              className="w-full border p-2 rounded"
+              className="w-full border p-2 "
               placeholder="Phone (optional)"
               value={form.phone}
               onChange={(e) => onChange("phone", e.target.value)}
             />
             <input
-              className="w-full border p-2 rounded"
+              className="w-full border p-2 "
               placeholder="Location (optional)"
               value={form.location}
               onChange={(e) => onChange("location", e.target.value)}
             />
             <input
-              className="w-full border p-2 rounded"
+              className="w-full border p-2 "
               placeholder="Social (optional)"
               value={form.social}
               onChange={(e) => onChange("social", e.target.value)}
             />
 
             <input
-              className="w-full border p-2 rounded"
+              className="w-full border p-2 "
               placeholder="Subject | Favor Title"
               value={form.favorTitle}
               onChange={(e) => onChange("favorTitle", e.target.value)}
             />
             <textarea
-              className="w-full border p-2 rounded"
+              className="w-full border p-2 "
               placeholder="Describe your need"
               rows={5}
               value={form.needText}
               onChange={(e) => onChange("needText", e.target.value)}
             />
             <textarea
-              className="w-full border p-2 rounded"
+              className="w-full border p-2 "
               placeholder="Links to files (space-separated)"
               rows={2}
               value={form.attachments}
@@ -314,11 +312,10 @@ export default function SubmitClient({
           </form>
         </div>
 
-        <aside className="space-y-2 pt-3 pb-66">
+        <aside className="w-full md:w-1/2 space-y-2 pt-3 ">
           <div
-            className={`${
-              isPriority ? "bg-gold" : "bg-greenlite"
-            } box-border content-stretch flex flex-row items-center justify-center px-[13px] py-2 w-full text-center uppercase`}
+            className={`${isPriority ? "bg-gold" : "bg-greenlite"
+              } box-border content-stretch flex flex-row items-center justify-center px-[13px] py-2 w-full text-center uppercase`}
             style={{ fontFamily: "var(--font-body)" }}
           >
             <span className="text-[15.98px] tracking-[-0.3196px] text-text font-bold">
@@ -346,17 +343,16 @@ export default function SubmitClient({
               <div className="text-sm space-y-1 min-w-0 break-words">
                 {form.attachments.trim()
                   ? form.attachments.split(/\s+/).map((u, i) => (
-                      <div key={i} className="truncate" title={u}>
-                        {u}
-                      </div>
-                    ))
+                    <div key={i} className="truncate" title={u}>
+                      {u}
+                    </div>
+                  ))
                   : "—"}
               </div>
             </div>
             <div
-              className={`${
-                isPriority ? "bg-gold" : "bg-greenlite"
-              } pt-4 pb-4 px-9 border border-gray-subtle text-text text-center flex flex-col items-center`}
+              className={`${isPriority ? "bg-gold" : "bg-greenlite"
+                } pt-4 pb-4 px-9 border border-gray-subtle text-text text-center flex flex-col items-center`}
             >
               <div
                 className="text-[18px]"
@@ -398,9 +394,8 @@ export default function SubmitClient({
           <button
             form="ticket-form"
             type="submit"
-            className={`${
-              isPriority ? "bg-coral" : "bg-blue"
-            } text-text uppercase text-[24px] px-3 py-3.5 w-full flex items-center justify-between`}
+            className={`${isPriority ? "bg-coral" : "bg-blue"
+              } text-text uppercase text-[24px] px-3 py-3.5 w-full flex items-center justify-between`}
             style={{ fontFamily: "var(--font-body)" }}
           >
             <span>

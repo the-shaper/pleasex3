@@ -433,6 +433,7 @@ export const capturePaymentForTicket = action({
     if (!ticket) throw new Error("Ticket not found");
     if (!ticket.paymentIntentId) {
       // No payment attached (e.g. free ticket or legacy)
+      await ctx.runMutation(api.tickets.approve, { ref: args.ticketRef });
       return { ok: true, status: "no_payment" };
     }
 
@@ -505,6 +506,7 @@ export const cancelOrRefundPaymentForTicket = action({
     const ticket = await ctx.runQuery(api.tickets.getByRef, { ref: args.ticketRef });
     if (!ticket) throw new Error("Ticket not found");
     if (!ticket.paymentIntentId) {
+      await ctx.runMutation(api.tickets.reject, { ref: args.ticketRef });
       return { ok: true, status: "no_payment" };
     }
 

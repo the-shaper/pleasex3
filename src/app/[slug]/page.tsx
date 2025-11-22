@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import QueueCard from "../../../ui-backup/QueueCard";
@@ -9,17 +10,15 @@ import QueueCard from "../../../ui-backup/QueueCard";
 export default function CreatorQueuesPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const minPriorityTipCents = 1500;
   // Reactive queries (auto-update on DB changes)
   const queueSnapshot = useQuery(api.queues.getSnapshot, { creatorSlug: slug });
-  const creatorInfo =
-    useQuery(api.dashboard.getCreator, { creatorSlug: slug }) ||
-    ({ displayName: slug } as any);
+  const creatorInfo = useQuery(api.dashboard.getCreator, { creatorSlug: slug });
   const nextNumbers = useQuery(api.dashboard.getNextTicketNumbers, {
     creatorSlug: slug,
   });
 
-  if (!queueSnapshot) {  // Loading (useQuery handles)
+  // Loading state
+  if (creatorInfo === undefined || queueSnapshot === undefined) {
     return (
       <div className="bg-bg">
         <div className="max-w-6xl mx-auto p-8 min-h-screen flex flex-col items-center justify-center">
@@ -35,6 +34,13 @@ export default function CreatorQueuesPage() {
       </div>
     );
   }
+
+  // 404 if creator doesn't exist
+  if (creatorInfo === null) {
+    notFound();
+  }
+
+  const minPriorityTipCents = creatorInfo.minPriorityTipCents ?? 5000;
 
   // Ensure etaDays is number | null, not undefined
   const safeQueueSnapshot = {

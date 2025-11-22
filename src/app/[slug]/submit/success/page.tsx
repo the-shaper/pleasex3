@@ -78,7 +78,7 @@ export default function FormSubmittedPage() {
   const isPriority = ticket.queueKind === "priority";
 
   return (
-    <div className="min-h-screen bg-bg py-8 px-4">
+    <div className="min-h-screen bg-bg py-8 px-4 flex items-center justify-center">
       <div className="max-w-2xl mx-auto flex flex-col items-center gap-6">
         <h1 className="text-2xl font-bold text-center mb-1 text-text uppercase">
           Ticket Submission Successful!

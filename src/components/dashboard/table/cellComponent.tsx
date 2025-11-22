@@ -3,6 +3,8 @@
 import { GeneralNumber } from "./generalNumber";
 import { TagBase } from "../../general/tagBase";
 
+import { getGridColumns } from "./tableLayout";
+
 export interface CellComponentData {
   // General number - combined position across all queues
   generalNumber: number | null;
@@ -24,6 +26,8 @@ export interface CellComponentData {
   tipCents?: number;
   // Tags from convex tickets table
   tags?: string[];
+  // Resolved timestamp (optional)
+  resolvedAt?: number;
 }
 
 export interface CellComponentProps {
@@ -67,18 +71,6 @@ export function CellComponent({
   // UPDATED: Conditionally enable row clicks based on status
   const isClickable = data.status === "open" || data.status === "approved";
 
-  // Helper function to get grid columns based on variant
-  const getGridColumns = (variant: string) => {
-    switch (variant) {
-      case "past":
-      case "all":
-        return "100px 100px 100px 1fr 1fr 120px 80px 100px 140px"; // GENERAL, TICKET, QUEUE, TASK, FRIEND, TAGS, STATUS, TIP, REQUESTED ON
-      case "active":
-      default:
-        return "100px 100px 100px 1fr 1fr 140px"; // Current layout
-    }
-  };
-
   // Format tip as dollars
   const formatTip = (cents?: number) => {
     if (!cents) return "$0.00";
@@ -88,7 +80,7 @@ export function CellComponent({
   return (
     // UPDATED: Make entire row clickable; remove button column
     <div
-      className={`grid gap-4 items-center p-3 border-b border-gray-subtle cursor-pointer hover:bg-gray-subtle/50 transition-colors ${className} ${isClickable ? "focus:bg-gray-subtle" : ""
+      className={`grid gap-4 items-center p-4 border-b border-gray-subtle cursor-pointer hover:bg-gray-subtle/50 transition-colors whitespace-nowrap ${className} ${isClickable ? "focus:bg-gray-subtle" : ""
         } ${isActive ? "bg-gray-subtle" : "" // NEW: Highlight when active from ScrollTrigger
         }`}
       style={{
@@ -173,6 +165,13 @@ export function CellComponent({
       <div className="text-sm text-text-muted font-mono">
         {formatDate(data.requestDate)}
       </div>
+
+      {/* CONDITIONAL: Resolved Date - Only for past/all variants */}
+      {(variant === "past" || variant === "all") && (
+        <div className="text-sm text-text-muted font-mono">
+          {data.resolvedAt ? formatDate(data.resolvedAt) : "—"}
+        </div>
+      )}
 
       {/* REMOVED: Open Button - Now handled by row click */}
     </div>

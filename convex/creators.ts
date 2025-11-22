@@ -87,3 +87,26 @@ export const upsertBySlug = mutation({
     return { creatorId };
   },
 });
+
+export const updateMinPriorityFee = mutation({
+  args: {
+    slug: v.string(),
+    minPriorityTipCents: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const creator = await ctx.db
+      .query("creators")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .unique();
+
+    if (!creator) {
+      throw new Error("Creator not found");
+    }
+
+    await ctx.db.patch(creator._id, {
+      minPriorityTipCents: args.minPriorityTipCents,
+    });
+
+    return { success: true };
+  },
+});

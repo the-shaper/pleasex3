@@ -390,7 +390,7 @@ Which approach would you prefer? The quick win would give us a functional dashbo
   - [ ] Add a sign-in option to the dashboard
 
 - [ ] Creator page
- - [ ] Create and wire up "tracking number" follow up  /docs/trackingNumberPlan.md
+ - [ ] Create and wire up "tracking number" follow up  `/docs/trackingNumberPlan.md`
  - [ ] Add logo with link to homepage
  - [ ] Add auth-aware buttons
   - [ ] sign-out
@@ -407,3 +407,8 @@ Which approach would you prefer? The quick win would give us a functional dashbo
 - [ ] Personalize Clerk Screens
   - [ ] Login Screen
   - [ ] Logout Screen
+
+
+- [ ] Qualia of Life
+- [ ] Delete/Restart queue from scratch
+- [ ] E-mail list component w/ download as CSV

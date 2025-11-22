@@ -146,7 +146,10 @@ export const approve = mutation({
     }
 
     // Standard approval flow (for free/legacy/manual-override)
-    await ctx.db.patch(ticket._id, { status: "approved" });
+    await ctx.db.patch(ticket._id, {
+      status: "approved",
+      resolvedAt: Date.now(),
+    });
 
     await assignNumbersOnApprove(ctx, ticket._id);
     await computeTagsForCreator(ctx, ticket.creatorSlug);
@@ -192,7 +195,8 @@ export const reject = mutation({
 
     await ctx.db.patch(ticket._id, {
       status: "rejected",
-      tags: nextTags
+      tags: nextTags,
+      resolvedAt: Date.now(),
     });
 
     // Trigger Email: Ticket Rejected
@@ -321,6 +325,7 @@ export const markAsFinished = mutation({
     await ctx.db.patch(ticket._id, {
       status: "closed",
       tags: cleanedTags.length > 0 ? cleanedTags : undefined,
+      resolvedAt: Date.now(),
     });
 
     await computeTagsForCreator(ctx, ticket.creatorSlug);

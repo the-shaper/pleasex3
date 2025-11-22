@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 function formatEtaDays(etaDays: number | null | undefined): string {
   if (!etaDays || etaDays <= 0) return "—";
@@ -54,6 +54,13 @@ export default function QueueCard({
   const [amountDollars, setAmountDollars] = useState<string>(
     isPriority ? (minPriorityTipCents / 100).toFixed(2) : "0.00"
   );
+
+  // Update local state if the prop changes (e.g. data loaded)
+  useEffect(() => {
+    if (isPriority) {
+      setAmountDollars((minPriorityTipCents / 100).toFixed(2));
+    }
+  }, [minPriorityTipCents, isPriority]);
 
   const tipCents = useMemo(() => {
     const dollars = parseFloat((amountDollars || "0").replace(/,/g, "."));
