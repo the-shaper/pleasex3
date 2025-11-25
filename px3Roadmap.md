@@ -114,8 +114,6 @@
   - [x] Test edge cases (invalid refs, double approvals, etc.)
   - [x] Verify data persistence across page refreshes
 
-- Keep mocked for now
-  - [ ] Queue metrics and positions (counts/ETAs) remain mocked during this slice
 
 - After this slice
   - [x] Add minimal queue position calculation (simple counts) to replace mock numbers ✅ COMPLETED
@@ -385,21 +383,24 @@ Which approach would you prefer? The quick win would give us a functional dashbo
 
 ## **PENDING STUFF**
 
-- [ ] Homepage
-  - [ ] Design and build homepage
-  - [ ] Add a sign-in option to the dashboard
+- [x] Homepage
+  - [x] Design and build homepage
+  - [x] Add a sign-in option to the dashboard
+   - [ ] Create and wire up "I have a tracking number" link when user is 'signed out"
+
 
 - [ ] Creator page
- - [ ] Create and wire up "tracking number" follow up  `/docs/trackingNumberPlan.md`
+ - [x] Create and wire up "tracking number" follow up  `/docs/trackingNumberPlan.md`
  - [ ] Add logo with link to homepage
  - [ ] Add auth-aware buttons
   - [ ] sign-out
   - [ ] go to dashboard
 
-- [ ] E-mail routing
-  - [ ] Creator sign up
-  - [ ] Task Submission notifications
-  - [ ] Requester task approval
+- [x] E-mail routing
+This is working via Resend. Check resend dashboard for more.
+  - [x] Creator sign up
+  - [x] Task Submission notifications
+  - [x] Requester task approval
 
 - [ ] Personalize Stripe Screens
   - [ ] Remove HAND branding. Figure out how to make it Pleasepleaseplease specific
@@ -412,3 +413,20 @@ Which approach would you prefer? The quick win would give us a functional dashbo
 - [ ] Qualia of Life
 - [ ] Delete/Restart queue from scratch
 - [ ] E-mail list component w/ download as CSV
+
+
+- [ ] Security verification
+  - [ ] Create a security checklist with the help of gemini, the web and gpt.
+  - [ ] Ask friends to check your codebase and ask them for potential security vulnerabilities
+    - [ ] Yamir
+    - [ ] Davide
+    - [ ] X/Twitter, however wants
+
+
+- [ ] Create WHAT/WHY page/modal
+- [ ] Create FAQ Docs
+
+
+- [ ] Investigate how to replace developer environments tools with actual production tools
+
+

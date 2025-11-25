@@ -125,7 +125,7 @@ export default function DashboardPage() {
     upsertCreator({
       slug,
       displayName,
-      minPriorityTipCents: 0,
+      minPriorityTipCents: 5000,
     }).catch((err) => {
       console.error("Failed to upsert creator", err);
     });
@@ -449,6 +449,7 @@ export default function DashboardPage() {
       ...overview.approvedTickets,
       ...overview.closedTickets,
       ...overview.rejectedTickets,
+      ...overview.pendingPaymentTickets,
     ].forEach((t) => {
       ticketByRef[t.ref] = t;
     });

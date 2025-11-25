@@ -78,6 +78,30 @@ export const upsertBySlug = mutation({
       showAutoqueueCard: true,
     });
 
+    // Insert personal queue (enabled by default)
+    await ctx.db.insert("queues", {
+      creatorSlug: args.slug,
+      kind: "personal",
+      activeTurn: 0,
+      nextTurn: 1,
+      etaDays: 0,
+      activeCount: 0,
+      enabled: true,
+      avgDaysPerTicket: 1,
+    });
+
+    // Insert priority queue (enabled by default)
+    await ctx.db.insert("queues", {
+      creatorSlug: args.slug,
+      kind: "priority",
+      activeTurn: 0,
+      nextTurn: 1,
+      etaDays: 0,
+      activeCount: 0,
+      enabled: true,
+      avgDaysPerTicket: 1,
+    });
+
     if (args.email) {
       await ctx.scheduler.runAfter(0, internal.emails.sendWelcomeEmail, {
         email: args.email,

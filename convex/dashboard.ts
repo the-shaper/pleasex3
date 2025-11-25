@@ -51,6 +51,7 @@ export const getOverview = query({
       approvedTickets: allTickets.filter((t) => t.status === "approved"),
       closedTickets: allTickets.filter((t) => t.status === "closed"),
       rejectedTickets: allTickets.filter((t) => t.status === "rejected"),
+      pendingPaymentTickets: allTickets.filter((t) => t.status === "pending_payment"),
     };
   },
 });

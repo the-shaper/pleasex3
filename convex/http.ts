@@ -1,0 +1,87 @@
+import { httpRouter } from "convex/server";
+import { httpAction } from "./_generated/server";
+import { api, internal } from "./_generated/api";
+import Stripe from "stripe";
+
+const http = httpRouter();
+const stripe = new Stripe(process.env.STRIPE_API_KEY!, {
+    apiVersion: "2022-11-15",
+});
+
+http.route({
+    path: "/stripe",
+    method: "POST",
+    handler: httpAction(async (ctx, request) => {
+        const signature = request.headers.get("stripe-signature");
+        if (!signature) {
+            return new Response("Missing signature", { status: 400 });
+        }
+
+        const payload = await request.text();
+        let event;
+
+        try {
+            event = await stripe.webhooks.constructEventAsync(
+                payload,
+                signature,
+                process.env.STRIPE_WEBHOOK_SECRET!
+            );
+        } catch (err) {
+            console.error("Webhook signature verification failed", err);
+            return new Response("Webhook signature verification failed", { status: 400 });
+        }
+
+        if (event.type === "payment_intent.succeeded") {
+            const paymentIntent = event.data.object as Stripe.PaymentIntent;
+            const ticketRef = paymentIntent.metadata.ticketRef;
+            const creatorSlug = paymentIntent.metadata.creatorSlug;
+
+            if (ticketRef && creatorSlug) {
+                // 1. Record the payment
+                await ctx.runMutation(api.payments.recordStripePayment, {
+                    creatorSlug,
+                    amountGross: paymentIntent.amount,
+                    currency: paymentIntent.currency,
+                    externalId: paymentIntent.id,
+                    provider: "stripe",
+                    status: "succeeded",
+                    ticketRef,
+                });
+
+                // 2. Update ticket status to open (or approved if auto-approve logic exists)
+                // For now, we mark it as open so it appears in the dashboard
+                await ctx.runMutation(api.tickets.markAsOpen, { ref: ticketRef });
+
+                // 3. Update payment intent status on ticket
+                await ctx.runMutation(api.payments.setPaymentIntentForTicket, {
+                    ticketRef,
+                    paymentIntentId: paymentIntent.id,
+                    status: "succeeded",
+                });
+            }
+        } else if (event.type === "payment_intent.amount_capturable_updated") {
+            const paymentIntent = event.data.object as Stripe.PaymentIntent;
+            const ticketRef = paymentIntent.metadata.ticketRef;
+            const creatorSlug = paymentIntent.metadata.creatorSlug;
+
+            if (ticketRef && creatorSlug) {
+                // This event means the funds are held and ready to capture.
+                // We should show the ticket in the dashboard now.
+
+                // 1. Update ticket status to open so it appears in ApprovalPanel
+                await ctx.runMutation(api.tickets.markAsOpen, { ref: ticketRef });
+
+                // 2. Update payment intent status on ticket
+                await ctx.runMutation(api.payments.setPaymentIntentForTicket, {
+                    ticketRef,
+                    paymentIntentId: paymentIntent.id,
+                    status: "requires_capture",
+                });
+            }
+        }
+
+        return new Response(null, { status: 200 });
+    }),
+});
+
+export default http;

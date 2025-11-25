@@ -48,7 +48,11 @@ async function sendEmail({
 
         console.log("Email sent successfully:", data?.id);
         return data;
-    } catch (err) {
+    } catch (err: any) {
+        if (err.message?.includes("You can only send testing emails to your own email address")) {
+            console.warn("Resend Dev Mode Restriction: Email not sent because recipient is not verified.", to);
+            return;
+        }
         console.error("Unexpected error sending email:", err);
         throw err;
     }

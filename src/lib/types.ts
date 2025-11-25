@@ -7,7 +7,8 @@ export type TaskTag =
   | "awaiting-feedback"
   | "finished"
   | "current"
-  | "rejected";
+  | "rejected"
+  | "closed";
 
 export type TicketStatus = "open" | "approved" | "rejected" | "closed" | "pending_payment";
 
@@ -57,6 +58,7 @@ export interface Ticket {
   consentEmail?: boolean;
   queueNumber?: number;
   ticketNumber?: number;
+  resolvedAt?: number;
 }
 
 // Engine TicketPosition exposed to clients
@@ -77,6 +79,9 @@ export interface DashboardOverview {
   queues: Record<QueueKind, any>;
   openTickets: Ticket[];
   approvedTickets: Ticket[];
+  closedTickets: Ticket[];
+  rejectedTickets: Ticket[];
+  pendingPaymentTickets: Ticket[];
 }
 
 export interface CreateTicketInput {

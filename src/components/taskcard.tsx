@@ -34,7 +34,7 @@ export interface TaskCardData {
   attachments: string[];
   tipCents: number;
   queueKind?: "personal" | "priority" | "general";
-  status: "current" | "next-up" | "pending" | "awaiting-feedback" | "finished" | "attn";
+  status: TaskTag;
   tags?: TaskTag[];
   createdAt: number;
   ref: string;

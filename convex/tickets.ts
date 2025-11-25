@@ -72,6 +72,13 @@ export const create = mutation({
       consentEmail: args.consentEmail,
     });
 
+    // Ensure queue exists for this ticket type
+    await ctx.scheduler.runAfter(0, api.queues.ensureQueueExists, {
+      creatorSlug: args.creatorSlug,
+      kind: args.queueKind,
+    });
+
+
     // Trigger emails
     if (args.email) {
       // 1. Receipt to User

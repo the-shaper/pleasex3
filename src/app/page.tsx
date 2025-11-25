@@ -26,7 +26,7 @@ export default function Home() {
         <div className="p-8 flex flex-col items-center justify-center w-full max-w-full">
           <h1 className="md:hidden text-6xl sm:text-5xl font-bold text-text tracking-tighter leading-[0.8] text-center break-words max-w-full">PLEASE PLEASE PLEASE</h1>
           <h2 className="md:hidden text-center text-xl sm:text-2xl text-text md:tracking-[1.77rem] leading-[1] break-words max-w-full mt-2">VIRTUAL TICKET MACHINE</h2>
-          <img src="/px3-maintitle.svg" alt="" className="hidden md:flex  w-full h-full text-text" />
+          <img src="/px3-maintitle.svg" alt="" className="hidden md:flex  w-2/3 h-full text-text" />
         </div>
 
         {/* Row 3: Nav buttons centered within this row */}

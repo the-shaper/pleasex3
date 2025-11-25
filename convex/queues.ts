@@ -129,3 +129,31 @@ export const updateQueueSettings = mutation({
     return { success: true };
   },
 });
+
+export const ensureQueueExists = mutation({
+  args: {
+    creatorSlug: v.string(),
+    kind: v.union(v.literal("personal"), v.literal("priority")),
+  },
+  handler: async (ctx, args) => {
+    const queue = await ctx.db
+      .query("queues")
+      .withIndex("by_creator_kind", (q) =>
+        q.eq("creatorSlug", args.creatorSlug).eq("kind", args.kind)
+      )
+      .unique();
+
+    if (!queue) {
+      await ctx.db.insert("queues", {
+        creatorSlug: args.creatorSlug,
+        kind: args.kind,
+        activeTurn: 0,
+        nextTurn: 1,
+        etaDays: 0,
+        activeCount: 0,
+        enabled: true,
+        avgDaysPerTicket: 1, // Default 1 day
+      });
+    }
+  },
+});
