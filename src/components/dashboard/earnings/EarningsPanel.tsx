@@ -42,6 +42,7 @@ export function EarningsPanel({ data, onConnectStripe }: EarningsPanelProps) {
       <PayoutsCard
         upcomingPayout={data.upcomingPayout ?? null}
         payoutHistory={data.payoutHistory}
+        currentPeriod={data.currentPeriod}
       />
     </div>
   );

@@ -80,11 +80,11 @@ export default function QueueCard({
     isPriority && data.enabled && tipCents < minPriorityTipCents;
 
   return (
-    <section className="space-y-2">
+    <section className="space-y-2 w-full">
       <div className="space-y-2">
-        <div className="flex gap-2 items-stretch">
+        <div className="flex flex-col md:flex-row gap-2 items-stretch">
           <div
-            className="w-32 grid gap-1 items-stretch"
+            className="md:w-32 w-full grid gap-1 items-stretch"
             style={{ gridTemplateRows: "auto auto 1fr", minHeight: 167 }}
           >
             <div
@@ -174,13 +174,13 @@ export default function QueueCard({
           </div>
           <div className="flex gap-2">
             <div
-              className={`${tipLeftBg} flex-1 py-5 text-center uppercase`}
+              className={`${tipLeftBg} flex-1 py-5 text-center uppercase content-center`}
               style={{ fontFamily: "var(--font-body)" }}
             >
               CHOOSE AMOUNT (USD)
             </div>
             <div
-              className="flex-1 py-5 text-center"
+              className="flex-1 py-5 text-center content-center px-5"
               style={{
                 backgroundColor: tipFieldBg,
                 fontFamily: "var(--font-body)",
@@ -242,7 +242,7 @@ export default function QueueCard({
               <span>&gt;</span>
             </Link>
           ) : (
-            <div className="text-sm opacity-70">Currently closed</div>
+            <div className="text-sm text-center  uppercase bg-ielo py-2">This queue is currently closed</div>
           )}
         </div>
       </div>

@@ -159,11 +159,11 @@ export function computeSchedule(
 
   const priorityTickets = remaining
     .filter((t) => t.queueKind === "priority")
-    .sort(sortByCreatedAt);
+    .sort((a, b) => (a.queueNumber ?? 0) - (b.queueNumber ?? 0));
 
   const personalTickets = remaining
     .filter((t) => t.queueKind === "personal")
-    .sort(sortByCreatedAt);
+    .sort((a, b) => (a.queueNumber ?? 0) - (b.queueNumber ?? 0));
 
   const ordered: TicketDoc[] = [];
 
@@ -351,12 +351,22 @@ export async function getQueueSnapshot(
     let avgDays = 1; // Default 1 day
     let enabled = true;
 
-    if (kind === "personal" && personalQueue) {
-      avgDays = personalQueue.avgDaysPerTicket ?? 1;
-      enabled = personalQueue.enabled;
-    } else if (kind === "priority" && priorityQueue) {
-      avgDays = priorityQueue.avgDaysPerTicket ?? 1;
-      enabled = priorityQueue.enabled;
+    if (kind === "personal") {
+      if (personalQueue) {
+        avgDays = personalQueue.avgDaysPerTicket ?? 1;
+        enabled = personalQueue.enabled;
+      } else {
+        // Default for personal if missing
+        enabled = true;
+      }
+    } else if (kind === "priority") {
+      if (priorityQueue) {
+        avgDays = priorityQueue.avgDaysPerTicket ?? 1;
+        enabled = priorityQueue.enabled;
+      } else {
+        // Default for priority if missing
+        enabled = false;
+      }
     }
 
     const etaDays = activeCount > 0 ? activeCount * avgDays : null;

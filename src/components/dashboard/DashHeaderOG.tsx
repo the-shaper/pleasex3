@@ -45,61 +45,64 @@ export default function DashboardHeader({
 
   return (
     <div data-element="HEADER" className={`col-span-2 ${className}`}>
-      <div className="flex justify-between items-start">
-        <div
-          data-element="HEADER-TITLES-WRAPPER"
-          className="flex flex-col gap-2"
-        >
-          <div className="flex flex-row items-start gap-2 md:gap-0">
-            {/* NEW: MenuButton just before DASHBOARD tag */}
+      <div className="flex flex-col gap-4">
+        {/* Top row: DASHBOARD tag + MenuButton and Auth buttons */}
+        <div className="flex md:justify-between justify-between items-center">
+          <div className="flex flex-row items-center gap-2">
+            {/* MenuButton on mobile */}
             {onMenuClick && (
               <MenuButton
                 onClick={onMenuClick}
                 isOpen={isOpen || false}
-                className="md:hidden self-start mb-2"
+                className="md:hidden"
               />
             )}
+            {/* DASHBOARD tag */}
+            <p className="text-sm bg-purple text-text-bright w-fit py-1 px-2">
+              DASHBOARD
+            </p>
+          </div>
 
-            <div className="flex flex-col items-start gap-2">
-              <p className="text-sm bg-purple text-text-bright w-fit py-1 px-2">
-                DASHBOARD
-              </p>
-              <SignedIn>
-                <p className="uppercase text-text-muted -mt-2">
-                  Hello,{user?.firstName || user?.fullName || "User"}!
-                </p>
-              </SignedIn>
-            </div>
+          {/* Auth buttons */}
+          <div data-element="HEADER-CONTROLS-WRAPPER">
+            <SignedIn>
+              <ButtonBase
+                variant="default"
+                size="sm"
+                onClick={handleSignOut}
+                className="text-xs"
+              >
+                SIGN OUT
+              </ButtonBase>
+            </SignedIn>
             <SignedOut>
-              <p className="uppercase text-text-muted text-sm">
-                Sign in to continue
-              </p>
+              <SignInButton mode="modal">
+                <ButtonBase variant="default" size="sm" className="text-xs">
+                  SIGN IN
+                </ButtonBase>
+              </SignInButton>
             </SignedOut>
           </div>
-          <h1 className="text-xl md:text-3xl text-nowrap font-bold">{title}</h1>
         </div>
+
+        {/* Bottom section: Username greeting and title */}
         <div
-          data-element="HEADER-CONTROLS-WRAPPER"
+          data-element="HEADER-TITLES-WRAPPER"
           className="flex flex-col gap-2"
         >
           <SignedIn>
-            <ButtonBase
-              variant="default"
-              size="sm"
-              onClick={handleSignOut}
-              className="text-xs"
-            >
-              SIGN OUT
-            </ButtonBase>
+            <p className="uppercase text-text-muted text-sm">
+              Hello, {user?.firstName || user?.fullName || "User"}!
+            </p>
           </SignedIn>
           <SignedOut>
-            {/* Simple sign-in button - no sign-up */}
-            <SignInButton mode="modal">
-              <ButtonBase variant="default" size="sm" className="text-xs">
-                SIGN IN
-              </ButtonBase>
-            </SignInButton>
+            <p className="uppercase text-text-muted text-sm">
+              Sign in to continue
+            </p>
           </SignedOut>
+          <h1 className="md:text-3xl text-2xl text-2xl text-nowrap font-bold tracking-tighter">
+            {title}
+          </h1>
         </div>
       </div>
     </div>

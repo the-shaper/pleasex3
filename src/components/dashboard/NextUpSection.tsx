@@ -30,8 +30,10 @@ export default function NextUpSection({
   onTicketUpdate,
 }: NextUpSectionProps) {
   const [isCollapsed, setIsCollapsed] = useState(false); // Default expanded
+  const [isPendingCollapsed, setIsPendingCollapsed] = useState(false); // Default expanded for Pending Approvals
 
   const toggleCollapse = () => setIsCollapsed(!isCollapsed);
+  const togglePendingCollapse = () => setIsPendingCollapsed(!isPendingCollapsed);
 
   // Create refs for each task card
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -99,21 +101,34 @@ export default function NextUpSection({
   return (
     <div
       data-element="NEXT-UP-COLUMN"
-      className="flex flex-col md:h-[86svh] h-auto w-full "
+      className="flex flex-col md:h-[86svh] w-full "
     >
-      {/* Pending Approvals - unchanged, conditional */}
-      <h2
-        className={`text-xl font-bold ${hasPendingApprovals ? "block sticky top-0 bg-bg border-b border-gray-subtle pb-2" : "hidden"}`}
-      >
-        PENDING APPROVALS
-      </h2>
+      {/* Pending Approvals - clickable title with chevron */}
+      {hasPendingApprovals && (
+        <button
+          onClick={togglePendingCollapse}
+          className="flex items-center justify-between w-full text-left border-b border-gray-subtle pb-2 sticky top-0 bg-bg"
+          aria-expanded={!isPendingCollapsed}
+        >
+          <h2 className="text-xl font-bold bg-bg w-full">PENDING APPROVALS</h2>
+          <span
+            className={`text-xs text-gray-subtle transition-transform duration-300 ${isPendingCollapsed ? "rotate-180" : ""}`}
+          >
+            ▼
+          </span>
+        </button>
+      )}
 
       {hasPendingApprovals && (
-        <div data-element="PENDING-APPROVALS-COLUMN" className="h-auto mb-8">
-          <ApprovalPanel
-            tickets={openTickets}
-            onTicketUpdate={onTicketUpdate}
-          />
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${isPendingCollapsed ? "max-h-0" : "max-h-[66vh]"}`}
+        >
+          <div data-element="PENDING-APPROVALS-COLUMN" className="h-full mb-8">
+            <ApprovalPanel
+              tickets={openTickets}
+              onTicketUpdate={onTicketUpdate}
+            />
+          </div>
         </div>
       )}
 
@@ -136,11 +151,10 @@ export default function NextUpSection({
         ref={(el) => {
           scrollContainerRef.current = el;
         }}
-        className={`overflow-x-auto md:overflow-y-auto md:overflow-x-visible no-scrollbar transition-all duration-300 ease-in-out px-4 ${
-          isCollapsed ? "max-h-0" : "max-h-[80vh]"
-        } scroll-pb-6`}
+        className={`overflow-x-auto md:overflow-y-auto md:overflow-x-visible no-scrollbar transition-all duration-300 ease-in-out md:px-4 ${isCollapsed ? "max-h-0" : "max-h-[80vh]"
+          } scroll-pb-6`}
       >
-        <div data-element="TASK-CARDS-WRAPPER" className="md:flex-1">
+        <div data-element="TASK-CARDS-WRAPPER" className="md:flex-1 px-1 md:px-0">
           {/* UPDATED: Flex row - replace space-x-4 pr-6 with gap-4 + balanced pl/pr for ends + between spacing */}
           <div className="flex flex-col md:flex-col md:gap-4 gap-4  md:pl-0 md:pr-0 md:px-0 pb-4 md:pb-[50vh] mt-3">
             {/* Approved ticket cards */}

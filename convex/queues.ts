@@ -1,10 +1,23 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getQueueSnapshot } from "./lib/ticketEngine";
+import { requireCreatorOwnership } from "./lib/auth";
 
 export const getSnapshot = query({
   args: { creatorSlug: v.string() },
   handler: async (ctx, args) => {
+    // This is used by the dashboard, so we should protect it.
+    // If public page needs it, we might need a separate public query or allow it.
+    // Usually public page needs snapshot too.
+    // Let's check if we can distinguish or if we should leave it open.
+    // The public page definitely needs to know if queue is enabled and ETA.
+    // So getSnapshot might need to be public.
+    // BUT, the dashboard uses it too.
+    // If we lock it, public page breaks.
+    // Let's NOT lock getSnapshot for now, as it returns public info (ETA, enabled status).
+    // Wait, does it return sensitive info?
+    // It returns activeTurn, nextTurn, etaDays, activeCount, enabled.
+    // This seems fine for public.
     return await getQueueSnapshot(ctx, args.creatorSlug);
   },
 });
@@ -12,6 +25,7 @@ export const getSnapshot = query({
 export const getSettings = query({
   args: { creatorSlug: v.string() },
   handler: async (ctx, args) => {
+    await requireCreatorOwnership(ctx, args.creatorSlug);
     const creator = await ctx.db
       .query("creators")
       .withIndex("by_slug", (q) => q.eq("slug", args.creatorSlug))
@@ -27,6 +41,7 @@ export const updateSettings = mutation({
     showAutoqueueCard: v.boolean(),
   },
   handler: async (ctx, args) => {
+    await requireCreatorOwnership(ctx, args.creatorSlug);
     const creator = await ctx.db
       .query("creators")
       .withIndex("by_slug", (q) => q.eq("slug", args.creatorSlug))
@@ -50,6 +65,7 @@ export const toggleEnabled = mutation({
     kind: v.union(v.literal("personal"), v.literal("priority")),
   },
   handler: async (ctx, args) => {
+    await requireCreatorOwnership(ctx, args.creatorSlug);
     console.log(`Toggling queue for ${args.creatorSlug}/${args.kind}`);
 
     let queue = await ctx.db
@@ -71,7 +87,7 @@ export const toggleEnabled = mutation({
 
         etaDays: 0,
         activeCount: 0,
-        enabled: true,
+        enabled: args.kind === "personal",
       });
       queue = await ctx.db
         .query("queues")
@@ -99,6 +115,7 @@ export const updateQueueSettings = mutation({
     avgDaysPerTicket: v.number(),
   },
   handler: async (ctx, args) => {
+    await requireCreatorOwnership(ctx, args.creatorSlug);
     let queue = await ctx.db
       .query("queues")
       .withIndex("by_creator_kind", (q) =>
@@ -116,7 +133,7 @@ export const updateQueueSettings = mutation({
         nextTurn: 1,
         etaDays: 0,
         activeCount: 0,
-        enabled: true,
+        enabled: args.kind === "personal",
         avgDaysPerTicket: args.avgDaysPerTicket,
       });
       return { success: true };
@@ -136,6 +153,7 @@ export const ensureQueueExists = mutation({
     kind: v.union(v.literal("personal"), v.literal("priority")),
   },
   handler: async (ctx, args) => {
+    await requireCreatorOwnership(ctx, args.creatorSlug);
     const queue = await ctx.db
       .query("queues")
       .withIndex("by_creator_kind", (q) =>
@@ -151,7 +169,7 @@ export const ensureQueueExists = mutation({
         nextTurn: 1,
         etaDays: 0,
         activeCount: 0,
-        enabled: true,
+        enabled: args.kind === "personal",
         avgDaysPerTicket: 1, // Default 1 day
       });
     }

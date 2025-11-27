@@ -34,6 +34,7 @@ export function QueueSettings({
   const [personalDays, setPersonalDays] = useState(1);
   const [priorityDays, setPriorityDays] = useState(1);
   const [minFee, setMinFee] = useState(50);
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     if (minPriorityTipCents !== undefined) {
@@ -68,6 +69,17 @@ export function QueueSettings({
     });
   };
 
+  const handleCopyUrl = async () => {
+    const url = `https://pleasepleaseplease.me/${slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
   if (!queueSnapshot) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)] text-gray-500">
@@ -77,91 +89,285 @@ export function QueueSettings({
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-200px)] p-4">
-      <div className="w-full max-w-md space-y-4">
-        <h3 className="text-xl font-bold text-center">Queue Settings</h3>
-        <div className="space-y-4">
+    <div className="flex items-start justify-start min-h-[calc(100vh-200px)]  ">
+      <div className="w-full  max-w-2xl space-y-3 ">
+        {/* Title */}
+        <h2
+          className="text-xl font-bold text-left uppercase tracking-tight border-b border-gray-subtle pb-2"
+          style={{ fontFamily: "var(--font-body)" }}
+        >
+          QUEUE SETTINGS
+        </h2>
+
+        <button
+          onClick={handleCopyUrl}
+          className="group w-full flex flex-col md:flex-row gap-4 justify-center p-2 bg-blue-2 hover:bg-text hover:cursor-pointer transition-colors border hover:border-text  border-blue-2"
+        >
+          <div>
+            <h4 className="uppercase text-left font-bold group-hover:text-white transition-colors">
+              Your public queue url:
+            </h4>
+            <p className={`text-left text-xs group-hover:text-white transition-colors ${isCopied ? 'text-coral' : ''}`}>
+              {isCopied ? 'LINK COPIED!' : 'CLICK/TAP TO COPY'}
+            </p>
+          </div>
+          <div className="">
+            <p className="font-bold text-left group-hover:text-white transition-colors text-xs uppercase">
+              https://pleasepleaseplease.me/{slug}
+            </p>
+            <p className="text-left text-xs group-hover:text-white transition-colors">
+              Share this with your friends to get them in line!
+            </p>
+          </div>
+        </button>
+
+        <div className="flex flex-col md:flex-row gap-2">
           {/* Personal Queue Settings */}
-          <div className="p-4 bg-white rounded-lg border border-gray-200 space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Personal Queue: {personalEnabled ? "On" : "Off"}</label>
-              <button
-                onClick={async () => {
-                  const result = await toggleQueue({
-                    creatorSlug: slug,
-                    kind: "personal",
-                  });
-                  setPersonalEnabled(result.enabled);
-                }}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-              >
-                Toggle
-              </button>
+          <div className="overflow-hidden border border-gray-subtle">
+            {/* Header */}
+            <div
+              className="bg-greenlite  px-6 text-center"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              <h3 className="text-[20px] font-bold uppercase tracking-wide">PERSONAL</h3>
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-              <label className="text-sm text-gray-600">Avg Time / Favor (days)</label>
-              <input
-                type="number"
-                min="1"
-                value={personalDays}
-                onChange={(e) => handleDaysChange("personal", parseInt(e.target.value) || 0)}
-                className="w-20 px-2 py-1 border rounded text-right"
-              />
+
+            {/* Content */}
+            <div className="space-y-4 p-6 ">
+              {/* Queue Status */}
+              <div className="flex items-center justify-between">
+                <label
+                  className="text-sm uppercase tracking-wide"
+                  style={{ fontFamily: "var(--font-body)" }}
+                >
+                  QUEUE STATUS
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!personalEnabled) {
+                        const result = await toggleQueue({
+                          creatorSlug: slug,
+                          kind: "personal",
+                        });
+                        setPersonalEnabled(result.enabled);
+                      }
+                    }}
+                    className={`px-4 py-2 text-[14px] font-bold uppercase  ${personalEnabled
+                      ? "bg-coral text-text"
+                      : "bg-gray-300 text-text-muted"
+                      }`}
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    ON
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (personalEnabled) {
+                        const result = await toggleQueue({
+                          creatorSlug: slug,
+                          kind: "personal",
+                        });
+                        setPersonalEnabled(result.enabled);
+                      }
+                    }}
+                    className={`px-4 py-2 text-[14px] font-bold uppercase   ${!personalEnabled
+                      ? "bg-text text-coral"
+                      : "bg-gray-200 text-text-muted"
+                      }`}
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    OFF
+                  </button>
+                </div>
+              </div>
+
+              {/* Avg Time / Favor */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <div
+                    className="text-sm uppercase tracking-wide"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    AVG TIME/FAVOR
+                  </div>
+                  <div
+                    className="text-[12px] text-text-muted"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    (DAYS)
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleDaysChange("personal", Math.max(1, personalDays - 1))}
+                    className="w-8 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    &lt;
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    value={personalDays}
+                    onChange={(e) => handleDaysChange("personal", parseInt(e.target.value) || 1)}
+                    className="w-20 h-10 px-3 text-center bg-white border border-gray-300 text-[16px] font-mono no-spinners focus:outline-blue-2"
+                  />
+                  <button
+                    onClick={() => handleDaysChange("personal", personalDays + 1)}
+                    className="w-8 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    &gt;
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Priority Queue Settings */}
-          <div className="p-4 bg-white rounded-lg border border-gray-200 space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Priority Queue: {priorityEnabled ? "On" : "Off"}</label>
-              <button
-                onClick={async () => {
-                  const result = await toggleQueue({
-                    creatorSlug: slug,
-                    kind: "priority",
-                  });
-                  setPriorityEnabled(result.enabled);
-                }}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-              >
-                Toggle
-              </button>
+          <div className="overflow-hidden border border-gray-subtle">
+            {/* Header */}
+            <div
+              className="bg-gold px-6 text-center "
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              <h3 className="text-[20px] font-bold uppercase tracking-wide">PRIORITY</h3>
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-              <label className="text-sm text-gray-600">Avg Time / Favor (days)</label>
-              <input
-                type="number"
-                min="1"
-                value={priorityDays}
-                onChange={(e) => handleDaysChange("priority", parseInt(e.target.value) || 0)}
-                className="w-20 px-2 py-1 border rounded text-right"
-              />
-            </div>
-            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-              <label className="text-sm text-gray-600">Min Priority Fee ($)</label>
-              <input
-                type="number"
-                min="1"
-                value={minFee}
-                onChange={(e) => handleMinFeeChange(parseInt(e.target.value) || 0)}
-                className="w-20 px-2 py-1 border rounded text-right"
-              />
+
+            {/* Content */}
+            <div className=" space-y-4 p-6 ">
+              {/* Queue Status */}
+              <div className="flex items-center justify-between">
+                <label
+                  className="text-sm uppercase tracking-wide"
+                  style={{ fontFamily: "var(--font-body)" }}
+                >
+                  QUEUE STATUS
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!priorityEnabled) {
+                        const result = await toggleQueue({
+                          creatorSlug: slug,
+                          kind: "priority",
+                        });
+                        setPriorityEnabled(result.enabled);
+                      }
+                    }}
+                    className={`px-6 py-2 text-[14px] font-bold uppercase ${priorityEnabled
+                      ? "bg-coral text-text"
+                      : "bg-gray-300 text-text-muted"
+                      }`}
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    ON
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (priorityEnabled) {
+                        const result = await toggleQueue({
+                          creatorSlug: slug,
+                          kind: "priority",
+                        });
+                        setPriorityEnabled(result.enabled);
+                      }
+                    }}
+                    className={`px-6 py-2 text-[14px] font-bold uppercase ${!priorityEnabled
+                      ? "bg-text text-coral"
+                      : "bg-gray-200 text-text-muted"
+                      }`}
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    OFF
+                  </button>
+                </div>
+              </div>
+
+              {/* Avg Time / Favor */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <div
+                    className="text-sm uppercase tracking-wide"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    AVG TIME/FAVOR
+                  </div>
+                  <div
+                    className="text-[12px] text-text-muted"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    (DAYS)
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleDaysChange("priority", Math.max(1, priorityDays - 1))}
+                    className="w-10 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100 "
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    &lt;
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    value={priorityDays}
+                    onChange={(e) => handleDaysChange("priority", parseInt(e.target.value) || 1)}
+                    className="w-20 h-10 px-3 text-center bg-white border border-gray-300 text-[16px] font-mono no-spinners focus:outline-blue-2"
+                  />
+                  <button
+                    onClick={() => handleDaysChange("priority", priorityDays + 1)}
+                    className="w-10 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100 "
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    &gt;
+                  </button>
+                </div>
+              </div>
+
+              {/* Minimum Fee */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <div
+                    className="text-sm uppercase tracking-wide"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    MINIMUM FEE
+                  </div>
+                  <div
+                    className="text-[12px] text-text-muted"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    ($USD)
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleMinFeeChange(Math.max(1, minFee - 1))}
+                    className="w-10 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100 "
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    &lt;
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    value={minFee}
+                    onChange={(e) => handleMinFeeChange(parseInt(e.target.value) || 1)}
+                    className="w-20 h-10 px-3 text-center bg-white border border-gray-300 text-[16px] font-mono no-spinners focus:outline-blue-2"
+                  />
+                  <button
+                    onClick={() => handleMinFeeChange(minFee + 1)}
+                    className="w-10 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100 "
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    &gt;
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-
-          {onToggleAutoqueueCard && (
-            <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
-              <label className="text-sm font-medium">
-                Show autoqueue card in NEXT UP: {showAutoqueueCard ? "On" : "Off"}
-              </label>
-              <button
-                onClick={() => onToggleAutoqueueCard(!showAutoqueueCard)}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-              >
-                Toggle
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>

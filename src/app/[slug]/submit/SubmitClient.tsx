@@ -66,8 +66,10 @@ export default function SubmitClient({
     return `${mm}.${dd}.${yy}`;
   }
 
+  const priorityEnabled = initialQueue?.priority?.enabled ?? false;
+
   const initialQueueTab = (
-    sp.get("queue") === "priority" ? "priority" : "personal"
+    sp.get("queue") === "priority" && priorityEnabled ? "priority" : "personal"
   ) as "personal" | "priority";
   const initialTip = (() => {
     const v = sp.get("tipCents");
@@ -103,7 +105,7 @@ export default function SubmitClient({
   // Auto-switch queue based on tip threshold in both directions
   useEffect(() => {
     if (minPriorityTipCents <= 0) return;
-    if (form.priorityTipCents >= minPriorityTipCents && queue !== "priority") {
+    if (form.priorityTipCents >= minPriorityTipCents && queue !== "priority" && priorityEnabled) {
       setQueue("priority");
     } else if (
       form.priorityTipCents < minPriorityTipCents &&
@@ -111,7 +113,7 @@ export default function SubmitClient({
     ) {
       setQueue("personal");
     }
-  }, [form.priorityTipCents, minPriorityTipCents, queue]);
+  }, [form.priorityTipCents, minPriorityTipCents, queue, priorityEnabled]);
 
   // Remember the last personal tip when on personal tab
   useEffect(() => {
@@ -141,6 +143,7 @@ export default function SubmitClient({
       .filter(Boolean);
 
     // 1. Create Ticket First
+    console.log("[Submit] Creating ticket...");
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -161,9 +164,11 @@ export default function SubmitClient({
     });
     const json = await res.json();
     if (!res.ok) {
+      console.error("[Submit] Ticket creation failed:", json);
       alert(`Error: ${JSON.stringify(json.error)}`);
       return;
     }
+    console.log("[Submit] Ticket created:", json.ref);
 
     // 2. If Free, Redirect Immediately
     if (form.priorityTipCents <= 0) {
@@ -175,18 +180,31 @@ export default function SubmitClient({
 
     // 3. If Paid, Create Payment Intent & Show Modal
     try {
+      console.log("[Submit] Creating payment intent for ticket:", json.ref);
       setPendingTicketRef(json.ref);
+
+      // Verify the action is available
+      if (!createManualPaymentIntent) {
+        throw new Error("createManualPaymentIntent action is not available. Check Convex provider setup.");
+      }
+
       const result = await createManualPaymentIntent({
         creatorSlug: slug,
         ticketRef: json.ref,
         amountCents: form.priorityTipCents,
       });
 
+      console.log("[Submit] Payment intent created successfully");
       setClientSecret(result.clientSecret);
       setShowPaymentModal(true);
     } catch (err: any) {
-      console.error("Payment setup failed", err);
-      alert(`Payment setup failed: ${err.message}`);
+      console.error("[Submit] Payment setup failed:", err);
+      console.error("[Submit] Error details:", {
+        name: err.name,
+        message: err.message,
+        stack: err.stack,
+      });
+      alert(`Payment setup failed: ${err.message || 'Unknown error'}\n\nPlease check the console for details.`);
     }
   }
 
@@ -235,22 +253,24 @@ export default function SubmitClient({
             >
               Personal
             </button>
-            <button
-              className={`px-3 py-1 uppercase ${queue === "priority" ? "bg-gold text-tex font-bold" : "bg-slate-200"
-                }`}
-              onClick={() => {
-                const adjusted = Math.max(
-                  form.priorityTipCents,
-                  minPriorityTipCents
-                );
-                if (adjusted !== form.priorityTipCents) {
-                  onChange("priorityTipCents", adjusted);
-                }
-                setQueue("priority");
-              }}
-            >
-              Priority
-            </button>
+            {priorityEnabled && (
+              <button
+                className={`px-3 py-1 uppercase ${queue === "priority" ? "bg-gold text-tex font-bold" : "bg-slate-200"
+                  }`}
+                onClick={() => {
+                  const adjusted = Math.max(
+                    form.priorityTipCents,
+                    minPriorityTipCents
+                  );
+                  if (adjusted !== form.priorityTipCents) {
+                    onChange("priorityTipCents", adjusted);
+                  }
+                  setQueue("priority");
+                }}
+              >
+                Priority
+              </button>
+            )}
           </div>
           <form id="ticket-form" onSubmit={onSubmit} className="space-y-3">
             <input

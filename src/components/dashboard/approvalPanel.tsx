@@ -93,7 +93,7 @@ export default function ApprovalPanel({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1  space-y-6">
+      <div className="flex-1 space-y-6 overflow-y-auto">
         {tickets.map((ticket) => {
           // Map ticket data to the format expected by TicketApprovalCard
           const ticketData = {

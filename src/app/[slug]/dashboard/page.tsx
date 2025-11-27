@@ -27,6 +27,7 @@ import { api } from "@convex/_generated/api"; // Generated Convex API via path a
 import { TaskCardData } from "@/components/taskcard";
 import NextUpSection from "@/components/dashboard/NextUpSection";
 import { EarningsPanel } from "@/components/dashboard/earnings/EarningsPanel";
+import { StripeOnboardingBanner } from "@/components/dashboard/StripeOnboardingBanner";
 
 const dataProvider = new ConvexDataProvider();
 
@@ -37,51 +38,68 @@ export default function DashboardPage() {
   // All hooks first: Consistent order every render
   const { isSignedIn, isLoaded, user } = useUser();
   const router = useRouter();
-  const [queueData, setQueueData] = useState<QueueSnapshot | null>(null);
-  const [dashboardOverview, setDashboardOverview] =
-    useState<DashboardOverview | null>(null);
+  // Reactive queries - automatically authenticated and updated
+  const creator = useQuery(api.dashboard.getCreator, { creatorSlug: slug });
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const queueSnapshot = useQuery(api.queues.getSnapshot, { creatorSlug: slug });
+  // Check ownership:
+  // 1. Must be loaded and signed in.
+  // 2. Creator info must be loaded.
+  // 3. If creator has a clerkUserId, it must match the current user.
+  const isOwner =
+    isLoaded &&
+    isSignedIn &&
+    creator !== undefined &&
+    (creator === null || !creator.clerkUserId || creator.clerkUserId === user?.id);
 
-  const overviewLive = useQuery(api.dashboard.getOverview, {
+  const shouldFetch = isOwner;
+
+  const queueSnapshot = useQuery(api.queues.getSnapshot, shouldFetch ? { creatorSlug: slug } : "skip");
+  const dashboardOverview = useQuery(api.dashboard.getOverview, shouldFetch ? {
     creatorSlug: slug,
-  });
-  const toggleQueue = useMutation(api.queues.toggleEnabled);
-  const connectStripeAction = useAction(
-    api.stripeOnboarding.createStripeAccountLink
+  } : "skip");
+  const positions = useQuery(api.dashboard.getAllTicketsWithPositions, shouldFetch ? {
+    creatorSlug: slug,
+  } : "skip");
+  const activePositions = useQuery(api.dashboard.getActiveTicketPositions, shouldFetch ? {
+    creatorSlug: slug,
+  } : "skip");
+  const earningsData = useQuery(
+    api.lib.stripeEngine.getEarningsDashboardData,
+    shouldFetch ? {
+      creatorSlug: slug,
+    } : "skip"
   );
 
-  const recomputeWorkflowTags = useMutation(
-    api.tickets.recomputeWorkflowTagsForCreator
-  );
   const [personalEnabled, setPersonalEnabled] = useState(false);
   const [priorityEnabled, setPriorityEnabled] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskCardData | null>(null);
-  const positions = useQuery(api.dashboard.getAllTicketsWithPositions, {
-    creatorSlug: slug,
-  });
-  const activePositions = useQuery(api.dashboard.getActiveTicketPositions, {
-    creatorSlug: slug,
-  });
-  const earningsData = useQuery(
-    api.lib.stripeEngine.getEarningsDashboardData,
-    {
-      creatorSlug: slug,
-    }
-  );
-  // Unauth: redirect to Clerk sign-in with return URL
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Unauth or Non-Owner: redirect
   useEffect(() => {
-    if (isLoaded && !isSignedIn) {
+    if (!isLoaded) return;
+
+    // 1. Not signed in -> Redirect to sign-in
+    if (!isSignedIn) {
       const redirectUrl =
         typeof window !== "undefined"
           ? window.location.pathname + window.location.search
           : `/${slug}/dashboard`;
-
       router.push(`/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`);
+      return;
     }
-  }, [isLoaded, isSignedIn, router, slug]);
+
+    // 2. Signed in but not owner -> Redirect to home
+    if (creator !== undefined) {
+      // If creator exists and has an ID, and it doesn't match -> Redirect
+      if (creator && creator.clerkUserId && creator.clerkUserId !== user?.id) {
+        console.warn("Unauthorized access attempt to dashboard. Redirecting to home.");
+        router.push("/");
+      }
+    }
+  }, [isLoaded, isSignedIn, router, slug, creator, user]);
 
 
   useEffect(() => {
@@ -102,17 +120,17 @@ export default function DashboardPage() {
       selectedTask?.ref || "null"
     );
   }, [selectedTask]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // New state for mobile sidebar
-  const [isModalOpen, setIsModalOpen] = useState(false); // NEW: Modal visibility, tied to selectedTask
-  const [isDesktop, setIsDesktop] = useState(false); // NEW: Track desktop breakpoint
 
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "active";
 
   // Ensure a Convex creator exists for this slug when a signed-in user visits the dashboard
   const upsertCreator = useMutation(api.creators.upsertBySlug);
+  const toggleQueue = useMutation(api.queues.toggleEnabled);
+  const connectStripeAction = useAction(api.stripeOnboarding.createStripeAccountLink);
 
   useEffect(() => {
+    // Skip if not signed in or not loaded
     if (!isLoaded || !isSignedIn || !slug) return;
 
     const displayName =
@@ -144,7 +162,6 @@ export default function DashboardPage() {
       title: "My Page",
       links: [
         { href: "?tab=queue-settings", label: "Queue Settings" },
-        { href: "/skills", label: "My Skills" },
       ],
     },
     {
@@ -153,6 +170,7 @@ export default function DashboardPage() {
     },
   ];
 
+  // Derived state for queue settings
   useEffect(() => {
     if (queueSnapshot) {
       setPersonalEnabled(queueSnapshot.personal.enabled);
@@ -160,48 +178,12 @@ export default function DashboardPage() {
     }
   }, [queueSnapshot]);
 
-  // useEffect: Always called, but guard inside
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      // Always exit loading state first (even on unauth)
-      setLoading(false);
+  // Loading state is now derived from the queries
+  const isLoading = queueSnapshot === undefined || dashboardOverview === undefined;
 
-      // Skip fetch if not signed in
-      if (!isSignedIn) return;
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch queue snapshot and dashboard overview in parallel
-        const [queueSnapshot, overview] = await Promise.all([
-          dataProvider.getQueueSnapshot(slug),
-          dataProvider.getDashboardOverview(slug),
-        ]);
-
-        setQueueData(queueSnapshot);
-        setDashboardOverview(overview);
-
-        // Ensure workflow tags (current / next-up) are persisted based on latest data.
-        try {
-          await recomputeWorkflowTags({ creatorSlug: slug });
-        } catch (err) {
-          console.error(
-            "Failed to recompute workflow tags on dashboard load",
-            err
-          );
-        }
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-        setError("Failed to load dashboard data");
-        // Set empty data to prevent crashes
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, [slug, isSignedIn, recomputeWorkflowTags]); // Re-run on auth change
+  // Error handling is implicit (undefined result while loading), or we can check for null if the query returns null on error
+  // For now, we'll rely on the loading state. If queries fail due to auth, they will throw or return undefined depending on setup.
+  // But since we are fixing auth, we expect them to work.
 
   // New useEffect for body overflow on mobile sidebar open
   useEffect(() => {
@@ -232,8 +214,25 @@ export default function DashboardPage() {
   }, []);
 
   // Early returns: AFTER all hooks
-  // Combined loading (Clerk + app)
-  if (!isLoaded || loading) {
+
+  // 1. Wait for Clerk to load
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-bg">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-4">Loading session...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. If not signed in, return null (redirect handled by useEffect)
+  if (!isSignedIn) {
+    return null;
+  }
+
+  // 3. If signed in but data is loading
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-bg">
         <div className="text-center">
@@ -246,29 +245,9 @@ export default function DashboardPage() {
     );
   }
 
-  // Unauth: redirect to Clerk sign-in with return URL
-  // Unauth: redirect to Clerk sign-in with return URL
-
-
-  if (!isSignedIn) {
-    return null;
-  }
-
   const handleTicketUpdate = async () => {
-    if (!dashboardOverview) return;
-
-    // Refresh queue data and full ticket data after approval
-    try {
-      const [queueSnapshot, overview] = await Promise.all([
-        dataProvider.getQueueSnapshot(slug),
-        dataProvider.getDashboardOverview(slug),
-      ]);
-
-      setQueueData(queueSnapshot);
-      setDashboardOverview(overview);
-    } catch (err) {
-      console.error("Error refreshing dashboard data:", err);
-    }
+    // No-op: queries are reactive and will update automatically
+    // We might want to trigger a re-computation if needed, but for now we can rely on reactivity
   };
 
   // UPDATED: Enhanced handleOpenTicket for table row clicks
@@ -276,13 +255,8 @@ export default function DashboardPage() {
     console.log("🔍 handleOpenTicket called with ref:", ref);
 
     try {
-      if (!queueData || !dashboardOverview) {
+      if (!queueSnapshot || !dashboardOverview) {
         console.warn("Cannot open ticket: Missing queue or overview data");
-        console.log("🔍 queueData:", queueData ? "exists" : "null");
-        console.log(
-          "🔍 dashboardOverview:",
-          dashboardOverview ? "exists" : "null"
-        );
         return;
       }
 
@@ -294,7 +268,7 @@ export default function DashboardPage() {
       }
 
       const queueKind = ticket.queueKind as "personal" | "priority";
-      const queue = queueData[queueKind];
+      const queue = queueSnapshot[queueKind];
       console.log("🔍 Queue kind:", queueKind, "Queue data:", queue);
       if (!queue) {
         console.warn(`No queue snapshot for ${queueKind}`);
@@ -333,14 +307,9 @@ export default function DashboardPage() {
 
       if (relevantTickets) {
         if (ticket.status === "approved") {
-          const sortedAll = sortTicketsByPriorityRatio(
-            dashboardOverview.approvedTickets.filter(
-              (t) => t.queueKind === "personal" || t.queueKind === "priority"
-            )
-          );
-          const idx = sortedAll.findIndex((t) => t.ref === ticket.ref);
-          if (idx === 0) computedStatus = "current";
-          else if (idx === 1) computedStatus = "next-up";
+          const position = activePositions?.find((p) => p.ref === ticket.ref);
+          if (position?.tag === "current") computedStatus = "current";
+          else if (position?.tag === "next-up") computedStatus = "next-up";
           else computedStatus = "pending";
         } else if (ticket.status === "open") {
           computedStatus = "pending";
@@ -403,43 +372,20 @@ export default function DashboardPage() {
     setIsModalOpen(false);
   };
 
-  // Helper function to sort tickets with 3:1 priority-to-personal ratio
-  const sortTicketsByPriorityRatio = (tickets: Ticket[]) => {
-    // Separate tickets by type
-    const priorityTickets = tickets
-      .filter((t) => t.queueKind === "priority")
-      .sort((a, b) => a.createdAt - b.createdAt); // Oldest first within priority
-
-    const personalTickets = tickets
-      .filter((t) => t.queueKind === "personal")
-      .sort((a, b) => a.createdAt - b.createdAt); // Oldest first within personal
-
-    // Interleave with 3:1 ratio (3 priority : 1 personal)
-    const result = [];
-    let priorityIndex = 0;
-    let personalIndex = 0;
-
-    while (
-      priorityIndex < priorityTickets.length ||
-      personalIndex < personalTickets.length
-    ) {
-      // Add up to 3 priority tickets
-      for (let i = 0; i < 3 && priorityIndex < priorityTickets.length; i++) {
-        result.push(priorityTickets[priorityIndex]);
-        priorityIndex++;
-      }
-
-      // Add 1 personal ticket if available
-      if (personalIndex < personalTickets.length) {
-        result.push(personalTickets[personalIndex]);
-        personalIndex++;
-      }
+  // Handler for opening task from TaskCard "OPEN TASK" button
+  const handleOpenTaskCard = (data: TaskCardData) => {
+    console.log("🔍 handleOpenTaskCard called with ref:", data.ref);
+    setSelectedTask(data);
+    // Open modal on mobile
+    if (!isDesktop) {
+      setIsModalOpen(true);
     }
-
-    return result;
   };
 
-  const overview = overviewLive ?? dashboardOverview;
+  // Helper function to sort tickets with 3:1 priority-to-personal ratio
+
+
+  const overview = dashboardOverview;
 
   // Build lookup map from tickets by ref using latest overview
   const ticketByRef: Record<string, Ticket> = {};
@@ -499,9 +445,11 @@ export default function DashboardPage() {
 
   // Unified table data for all tabs - TableComponent will handle visual filtering
   const tableRows: CellComponentData[] = mapPositionsToCellData(positions);
+  // Active table rows from engine-sorted active positions
+  const activeTableRows: CellComponentData[] = mapPositionsToCellData(activePositions);
 
   // Show error state
-  if (error || !queueData || !overview) {
+  if (!queueSnapshot || !overview) {
     return (
       <div
         id="DASHBOARD-LAYOUT"
@@ -514,7 +462,7 @@ export default function DashboardPage() {
               Error loading dashboard
             </h2>
             <p className="text-gray-600 mb-4">
-              {error || "Failed to load data"}
+              Failed to load data
             </p>
             <button
               onClick={() => window.location.reload()}
@@ -528,7 +476,7 @@ export default function DashboardPage() {
     );
   }
 
-  const queues = queueData;
+  const queues = queueSnapshot;
 
   // Engine positions from ticketEngine (already queried above)
   const enginePositions = positions || [];
@@ -552,43 +500,11 @@ export default function DashboardPage() {
       .map((p) => p.queueNumber as number)
   );
 
-  // Build TaskCardData list for NextUpSection with 3:1 priority-to-personal ratio as primary ordering
-  const approvedPositions =
-    activePositions?.filter((p) => p.status === "approved") || [];
+  // Approved task cards for NextUpSection = all engine-approved positions in UI order (awaiting-feedback first)
+  const approvedPositions = activePositions || [];
 
-  // Convert TicketPosition[] to Ticket[] to use existing sortTicketsByPriorityRatio function
-  const approvedTickets: Ticket[] = approvedPositions.map((p) => {
-    const ticket = ticketByRef[p.ref];
-    return ticket || {
-      ref: p.ref,
-      queueKind: p.queueKind,
-      createdAt: ticketByRef[p.ref]?.createdAt || 0,
-      creatorSlug: slug,
-      status: p.status,
-      taskTitle: "",
-      message: "",
-      name: "",
-      email: "",
-      tipCents: 0,
-      tags: [],
-    } as Ticket;
-  });
-
-  // Apply 3:1 sorting to ALL approved tickets (primary ordering)
-  const orderedTickets = sortTicketsByPriorityRatio(approvedTickets);
-
-  // Convert back to TicketPosition[] for mapping to TaskCardData
-  const orderedPositions = orderedTickets.map((ticket) =>
-    approvedPositions.find((p) => p.ref === ticket.ref) || {
-      ref: ticket.ref,
-      queueKind: ticket.queueKind,
-      status: ticket.status,
-      tag: "pending" as const,
-      createdAt: ticket.createdAt,
-      ticketNumber: null,
-      queueNumber: null,
-    }
-  );
+  // Use engine positions directly - they are already sorted by 3:1 logic and queue number
+  const orderedPositions = approvedPositions;
 
   // Debug: Log the 3:1 ordering
   console.log("DEBUG 3:1 ticket ordering:", {
@@ -673,11 +589,37 @@ export default function DashboardPage() {
   const approvedTaskCards: TaskCardData[] = nextUpTaskCards;
 
   // Check if there are pending approvals to conditionally show the column
-  const hasPendingApprovals = overview?.openTickets?.length > 0;
+  // Include both open tickets (free submissions) and pendingPayment tickets (paid submissions after auth)
+  const ticketsAwaitingApproval = [
+    ...(overview?.openTickets || []),
+    ...(overview?.pendingPaymentTickets || [])
+  ];
+  const hasPendingApprovals = ticketsAwaitingApproval.length > 0;
+
+  // DEBUG: Log approval panel visibility
+  console.log("[Dashboard] Approval Panel Debug:", {
+    hasDashboardOverview: !!dashboardOverview,
+    hasOverview: !!overview,
+    openTicketsCount: overview?.openTickets?.length || 0,
+    pendingPaymentCount: overview?.pendingPaymentTickets?.length || 0,
+    totalAwaitingApproval: ticketsAwaitingApproval.length,
+    hasPendingApprovals,
+    ticketsAwaitingApproval: ticketsAwaitingApproval.map(t => ({ ref: t.ref, status: t.status }))
+  });
+
   // autoqueue current card removed; NEXT UP is driven purely by engine positions
 
   return (
     <>
+      {/* Stripe Onboarding Banner - Full Width */}
+      <StripeOnboardingBanner
+        hasStripeAccount={!!creator?.stripeAccountId}
+        onNavigateToEarnings={() => {
+          const url = new URL(window.location.href);
+          url.searchParams.set("tab", "earnings");
+          router.push(url.pathname + url.search);
+        }}
+      />
       <div
         id="DASHBOARD-LAYOUT"
         className="grid grid-cols-[0px_1fr] md:grid-cols-[250px_1fr] grid-rows-[auto_1fr] h-screen overflow-hidden overflow-x-visible bg-bg p-8" // Updated grid for mobile (0px sidebar col)
@@ -719,7 +661,7 @@ export default function DashboardPage() {
         {/* Main Content Area */}
         <div
           data-element="MAIN-CONTENT-WRAPPER"
-          className="flex md:w-full w-[calc(100svw-4rem)] flex-col md:col-start-2 md:row-start-2 md:overflow-hidden md:grid gap-4 md:p-4 md:h-[86svh] h-full md:overflow-y-hidden overflow-y-auto min-h-0 md:min-h-0"
+          className="flex md:w-full w-[calc(100svw-4rem)] flex-col md:col-start-2 md:row-start-2 md:overflow-hidden md:grid gap-4 md:p-4 md:h-[86svh] h-full md:overflow-y-hidden overflow-y-auto min-h-0 md:min-h-0 no-scrollbar"
         >
           {tab === "queue-settings" ? (
             <div className="col-span-2">
@@ -780,14 +722,9 @@ export default function DashboardPage() {
               <NextUpSection
                 approvedTaskCards={approvedTaskCards}
                 activeTaskRef={selectedTask?.ref}
-                onOpen={(data) => {
-                  setSelectedTask(data);
-                  if (!isDesktop) {
-                    setIsModalOpen(true);
-                  }
-                }}
+                onOpen={handleOpenTaskCard}
                 hasPendingApprovals={hasPendingApprovals}
-                openTickets={overview?.openTickets || []}
+                openTickets={ticketsAwaitingApproval}
                 onTicketUpdate={handleTicketUpdate}
               />
 
@@ -798,13 +735,6 @@ export default function DashboardPage() {
                       data={(selectedTask || autoqueueCardData) as TaskCardData}
                       onMarkAsFinished={async () => {
                         try {
-                          const [queueSnapshot, overview] = await Promise.all([
-                            dataProvider.getQueueSnapshot(slug),
-                            dataProvider.getDashboardOverview(slug),
-                          ]);
-
-                          setQueueData(queueSnapshot);
-                          setDashboardOverview(overview);
                           setSelectedTask(null);
 
                           // Recompute workflow tags so NEXT UP reflects closed ticket removal.
@@ -832,7 +762,7 @@ export default function DashboardPage() {
                   className="md:h-1/2 h-full overflow-hidden min-h-0"
                 >
                   <TableComponent
-                    data={tableRows}
+                    data={tab === "active" ? activeTableRows : tableRows}
                     onOpen={handleOpenTicket}
                     activeTaskRef={selectedTask?.ref}
                     enableClickToScroll={true}
@@ -856,7 +786,7 @@ export default function DashboardPage() {
       )}
 
       {/* NEW: TaskModule modal */}
-      {isModalOpen && selectedTask && (tab === "past" || tab === "all") && (
+      {isModalOpen && selectedTask && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
           onClick={closeModal}
@@ -886,13 +816,6 @@ export default function DashboardPage() {
                 }}
                 onMarkAsFinished={async () => {
                   try {
-                    const [queueSnapshot, overview] = await Promise.all([
-                      dataProvider.getQueueSnapshot(slug),
-                      dataProvider.getDashboardOverview(slug),
-                    ]);
-
-                    setQueueData(queueSnapshot);
-                    setDashboardOverview(overview);
                     closeModal();
 
                     // Recompute workflow tags so NEXT UP reflects closed ticket removal.

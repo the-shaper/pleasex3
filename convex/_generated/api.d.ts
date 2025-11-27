@@ -23,6 +23,7 @@ import type * as emails_WelcomeEmail from "../emails/WelcomeEmail.js";
 import type * as emails from "../emails.js";
 import type * as http from "../http.js";
 import type * as internal_seed from "../internal/seed.js";
+import type * as lib_auth from "../lib/auth.js";
 import type * as lib_stripeEngine from "../lib/stripeEngine.js";
 import type * as lib_ticketEngine from "../lib/ticketEngine.js";
 import type * as migrations from "../migrations.js";
@@ -51,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   emails: typeof emails;
   http: typeof http;
   "internal/seed": typeof internal_seed;
+  "lib/auth": typeof lib_auth;
   "lib/stripeEngine": typeof lib_stripeEngine;
   "lib/ticketEngine": typeof lib_ticketEngine;
   migrations: typeof migrations;

@@ -11,40 +11,7 @@ import { useState, useEffect, useMemo } from "react";
 import { CellComponent, type CellComponentData } from "./cellComponent";
 
 // Helper function to sort tickets with 3:1 priority-to-personal ratio (moved from page.tsx)
-const sortTicketsByPriorityRatio = (data: CellComponentData[]) => {
-  // Separate tickets by type
-  const priorityTickets = data
-    .filter((t) => t.queueKind === "priority")
-    .sort((a, b) => a.requestDate - b.requestDate); // Oldest first within priority
 
-  const personalTickets = data
-    .filter((t) => t.queueKind === "personal")
-    .sort((a, b) => a.requestDate - b.requestDate); // Oldest first within personal
-
-  // Interleave with 3:1 ratio (3 priority : 1 personal)
-  const result = [];
-  let priorityIndex = 0;
-  let personalIndex = 0;
-
-  while (
-    priorityIndex < priorityTickets.length ||
-    personalIndex < personalTickets.length
-  ) {
-    // Add up to 3 priority tickets
-    for (let i = 0; i < 3 && priorityIndex < priorityTickets.length; i++) {
-      result.push(priorityTickets[priorityIndex]);
-      priorityIndex++;
-    }
-
-    // Add 1 personal ticket if available
-    if (personalIndex < personalTickets.length) {
-      result.push(personalTickets[personalIndex]);
-      personalIndex++;
-    }
-  }
-
-  return result;
-};
 
 // Re-export for convenience
 export type { CellComponentData };
@@ -116,13 +83,13 @@ export function TableComponent({
     return getFilteredData(data, variant);
   }, [data, variant]);
 
-  // Apply custom sorting logic: 3:1 pattern by default, numeric sort when GENERAL column is explicitly sorted
+  // Apply custom sorting logic: numeric sort when GENERAL column is explicitly sorted
   const sortedData = useMemo(() => {
     const isGeneralSorted = sorting.length > 0 && sorting[0].id === "general";
 
     if (!isGeneralSorted) {
-      // Default: apply 3:1 priority-to-personal pattern
-      return sortTicketsByPriorityRatio(filteredData);
+      // Default: show data as-is (respect parent's order)
+      return filteredData;
     } else if (sorting[0].desc === false) {
       // GENERAL sorted ascending: simple numeric ascending
       return [...filteredData].sort((a, b) => {
@@ -234,14 +201,9 @@ export function TableComponent({
 
   const isWideLayout = variant === "past" || variant === "all";
 
-  const gridRows = isCollapsed ? "auto 0fr" : "auto 1fr";
-
   return (
-    <div
-      className={`grid h-full min-h-0 transition-[grid-template-rows] duration-300 ease-in-out ${className}`}
-      style={{ gridTemplateRows: gridRows }}
-    >
-      {/* NEW: Clickable title matching page.tsx style */}
+    <div className={`flex flex-col h-full min-h-0 ${className}`}>
+      {/* Clickable title matching page.tsx style */}
       <button
         onClick={toggleCollapse}
         className="flex items-center justify-between w-full mb-4 pb-2 border-b border-gray-subtle text-left sticky top-0 bg-bg z-10"
@@ -255,149 +217,154 @@ export function TableComponent({
               : "ACTIVE FAVORS"}
         </h2>
         <span
-          className={`text-xs text-gray-subtle  transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
+          className={`text-xs text-gray-subtle transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
         >
           ▼
         </span>
       </button>
 
-      {/* NEW: Wrap existing table content for collapse with flexible height */}
-      <div className="flex flex-col overflow-hidden min-h-0">
-        {/* Shared horizontal scroll container for header and data */}
-        <div className="flex-1 overflow-x-auto overflow-y-auto no-scrollbar">
-          <div className="min-w-max flex flex-col h-full">
-            {/* Header Row - Sticky */}
-            <div className="flex-none sticky top-0 z-10 bg-bg">
-              <div
-                className={`grid gap-4 items-center p-4 border-b-2 border-gray-subtle`}
-                style={{
-                  gridTemplateColumns: getGridColumns(variant),
-                }}
-              >
-                {/* GENERAL - Sortable */}
-                <button
-                  className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-center gap-1"
-                  onClick={table.getColumn("general")?.getToggleSortingHandler()}
+      {/* Collapsible content wrapper with grid animation */}
+      <div
+        className="grid transition-[grid-template-rows] duration-300 ease-in-out flex-1 min-h-0"
+        style={{ gridTemplateRows: isCollapsed ? "0fr" : "1fr" }}
+      >
+        <div className="overflow-hidden min-h-0">
+          {/* Shared horizontal scroll container for header and data */}
+          <div className="h-full overflow-x-auto overflow-y-auto no-scrollbar">
+            <div className="min-w-max flex flex-col h-full">
+              {/* Header Row - Sticky */}
+              <div className="flex-none sticky top-0 z-10 bg-bg">
+                <div
+                  className={`grid gap-4 items-center p-4 border-b-2 border-gray-subtle`}
+                  style={{
+                    gridTemplateColumns: getGridColumns(variant),
+                  }}
                 >
-                  GENERAL
-                  {{
-                    asc: " ↑",
-                    desc: " ↓",
-                  }[table.getColumn("general")?.getIsSorted() as string] ?? " ⇅"}
-                </button>
-
-                {/* TICKET - Not sortable */}
-                <div className="font-semibold text-sm uppercase tracking-wider">
-                  TICKET
-                </div>
-
-                {/* QUEUE - Not sortable */}
-                <div className="font-semibold text-sm uppercase tracking-wider">
-                  QUEUE
-                </div>
-
-                {/* TASK - Not sortable */}
-                <div className="font-semibold text-sm uppercase tracking-wider">
-                  TASK
-                </div>
-
-                {/* FRIEND - Not sortable */}
-                <div className="font-semibold text-sm uppercase tracking-wider">
-                  FRIEND
-                </div>
-
-                {/* CONDITIONAL: TAGS - Only for past/all variants */}
-                {(variant === "past" || variant === "all") && (
-                  <div className="font-semibold text-sm uppercase tracking-wider">
-                    TAGS
-                  </div>
-                )}
-
-                {/* CONDITIONAL: STATUS - Only for past/all variants */}
-                {(variant === "past" || variant === "all") && (
-                  <div className="font-semibold text-sm uppercase tracking-wider">
-                    STATUS
-                  </div>
-                )}
-
-                {/* CONDITIONAL: TIP - Only for past/all variants */}
-                {(variant === "past" || variant === "all") && (
-                  <div className="font-semibold text-sm uppercase tracking-wider">
-                    TIP
-                  </div>
-                )}
-
-                {/* REQUESTED ON - Sortable */}
-                <button
-                  className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-center gap-1"
-                  onClick={table.getColumn("date")?.getToggleSortingHandler()}
-                >
-                  REQUESTED ON
-                  {{
-                    asc: " ↑",
-                    desc: " ↓",
-                  }[table.getColumn("date")?.getIsSorted() as string] ?? " ⇅"}
-                </button>
-
-                {/* CONDITIONAL: RESOLVED ON - Only for past/all variants */}
-                {(variant === "past" || variant === "all") && (
+                  {/* GENERAL - Sortable */}
                   <button
                     className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-center gap-1"
-                    onClick={table.getColumn("resolved")?.getToggleSortingHandler()}
+                    onClick={table.getColumn("general")?.getToggleSortingHandler()}
                   >
-                    RESOLVED ON
+                    GENERAL
                     {{
                       asc: " ↑",
                       desc: " ↓",
-                    }[table.getColumn("resolved")?.getIsSorted() as string] ?? " ⇅"}
+                    }[table.getColumn("general")?.getIsSorted() as string] ?? " ⇅"}
                   </button>
-                )}
-              </div>
-            </div>
 
-            {/* Data Rows */}
-            <div className="flex-1 pb-6">
-              {sortedData.map((rowData) => {
-                const shouldEnableClickToScroll =
-                  enableClickToScroll &&
-                  (clickToScrollBreakpoint === "both" ||
-                    (clickToScrollBreakpoint === "desktop" && !isMobile) ||
-                    (clickToScrollBreakpoint === "mobile" && isMobile));
-
-                const handleRowClick = (ref: string) => {
-                  // Always notify parent so PAST/ALL can open their modal.
-                  if (onOpen) {
-                    onOpen(ref);
-                  }
-
-                  // Optionally scroll the corresponding task card into view
-                  // (used by ACTIVE desktop layout only when enabled by props).
-                  if (shouldEnableClickToScroll) {
-                    scrollToTaskCard(ref);
-                  }
-                };
-
-                return (
-                  <div
-                    key={rowData.ref}
-                    className={`${isMobile ? "hover:bg-gray-subtle/20 cursor-pointer" : ""} ${shouldEnableClickToScroll
-                      ? "cursor-pointer hover:bg-gray-subtle/20"
-                      : ""
-                      }`}
-                    onClick={() => handleRowClick(rowData.ref)}
-                  >
-                    <CellComponent
-                      data={rowData}
-                      // Keep existing mobile-specific behavior inside the cell if needed
-                      onOpen={isMobile ? onOpen : undefined}
-                      className="border-b-0"
-                      isActive={rowData.ref === activeTaskRef}
-                      disableFocusStyling={disableFocusStyling}
-                      variant={variant}
-                    />
+                  {/* TICKET - Not sortable */}
+                  <div className="font-semibold text-sm uppercase tracking-wider">
+                    TICKET
                   </div>
-                );
-              })}
+
+                  {/* QUEUE - Not sortable */}
+                  <div className="font-semibold text-sm uppercase tracking-wider">
+                    QUEUE
+                  </div>
+
+                  {/* TASK - Not sortable */}
+                  <div className="font-semibold text-sm uppercase tracking-wider">
+                    TASK
+                  </div>
+
+                  {/* FRIEND - Not sortable */}
+                  <div className="font-semibold text-sm uppercase tracking-wider">
+                    FRIEND
+                  </div>
+
+                  {/* CONDITIONAL: TAGS - Only for past/all variants */}
+                  {(variant === "past" || variant === "all") && (
+                    <div className="font-semibold text-sm uppercase tracking-wider">
+                      TAGS
+                    </div>
+                  )}
+
+                  {/* CONDITIONAL: STATUS - Only for past/all variants */}
+                  {(variant === "past" || variant === "all") && (
+                    <div className="font-semibold text-sm uppercase tracking-wider">
+                      STATUS
+                    </div>
+                  )}
+
+                  {/* CONDITIONAL: TIP - Only for past/all variants */}
+                  {(variant === "past" || variant === "all") && (
+                    <div className="font-semibold text-sm uppercase tracking-wider">
+                      TIP
+                    </div>
+                  )}
+
+                  {/* REQUESTED ON - Sortable */}
+                  <button
+                    className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-center gap-1"
+                    onClick={table.getColumn("date")?.getToggleSortingHandler()}
+                  >
+                    REQUESTED ON
+                    {{
+                      asc: " ↑",
+                      desc: " ↓",
+                    }[table.getColumn("date")?.getIsSorted() as string] ?? " ⇅"}
+                  </button>
+
+                  {/* CONDITIONAL: RESOLVED ON - Only for past/all variants */}
+                  {(variant === "past" || variant === "all") && (
+                    <button
+                      className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-center gap-1"
+                      onClick={table.getColumn("resolved")?.getToggleSortingHandler()}
+                    >
+                      RESOLVED ON
+                      {{
+                        asc: " ↑",
+                        desc: " ↓",
+                      }[table.getColumn("resolved")?.getIsSorted() as string] ?? " ⇅"}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Data Rows */}
+              <div className="flex-1 pb-6">
+                {sortedData.map((rowData) => {
+                  const shouldEnableClickToScroll =
+                    enableClickToScroll &&
+                    (clickToScrollBreakpoint === "both" ||
+                      (clickToScrollBreakpoint === "desktop" && !isMobile) ||
+                      (clickToScrollBreakpoint === "mobile" && isMobile));
+
+                  const handleRowClick = (ref: string) => {
+                    // Always notify parent so PAST/ALL can open their modal.
+                    if (onOpen) {
+                      onOpen(ref);
+                    }
+
+                    // Optionally scroll the corresponding task card into view
+                    // (used by ACTIVE desktop layout only when enabled by props).
+                    if (shouldEnableClickToScroll) {
+                      scrollToTaskCard(ref);
+                    }
+                  };
+
+                  return (
+                    <div
+                      key={rowData.ref}
+                      className={`${isMobile ? "hover:bg-gray-subtle/20 cursor-pointer" : ""} ${shouldEnableClickToScroll
+                        ? "cursor-pointer hover:bg-gray-subtle/20"
+                        : ""
+                        }`}
+                      onClick={() => handleRowClick(rowData.ref)}
+                    >
+                      <CellComponent
+                        data={rowData}
+                        // Keep existing mobile-specific behavior inside the cell if needed
+                        onOpen={isMobile ? onOpen : undefined}
+                        className="border-b-0"
+                        isActive={rowData.ref === activeTaskRef}
+                        disableFocusStyling={disableFocusStyling}
+                        variant={variant}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

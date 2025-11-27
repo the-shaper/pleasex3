@@ -11,7 +11,9 @@ export default defineSchema({
     // Stripe / payouts integration
     stripeAccountId: v.optional(v.string()),
     payoutEnabled: v.optional(v.boolean()),
-  }).index("by_slug", ["slug"]),
+    clerkUserId: v.optional(v.string()),
+  }).index("by_slug", ["slug"])
+    .index("by_clerk_user", ["clerkUserId"]),
 
   queues: defineTable({
     creatorSlug: v.string(),

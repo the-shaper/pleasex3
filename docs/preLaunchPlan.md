@@ -2,7 +2,7 @@
 
 ## 1. Security & Multi-Tenancy Verification
 **Objective**: Ensure strict data isolation between tenants.
-- [ ] **URL Isolation**: Verify `user A` cannot access `user B`'s dashboard simply by changing the URL slug.
+- [x] **URL Isolation**: Verify `user A` cannot access `user B`'s dashboard simply by changing the URL slug.
 - [ ] **Query Auditing**: Ensure all Convex queries filter strictly by the *authenticated* user's identity (Clerk ID), not just the `slug` passed in the URL.
 - [ ] **Action Verification**: Test edge cases where a user might try to perform actions (approve/reject) on tickets belonging to another creator.
 
@@ -32,7 +32,7 @@
 **Proposed Solution**:
 - [ ] **Sidebar Update**: Replace the "My Skills" button in the dashboard sidebar with a **"My Account"** button.
 - [ ] **My Account View**: Create a simple view/modal that displays:
-    - **Username**: The slug used for their public URL (e.g., `pleasex3.com/ale`).
+    - **Username**: The slug used for their public URL (e.g., `pleasex3.com/alex`).
     - **Display Name**: The name used for greetings and emails (e.g., "Alejandro").
 - [ ] **Future Editing**: Plan for functionality to allow users to edit these fields, ensuring changes sync correctly between Clerk and Convex and handle unique constraints.
 
@@ -51,3 +51,6 @@
         - Disable/Hide the tipping component.
         - Show "FREE" indicator.
         - Ensure the submit mutation handles "0 tip" tickets correctly without attempting Stripe charges.
+
+**Priority queue default price fix**
+- [ ] When a new account gets created and stripe set-up, the priority queue does not display the default price of $50 until the creator manually adjusts the price in the queue settings on the dashboard. Fix this.

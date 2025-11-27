@@ -1,6 +1,7 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
 import { getQueueSnapshot, getTicketPositions, getActiveTicketPositions as getActiveTicketPositionsEngine, getNextTicketNumbersForCreator, getTicketPosition, type TicketPosition } from "./lib/ticketEngine";
+import { requireCreatorOwnership } from "./lib/auth";
 
 export const getCreator = query({
   args: { creatorSlug: v.string() },
@@ -24,10 +25,7 @@ export const getAllCreators = query({
 export const getOverview = query({
   args: { creatorSlug: v.string() },
   handler: async (ctx, args) => {
-    const creator = await ctx.db
-      .query("creators")
-      .withIndex("by_slug", (q) => q.eq("slug", args.creatorSlug))
-      .unique();
+    const creator = await requireCreatorOwnership(ctx, args.creatorSlug);
 
     const queues = await getQueueSnapshot(ctx, args.creatorSlug);
 
@@ -59,6 +57,7 @@ export const getOverview = query({
 export const getAllTicketsWithPositions = query({
   args: { creatorSlug: v.string() },
   handler: async (ctx, args) => {
+    await requireCreatorOwnership(ctx, args.creatorSlug);
     const positions = await getTicketPositions(ctx, args.creatorSlug);
     return positions;
   },
@@ -67,6 +66,7 @@ export const getAllTicketsWithPositions = query({
 export const getActiveTicketPositions = query({
   args: { creatorSlug: v.string() },
   handler: async (ctx, args): Promise<TicketPosition[]> => {
+    await requireCreatorOwnership(ctx, args.creatorSlug);
     const positions = await getActiveTicketPositionsEngine(ctx, args.creatorSlug);
     return positions;
   },
@@ -82,6 +82,15 @@ export const getNextTicketNumbers = query({
 export const getTicketPositionByRef = query({
   args: { creatorSlug: v.string(), ref: v.string() },
   handler: async (ctx, args) => {
+    // This one might be public? But usually dashboard uses it.
+    // If it's for public page, we shouldn't require ownership.
+    // But the name implies it's a specific lookup.
+    // Let's assume it's for dashboard for now.
+    // Wait, public page might need to know position.
+    // Let's check usage. If it's used in dashboard/page.tsx, it needs auth.
+    // If used in [slug]/page.tsx (public), it shouldn't.
+    // Given the file is "dashboard.ts", let's protect it.
+    await requireCreatorOwnership(ctx, args.creatorSlug);
     return await getTicketPosition(ctx, args.ref, args.creatorSlug);
   },
 });

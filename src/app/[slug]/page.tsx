@@ -1,15 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import QueueCard from "../../../ui-backup/QueueCard";
+import { TrackingModal } from "@/components/trackingModal";
 
 export default function CreatorQueuesPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
+
   // Reactive queries (auto-update on DB changes)
   const queueSnapshot = useQuery(api.queues.getSnapshot, { creatorSlug: slug });
   const creatorInfo = useQuery(api.dashboard.getCreator, { creatorSlug: slug });
@@ -74,16 +78,16 @@ export default function CreatorQueuesPage() {
               JOIN THE QUEUE
             </p>
           </div>
-          <Link
-            href={`/${slug}/tracking`}
-            className="bg-blue-2 px-6 py-1 uppercase"
+          <button
+            onClick={() => setIsTrackingModalOpen(true)}
+            className="bg-blue-2 px-6 py-1 uppercase cursor-pointer hover:opacity-90 transition-opacity"
             style={{ fontFamily: "var(--font-body)" }}
           >
             I HAVE A TRACKING NUMBER
-          </Link>
+          </button>
         </header>
         <main className="flex-1 flex items-center">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full items-stretch content-stretch">
+          <div className="flex flex-row w-full items-stretch content-stretch justify-center gap-6">
             <QueueCard
               kind="personal"
               slug={slug}
@@ -91,13 +95,15 @@ export default function CreatorQueuesPage() {
               nextTicketNumber={nextNumbers?.nextPersonalNumber}
               minPriorityTipCents={minPriorityTipCents}
             />
-            <QueueCard
-              kind="priority"
-              slug={slug}
-              data={safeQueueSnapshot.priority}
-              nextTicketNumber={nextNumbers?.nextPriorityNumber}
-              minPriorityTipCents={minPriorityTipCents}
-            />
+            {safeQueueSnapshot.priority.enabled && (
+              <QueueCard
+                kind="priority"
+                slug={slug}
+                data={safeQueueSnapshot.priority}
+                nextTicketNumber={nextNumbers?.nextPriorityNumber}
+                minPriorityTipCents={minPriorityTipCents}
+              />
+            )}
           </div>
         </main>
         <footer className="py-6">
@@ -117,6 +123,12 @@ export default function CreatorQueuesPage() {
           </div>
         </footer>
       </div>
+
+      {/* Tracking Modal */}
+      <TrackingModal
+        isOpen={isTrackingModalOpen}
+        onClose={() => setIsTrackingModalOpen(false)}
+      />
     </div>
   );
 }

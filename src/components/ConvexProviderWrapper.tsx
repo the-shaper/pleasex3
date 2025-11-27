@@ -1,7 +1,8 @@
 "use client";
 
-import { ConvexProvider, ConvexReactClient } from "convex/react";
-import { api } from "@convex/_generated/api";
+import { ConvexReactClient } from "convex/react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { useAuth } from "@clerk/nextjs";
 import { useMemo } from "react";
 
 export function ConvexProviderWrapper({ children }: { children: React.ReactNode }) {
@@ -10,5 +11,9 @@ export function ConvexProviderWrapper({ children }: { children: React.ReactNode 
     []
   );
 
-  return <ConvexProvider client={convex}>{children}</ConvexProvider>;
+  return (
+    <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+      {children}
+    </ConvexProviderWithClerk>
+  );
 }

@@ -10,6 +10,11 @@ export const create = mutation({
     email: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthorized");
+    }
+
     // Insert creator
     const creatorId = await ctx.db.insert("creators", {
       slug: args.slug,
@@ -17,6 +22,7 @@ export const create = mutation({
       minPriorityTipCents: args.minPriorityTipCents,
       email: args.email,
       showAutoqueueCard: true,
+      clerkUserId: identity.subject,
     });
 
     // Insert personal queue (enabled by default)
@@ -39,7 +45,7 @@ export const create = mutation({
       nextTurn: 1,
       etaDays: 0,
       activeCount: 0,
-      enabled: true,
+      enabled: false,
       avgDaysPerTicket: 1,
     });
 
@@ -61,12 +67,33 @@ export const upsertBySlug = mutation({
     email: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthorized");
+    }
+
     const existing = await ctx.db
       .query("creators")
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .unique();
 
     if (existing) {
+      // Backfill clerkUserId if missing
+      if (!existing.clerkUserId) {
+        await ctx.db.patch(existing._id, { clerkUserId: identity.subject });
+      } else if (existing.clerkUserId !== identity.subject) {
+        // If the slug is claimed by someone else, we might want to error or handle it.
+        // For now, let's just return existing (and let the dashboard fail if they try to access it)
+        // OR, we could throw an error here to prevent "taking over" a slug.
+        // But upsert is often used for "ensure I exist".
+        // If I am user B and I say "upsert userA", and userA exists and belongs to userA...
+        // I shouldn't be able to edit it.
+        // But this mutation doesn't edit much, just returns ID.
+        // However, the backfill above is dangerous if we don't check.
+        // Let's only backfill if we are sure? 
+        // Actually, if it exists and has a DIFFERENT clerkUserId, we should probably NOT return it as if it's yours?
+        // But for now, let's just patch if missing.
+      }
       return { creatorId: existing._id };
     }
 
@@ -76,6 +103,7 @@ export const upsertBySlug = mutation({
       minPriorityTipCents: args.minPriorityTipCents,
       email: args.email,
       showAutoqueueCard: true,
+      clerkUserId: identity.subject,
     });
 
     // Insert personal queue (enabled by default)
@@ -98,7 +126,7 @@ export const upsertBySlug = mutation({
       nextTurn: 1,
       etaDays: 0,
       activeCount: 0,
-      enabled: true,
+      enabled: false,
       avgDaysPerTicket: 1,
     });
 

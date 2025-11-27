@@ -1,79 +1,15 @@
-## Project Overview
+# Please Please Please
 
-This is a creator queue management system where people can submit tickets for personal or priority favors. The system features:
+A creator queue management system for handling personal and priority favor requests with Stripe payments.
 
-- Dual queue system (personal and priority)
-- 3:1 priority:personal ratio in main queue
-- Real-time queue updates
-- Creator dashboard for ticket management
-- Tip-based priority system
-
-## Architecture
-
-### Tech Stack
+## Tech Stack
 
 - **Frontend**: Next.js 15 with App Router
-- **Backend**: Convex for database and serverless functions
+- **Backend**: Convex (database + serverless functions)
 - **Styling**: Tailwind CSS v4
-- **Authentication**: Clerk (planned for future implementation)
-- **Testing**: Vitest + Playwright
-
-### Key Features
-
-- Creator pages with queue cards
-- Ticket submission with dynamic queue switching
-- Real-time queue position updates
-- Approval/rejection workflow
-- Dashboard with filtering and search
-
-## Documentation Structure
-
-### Architecture Documents
-
-- [`architecture/data-model.md`](architecture/data-model.md) - Database schema and relationships
-- [`architecture/ui-migration-strategy.md`](architecture/ui-migration-strategy.md) - UI component migration plan
-- [`architecture/convex-functions.md`](architecture/convex-functions.md) - Backend functions specification
-- [`architecture/api-endpoints-dataflow.md`](architecture/api-endpoints-dataflow.md) - API documentation and data flow
-
-### Implementation Plans
-
-- [`implementation/creator-page-plan.md`](implementation/creator-page-plan.md) - Creator page implementation
-- [`implementation/ticket-submission-plan.md`](implementation/ticket-submission-plan.md) - Ticket submission flow
-- [`implementation/dashboard-plan.md`](implementation/dashboard-plan.md) - Creator dashboard
-- [`implementation/ticket-approval-workflow.md`](implementation/ticket-approval-workflow.md) - Approval workflow
-- [`implementation/main-queue-algorithm.md`](implementation/main-queue-algorithm.md) - Queue algorithm implementation
-- [`implementation/notification-system-plan.md`](implementation/notification-system-plan.md) - Notification system (future)
-- [`implementation/testing-strategy.md`](implementation/testing-strategy.md) - Testing approach
-
-## Migration Strategy
-
-### Phase 1: Foundation
-
-1. Set up Convex integration
-2. Define schema and basic functions
-3. Migrate global styles and layout
-4. Set up testing infrastructure
-
-### Phase 2: Core Features
-
-1. Implement creator page with queue cards
-2. Build ticket submission flow
-3. Create approval workflow
-4. Add real-time updates
-
-### Phase 3: Advanced Features
-
-1. Build creator dashboard
-2. Implement main queue algorithm
-3. Add filtering and search
-4. Performance optimization
-
-### Phase 4: Polish & Testing
-
-1. Comprehensive testing
-2. Mobile responsiveness
-3. Accessibility improvements
-4. Documentation
+- **Auth**: Clerk
+- **Payments**: Stripe (authorize now, capture later)
+- **Email**: Resend + React Email
 
 ## Getting Started
 
@@ -81,15 +17,13 @@ This is a creator queue management system where people can submit tickets for pe
 
 - Node.js 18+
 - Convex account
-- (Future) Clerk account for authentication
+- Clerk account
+- Stripe account
+- Resend account (optional for emails)
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd pleasex3
-
 # Install dependencies
 pnpm install
 
@@ -102,93 +36,96 @@ pnpm dev
 
 ### Environment Variables
 
+#### Convex Environment Variables
+Set these via `npx convex env set`:
+
+```bash
+npx convex env set STRIPE_API_KEY sk_...
+npx convex env set STRIPE_WEBHOOK_SECRET whsec_...
+npx convex env set RESEND_API_KEY re_...
+npx convex env set RESEND_FROM_EMAIL noreply@yourdomain.com
+```
+
+#### Next.js Environment Variables
 Create a `.env.local` file:
 
 ```env
-NEXT_PUBLIC_CONVEX_URL=your_convex_url
-CONVEX_DEPLOYMENT=your_convex_deployment
-STRIPE_API_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+CLERK_SECRET_KEY=sk_...
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-## Key Components
+### Stripe Webhook Setup (Development)
 
-### UI Components (from ui-backup/)
+Run Stripe CLI to forward webhooks to your Convex backend:
 
-- `QueueCard.tsx` - Queue display with tip selection
-- `SubmitClient.tsx` - Ticket submission form
-- `TicketApprovalCard.tsx` - Dashboard approval interface
-- `globals.css` - Global styles and theme
+```bash
+stripe listen --forward-to https://your-deployment.convex.site/stripe
+```
 
-### Convex Functions
+Copy the webhook signing secret and set it in Convex:
 
-- Creator management
-- Ticket operations
-- Queue algorithm
-- Real-time subscriptions
+```bash
+npx convex env set STRIPE_WEBHOOK_SECRET whsec_...
+```
+
+## Core Features
+
+- **Dual Queue System**: Personal (free) and Priority (paid) queues
+- **3:1 Queue Ratio**: Priority tickets processed 3x faster than personal
+- **Payment Flow**: Stripe "authorize now, capture later" for creator approval
+- **Real-time Updates**: Live queue positions and ticket status
+- **Creator Dashboard**: Approve/reject tickets, manage queues, view earnings
+- **Email Notifications**: Automated emails for ticket receipts, approvals, and rejections
+
+## Key Workflows
+
+### Ticket Submission Flow
+
+1. User visits `/{creatorSlug}/submit`
+2. Fills out ticket form (name, email, task description)
+3. Selects queue type (personal or priority)
+4. If priority, enters payment via Stripe
+5. Stripe authorizes payment (holds funds)
+6. Webhook marks ticket as `open` → appears in creator dashboard
+7. User receives receipt email
+
+### Ticket Approval Flow
+
+1. Creator sees ticket in "Pending Approvals" panel
+2. Reviews ticket details
+3. Approves → Stripe captures payment, ticket moves to queue
+4. Rejects → Stripe cancels/refunds payment
+5. User receives approval/rejection email
 
 ## Data Model
 
 ### Core Tables
 
-- **creators** - Creator profiles and settings
-- **tickets** - Ticket submissions and metadata
-- **queueStates** - Queue metrics and main queue ordering
+- **creators**: Creator profiles, Stripe account IDs, queue settings
+- **tickets**: Ticket submissions with status, payment info, queue assignments
+- **queues**: Queue metrics (active count, ETA, enabled status)
+- **payments**: Payment records from Stripe
+- **payouts**: Monthly payout calculations
 
-### Key Relationships
+### Ticket Statuses
 
-- Creator has many tickets
-- Tickets belong to exactly one queue type
-- Queue state tracks metrics for each creator
+- `pending_payment`: Payment being processed
+- `open`: Awaiting creator approval
+- `approved`: In queue, being worked on
+- `closed`: Completed
+- `rejected`: Declined by creator
 
 ## Queue Algorithm
 
-The main queue maintains a 3:1 priority:personal ratio:
+The main queue uses a 3:1 priority:personal ratio:
 
 1. Separate approved tickets by queue type
-2. Interleave following 3 priority, 1 personal pattern
-3. Maintain original order within each type
-4. Dynamically recalculate positions
-
-## Testing Strategy
-
-### Test Types
-
-- **Unit Tests** (70%) - Component and function testing
-- **Integration Tests** (20%) - API and data flow testing
-- **E2E Tests** (10%) - Full user journey testing
-
-### Tools
-
-- Vitest for unit/integration tests
-- Playwright for E2E tests
-- Convex test utilities for backend testing
-
-## Future Enhancements
-
-### Planned Features
-
-- Clerk authentication integration
-- Email notification system
-- Analytics and reporting
-- Mobile app
-- Advanced queue management
-
-### Performance Improvements
-
-- Queue position caching
-- Optimized real-time subscriptions
-- Image/file uploads
-- Rate limiting
-
-## Contributing
-
-1. Follow the established architecture patterns
-2. Write tests for new features
-3. Update documentation
-4. Ensure mobile responsiveness
-5. Check accessibility compliance
+2. Interleave: 3 priority tickets, then 1 personal ticket
+3. Maintain FIFO order within each type
+4. Dynamically recalculate positions on status changes
 
 ## Deployment
 
@@ -202,19 +139,48 @@ pnpm dev
 ### Production
 
 ```bash
-npx convex deploy
+# Deploy Convex backend
+npx convex deploy --prod
+
+# Build and deploy Next.js
 pnpm build
 pnpm start
 ```
 
-## Support
+### Stripe Webhook (Production)
 
-For questions about the implementation:
+Configure webhook endpoint in Stripe Dashboard:
+- URL: `https://your-deployment.convex.site/stripe`
+- Events: `payment_intent.amount_capturable_updated`, `payment_intent.succeeded`
 
-1. Check the relevant documentation files
-2. Review the architecture documents
-3. Examine the implementation plans
-4. Review the testing strategy
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── [slug]/          # Creator pages
+│   │   ├── dashboard/   # Creator dashboard
+│   │   └── submit/      # Ticket submission
+│   └── api/             # Next.js API routes
+├── components/          # React components
+│   ├── dashboard/       # Dashboard components
+│   └── checkout/        # Payment components
+└── lib/                 # Utilities and types
+
+convex/
+├── schema.ts            # Database schema
+├── tickets.ts           # Ticket mutations/queries
+├── payments.ts          # Stripe payment actions
+├── http.ts              # Stripe webhook handler
+├── emails.ts            # Email sending actions
+└── lib/
+    └── ticketEngine.ts  # Queue algorithm
+```
+
+## Known Issues & Limitations
+
+- **Resend Dev Mode**: Free tier only sends to verified emails. Verify a domain for production.
+- **Stripe Test Mode**: Use test cards for development (e.g., `4242 4242 4242 4242`)
 
 ## License
 

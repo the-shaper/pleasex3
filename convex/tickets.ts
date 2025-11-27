@@ -120,7 +120,8 @@ export const approve = mutation({
       .withIndex("by_ref", (q) => q.eq("ref", args.ref))
       .unique();
     if (!ticket) return { ok: true } as const;
-    if (ticket.status !== "open") return { ok: true } as const;
+    // Allow approval for both open (free) and pending_payment (paid) tickets
+    if (ticket.status !== "open" && ticket.status !== "pending_payment") return { ok: true } as const;
 
     // Attempt to capture payment first (v3)
     if (ticket.paymentIntentId) {
@@ -187,7 +188,8 @@ export const reject = mutation({
       .withIndex("by_ref", (q) => q.eq("ref", args.ref))
       .unique();
     if (!ticket) return { ok: true } as const;
-    if (ticket.status !== "open") return { ok: true } as const;
+    // Allow rejection for both open (free) and pending_payment (paid) tickets
+    if (ticket.status !== "open" && ticket.status !== "pending_payment") return { ok: true } as const;
 
     // Similar to approve:
     // Real paid tickets should use `cancelOrRefundPaymentForTicket` action.

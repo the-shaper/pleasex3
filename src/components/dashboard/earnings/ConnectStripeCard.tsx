@@ -26,7 +26,7 @@ export function ConnectStripeCard({
         <button
           type="button"
           onClick={onConnectClick}
-          className="mt-2 inline-flex items-center justify-center bg-blue-2 text-bg text-xs font-semibold uppercase px-6 py-2 border border-blue-2"
+          className="mt-2 inline-flex items-center justify-center bg-text text-coral text-xs font-semibold uppercase px-6 py-2 border border-text hover:border-coral transition-colors"
         >
           Connect Stripe payouts
         </button>
