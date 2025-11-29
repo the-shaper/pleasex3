@@ -88,11 +88,11 @@ export default function DashboardHeader({
         {/* Bottom section: Username greeting and title */}
         <div
           data-element="HEADER-TITLES-WRAPPER"
-          className="flex flex-col gap-2"
+          className="flex flex-col"
         >
           <SignedIn>
-            <p className="uppercase text-text-muted text-sm">
-              Hello, {user?.firstName || user?.fullName || "User"}!
+            <p className="uppercase text-text-muted text-m">
+              Hello, <span className="text-coral">{user?.username || "User"}!</span>
             </p>
           </SignedIn>
           <SignedOut>

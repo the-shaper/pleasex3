@@ -28,7 +28,7 @@ export default function Home() {
           <div className="flex items-start justify-center pb-4">
             {isLoaded && user && userSlug && (
               <h6 className="text-xs font-bold text-text uppercase tracking-widest">
-                signed in as <a href={`/${userSlug}`} className="text-text underline hover:opacity-80 transition-opacity cursor-pointer">{user.firstName || user.fullName}</a>
+                signed in as <a href={`/${userSlug}`} className="text-text underline hover:opacity-80 transition-opacity cursor-pointer">{userSlug}</a>
               </h6>
             )}
           </div>

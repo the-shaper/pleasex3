@@ -163,37 +163,23 @@ export default function TaskModule({
   };
 
   return (
-    <section className={`flex flex-col gap-6 text-text  ${className}`}>
-      {/* Title row with optional collapse on non-modal usage */}
-      <button
-        onClick={toggleCollapse}
-        className="flex items-center justify-between w-full text-left border-b border-gray-subtle"
-        aria-expanded={!isCollapsed}
-      >
+    <section className={`flex flex-col gap-6 text-text h-full ${className}`}>
+      {/* Title row - collapse disabled in dashboard view */}
+      <div className="flex items-center justify-between w-full border-b border-gray-subtle">
         <h2 className="text-xl tracking-tight font-mono font-bold pb-2 ">
           TASK DETAILS:
         </h2>
-        {!isModal && (
-          <span
-            className={`text-xs text-gray-subtle transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""
-              }`}
-          >
-            ▼
-          </span>
-        )}
-      </button>
+      </div>
 
-      {/* Content wrapper: collapsible only when not in modal */}
-      <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${!isModal && isCollapsed ? "max-h-0" : "max-h-none"
-          }`}
+      {/* Content wrapper: always expanded in dashboard */}
+      <div className="overflow-hidden flex-1 min-h-0"
       >
         {/* Main Content Wrapper */}
-        <div className="flex md:flex-row md:gap-8 flex-col gap-4">
+        <div className="flex md:flex-row md:gap-0 flex-col gap-4 h-full">
           {/* Left Content Wrapper */}
-          <div className="flex-1 flex gap-4">
+          <div className="flex-1 flex gap-4 min-h-0">
             {/* Scrollable Content */}
-            <div className="flex-1 max-h-[60svh] overflow-y-auto pr-2">
+            <div className="flex-1 overflow-y-auto pr-2 no-scrollbar">
               {/* Ticket type wrapper */}
               <div
                 className="flex items-center gap-2 text-[11px] uppercase"
@@ -247,7 +233,7 @@ export default function TaskModule({
           </div>
 
           {/* Right Content Wrapper */}
-          <aside className="w-full md:max-w-[320px] flex flex-col gap-6 md:pl-6 md:pb-1 md:border-l border-t md:border-t-0 border-gray-subtle ">
+          <aside className="w-full md:max-w-[320px] flex flex-col gap-6 md:pl-6 md:pb-1 md:border-l border-t md:border-t-0 border-gray-subtle overflow-y-auto no-scrollbar">
             <div
               className="space-y-3 text-sm"
               style={{ fontFamily: "var(--font-body)" }}
@@ -303,7 +289,7 @@ export default function TaskModule({
             </div>
 
             {/* Action buttons */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {isClosed ? (
                 <ButtonBase
                   variant="neutral"

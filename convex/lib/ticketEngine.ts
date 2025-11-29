@@ -140,6 +140,32 @@ export async function assignNumbersOnApprove(
   });
 }
 
+export function getGlobalScore(
+  queueKind: QueueKind,
+  queueNumber: number,
+  pattern: SchedulePattern
+): number {
+  const isPriority = queueKind === "priority";
+  const batchSize = pattern.priority + pattern.personal;
+  const batchIndex = Math.ceil(queueNumber / (isPriority ? pattern.priority : pattern.personal)) - 1;
+
+  // Base score for the batch
+  const batchBaseScore = batchIndex * batchSize;
+
+  // Offset within the batch
+  // Personal tickets come FIRST (0 to pattern.personal - 1)
+  // Priority tickets come AFTER (pattern.personal to batchSize - 1)
+  let offsetInBatch = 0;
+
+  if (isPriority) {
+    offsetInBatch = pattern.personal + ((queueNumber - 1) % pattern.priority);
+  } else {
+    offsetInBatch = (queueNumber - 1) % pattern.personal;
+  }
+
+  return batchBaseScore + offsetInBatch;
+}
+
 export function computeSchedule(
   tickets: TicketDoc[],
   pattern: SchedulePattern = DEFAULT_PATTERN
@@ -157,13 +183,18 @@ export function computeSchedule(
   const current = regularActive.find((t) => t.tags?.includes("current"));
   const remaining = regularActive.filter((t) => t._id !== current?._id);
 
-  const priorityTickets = remaining
-    .filter((t) => t.queueKind === "priority")
-    .sort((a, b) => (a.queueNumber ?? 0) - (b.queueNumber ?? 0));
+  // Sort remaining tickets by Global Score
+  const sortedRemaining = remaining.sort((a, b) => {
+    // If queueNumber is missing, fallback to creation time (shouldn't happen for approved)
+    if (typeof a.queueNumber !== 'number' || typeof b.queueNumber !== 'number') {
+      return a.createdAt - b.createdAt;
+    }
 
-  const personalTickets = remaining
-    .filter((t) => t.queueKind === "personal")
-    .sort((a, b) => (a.queueNumber ?? 0) - (b.queueNumber ?? 0));
+    const scoreA = getGlobalScore(a.queueKind, a.queueNumber, pattern);
+    const scoreB = getGlobalScore(b.queueKind, b.queueNumber, pattern);
+
+    return scoreA - scoreB;
+  });
 
   const ordered: TicketDoc[] = [];
 
@@ -175,30 +206,8 @@ export function computeSchedule(
     ordered.push(...awaitingFeedback.sort(sortByCreatedAt));
   }
 
-  // Continue with 3:1 pattern for remaining tickets
-  let pIdx = 0;
-  let perIdx = 0;
-
-  while (
-    pIdx < priorityTickets.length ||
-    perIdx < personalTickets.length
-  ) {
-    for (
-      let i = 0;
-      i < pattern.priority && pIdx < priorityTickets.length;
-      i++
-    ) {
-      ordered.push(priorityTickets[pIdx++]);
-    }
-
-    for (
-      let i = 0;
-      i < pattern.personal && perIdx < personalTickets.length;
-      i++
-    ) {
-      ordered.push(personalTickets[perIdx++]);
-    }
-  }
+  // Add sorted remaining tickets
+  ordered.push(...sortedRemaining);
 
   return ordered;
 }

@@ -28,6 +28,8 @@ import { TaskCardData } from "@/components/taskcard";
 import NextUpSection from "@/components/dashboard/NextUpSection";
 import { EarningsPanel } from "@/components/dashboard/earnings/EarningsPanel";
 import { StripeOnboardingBanner } from "@/components/dashboard/StripeOnboardingBanner";
+import { ResizableDivider } from "@/components/dashboard/ResizableDivider";
+import { MyAccount } from "@/components/dashboard/MyAccount";
 
 const dataProvider = new ConvexDataProvider();
 
@@ -76,6 +78,7 @@ export default function DashboardPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [splitPercentage, setSplitPercentage] = useState(50); // For resizable divider
 
   // Unauth or Non-Owner: redirect
   useEffect(() => {
@@ -128,6 +131,7 @@ export default function DashboardPage() {
   const upsertCreator = useMutation(api.creators.upsertBySlug);
   const toggleQueue = useMutation(api.queues.toggleEnabled);
   const connectStripeAction = useAction(api.stripeOnboarding.createStripeAccountLink);
+  const recomputeWorkflowTags = useMutation(api.tickets.recomputeWorkflowTagsForCreator);
 
   useEffect(() => {
     // Skip if not signed in or not loaded
@@ -162,6 +166,7 @@ export default function DashboardPage() {
       title: "My Page",
       links: [
         { href: "?tab=queue-settings", label: "Queue Settings" },
+        { href: "?tab=account", label: "My Account" },
       ],
     },
     {
@@ -674,6 +679,20 @@ export default function DashboardPage() {
                 priorityEnabled={priorityEnabled}
                 setPriorityEnabled={setPriorityEnabled}
                 minPriorityTipCents={dashboardOverview?.creator?.minPriorityTipCents}
+                hasStripeAccount={!!creator?.stripeAccountId}
+                onNavigateToEarnings={() => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set("tab", "earnings");
+                  router.push(url.pathname + url.search);
+                }}
+              />
+            </div>
+          ) : tab === "account" ? (
+            <div className="col-span-2">
+              <MyAccount
+                slug={slug}
+                displayName={creator?.displayName || ""}
+                email={creator?.email}
               />
             </div>
           ) : tab === "past" || tab === "all" ? (
@@ -714,7 +733,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div
-              className={`flex flex-col w-full no-scrollbar md:grid gap-4 h-full md:h-[86svh] min-h-0 md:min-h-0 ${hasPendingApprovals
+              className={`flex flex-col w-full no-scrollbar md:grid md:gap-4 h-full md:h-[86svh] min-h-0 md:min-h-0 ${hasPendingApprovals
                 ? "w-full md:grid-cols-[400px_1fr]"
                 : "w-full md:grid-cols-[400px_1fr]"
                 }`}
@@ -726,11 +745,16 @@ export default function DashboardPage() {
                 hasPendingApprovals={hasPendingApprovals}
                 openTickets={ticketsAwaitingApproval}
                 onTicketUpdate={handleTicketUpdate}
+                queueSnapshot={queueSnapshot}
               />
 
-              <div className="flex flex-col h-full gap-4 min-h-0">
+              <div className="flex flex-col h-full min-h-0">
                 {(selectedTask || autoqueueCardData) && (
-                  <div data-element="TASK-MODULE" className="hidden md:block">
+                  <div
+                    data-element="TASK-MODULE"
+                    className="hidden md:block overflow-hidden"
+                    style={{ height: `${splitPercentage}%` }}
+                  >
                     <TaskModule
                       data={(selectedTask || autoqueueCardData) as TaskCardData}
                       onMarkAsFinished={async () => {
@@ -757,9 +781,23 @@ export default function DashboardPage() {
                   </div>
                 )}
 
+                {(selectedTask || autoqueueCardData) && (
+                  <ResizableDivider
+                    onResize={setSplitPercentage}
+                    className="hidden md:flex"
+                  />
+                )}
+
                 <div
                   data-element="FAVORS-TABLE"
-                  className="md:h-1/2 h-full overflow-hidden min-h-0"
+                  className="overflow-hidden min-h-0"
+                  style={
+                    isDesktop
+                      ? {
+                        height: (selectedTask || autoqueueCardData) ? `${100 - splitPercentage}%` : '100%'
+                      }
+                      : undefined
+                  }
                 >
                   <TableComponent
                     data={tab === "active" ? activeTableRows : tableRows}
@@ -770,6 +808,7 @@ export default function DashboardPage() {
                     disableFocusStyling={true}
                     variant="active"
                     className="h-full"
+                    disableCollapse={!!(selectedTask || autoqueueCardData)}
                   />
                 </div>
               </div>
@@ -795,7 +834,7 @@ export default function DashboardPage() {
           aria-label={`Detailed view for ticket ${selectedTask.ref}`}
         >
           <div
-            className="bg-bg shadow-xl max-w-full max-h-[95vh] overflow-hidden relative w-full md:max-w-3xl"
+            className="bg-bg shadow-xl max-w-full max-h-[95vh] relative w-full md:max-w-3xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -806,7 +845,7 @@ export default function DashboardPage() {
               ×
             </button>
 
-            <div className="p-4 h-full overflow-y-auto">
+            <div className="p-4 overflow-y-auto flex-1 min-h-0">
               <TaskModule
                 data={selectedTask}
                 isModal={true}

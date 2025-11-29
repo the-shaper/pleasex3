@@ -66,10 +66,10 @@ export default function CreatorQueuesPage() {
               <span className="text-coral">{creatorInfo.displayName}?</span>
             </p>
             <h1
-              className="text-[40px] font-bold leading-none"
+              className="text-[40px] font-bold leading-none tracking-tighter "
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Please Please Please
+              PLEASE PLEASE PLEASE
             </h1>
             <p
               className="uppercase text-coral"
@@ -108,18 +108,21 @@ export default function CreatorQueuesPage() {
         </main>
         <footer className="py-6">
           <div className="flex items-center justify-between">
-            <div
+            <a
+              href="/about"
               className="bg-greenlite px-6 py-1 uppercase"
               style={{ fontFamily: "var(--font-body)" }}
             >
               I WANT TO DO FAVORS TOO
-            </div>
-            <div
+            </a>
+            <a
+              href="https://twilightfringe.com"
               className="bg-blue-2 px-6 py-1 uppercase text-xs"
+              target="_blank"
               style={{ fontFamily: "var(--font-body)" }}
             >
-              please please please! is shareware provided by twilight fringe
-            </div>
+              please please please! is shareware provided by <span className="font-bold">twilight fringe</span>
+            </a>
           </div>
         </footer>
       </div>

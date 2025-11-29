@@ -23,15 +23,18 @@ export function EarningsPanel({ data, onConnectStripe }: EarningsPanelProps) {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Title */}
+      <h2
+        className="text-xl  font-bold text-left uppercase tracking-tight border-b border-gray-subtle pb-2 sticky top-0 z-10 bg-bg"
+        style={{ fontFamily: "var(--font-body)" }}
+      >
+        EARNINGS
+      </h2>
       <ConnectStripeCard
         connection={data.connection}
         onConnectClick={onConnectStripe}
       />
-      <p className="text-xs text-text-muted max-w-2xl">
-        Earnings are calculated in USD. We keep $3.33 per every $50 you make
-        (nothing below $50), while Stripe charges a fixed 2.9% processing fee
-        separately.
-      </p>
+
       <EarningsSummaryCard
         currentPeriod={data.currentPeriod}
         lastThreePeriods={data.lastThreePeriods}

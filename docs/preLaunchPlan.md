@@ -3,20 +3,21 @@
 ## 1. Security & Multi-Tenancy Verification
 **Objective**: Ensure strict data isolation between tenants.
 - [x] **URL Isolation**: Verify `user A` cannot access `user B`'s dashboard simply by changing the URL slug.
-- [ ] **Query Auditing**: Ensure all Convex queries filter strictly by the *authenticated* user's identity (Clerk ID), not just the `slug` passed in the URL.
-- [ ] **Action Verification**: Test edge cases where a user might try to perform actions (approve/reject) on tickets belonging to another creator.
+- [x] **Query Auditing**: Ensure all Convex queries filter strictly by the *authenticated* user's identity (Clerk ID), not just the `slug` passed in the URL.
+- [x] **Action Verification**: Test edge cases where a user might try to perform actions (approve/reject) on tickets belonging to another creator.
 
 ## 2. Payment & Brand Polish
 **Objective**: Professionalize the payment flow and remove placeholder branding.
-- [ ] **Stripe Branding**: Configure Stripe Dashboard settings to display "Please Please Please" instead of default/test names.
-- [ ] **Payment Flow**: Verify the "Authorize Now, Capture Later" flow is robust and handles errors gracefully.
-- [ ] **De-branding**: Remove any "HAND" branding or generic placeholders from the UI.
+- [x] **Stripe Branding**: Configure Stripe Dashboard settings to display "Please Please Please" instead of default/test names.
+- [x] **Payment Flow**: Verify the "Authorize Now, Capture Later" flow is robust and handles errors gracefully.
+- [x] **De-branding**: Remove any "HAND" branding or generic placeholders from the UI.
 
 ## 3. Onboarding "Zero to One"
 **Objective**: Ensure a seamless first-run experience for new creators.
-- [ ] **Signup Flow**: Test the end-to-end flow for a brand new user signing up via Clerk.
-- [ ] **Data Initialization**: Verify that a `Creator` record is automatically created in Convex upon signup.
-- [ ] **Default State**: Ensure default queues and settings are correctly initialized so the user doesn't land on a broken dashboard.
+- [x] **Signup Flow**: Test the end-to-end flow for a brand new user signing up via Clerk.
+- [x] **Data Initialization**: Verify that a `Creator` record is automatically created in Convex upon signup.
+- [x] **Default State**: Ensure default queues and settings are correctly initialized so the user doesn't land on a broken dashboard.
+- [] **Creator Intro Task**: Add a default "tutorial" task: It should be set for pending approval and as a way for new users to get started with the platform.
 
 ## 4. Codebase Cleanup
 **Objective**: Reduce technical debt and confusion.
@@ -42,10 +43,10 @@
 - We want to encourage them to connect Stripe to monetize, but the system must work (for free) without it.
 
 **Proposed Solution**:
-- [ ] **Monetization Banner**: Create a global top bar component (visible on dashboard pages) for creators who haven't connected Stripe yet.
+- [x] **Monetization Banner**: Create a global top bar component (visible on dashboard pages) for creators who haven't connected Stripe yet.
     - **Message**: "Start Monetizing your time, connect [Stripe Link]"
     - **Action**: Redirects to `dashboard/earnings` (or directly to Stripe Connect flow).
-- [ ] **"Free Mode" Logic**:
+- [x] **"Free Mode" Logic**:
     - **Public Queue Page (`/[slug]`)**: If creator has no Stripe account, replace any pricing/tipping display with a "FREE" badge/text.
     - **Submit Page (`/[slug]/submit`)**:
         - Disable/Hide the tipping component.
@@ -53,4 +54,8 @@
         - Ensure the submit mutation handles "0 tip" tickets correctly without attempting Stripe charges.
 
 **Priority queue default price fix**
-- [ ] When a new account gets created and stripe set-up, the priority queue does not display the default price of $50 until the creator manually adjusts the price in the queue settings on the dashboard. Fix this.
+- [x] When a new account gets created and stripe set-up, the priority queue does not display the default price of $50 until the creator manually adjusts the price in the queue settings on the dashboard. Fix this.
+
+
+**Create terms of service page**
+- [ ] Create a terms of service page and link to it from the about modal.

@@ -278,12 +278,14 @@ export default function SubmitClient({
               placeholder="Name"
               value={form.name}
               onChange={(e) => onChange("name", e.target.value)}
+              required
             />
             <input
               className="w-full border p-2 "
               placeholder="Email"
               value={form.email}
               onChange={(e) => onChange("email", e.target.value)}
+              required
             />
             <input
               className="w-full border p-2 "
@@ -309,14 +311,14 @@ export default function SubmitClient({
               placeholder="Subject | Favor Title"
               value={form.favorTitle}
               onChange={(e) => onChange("favorTitle", e.target.value)}
-            />
+              required />
             <textarea
               className="w-full border p-2 "
               placeholder="Describe your need"
               rows={5}
               value={form.needText}
               onChange={(e) => onChange("needText", e.target.value)}
-            />
+              required />
             <textarea
               className="w-full border p-2 "
               placeholder="Links to files (space-separated)"
@@ -406,16 +408,18 @@ export default function SubmitClient({
                 type="checkbox"
                 checked={form.consentEmail}
                 onChange={(e) => onChange("consentEmail", e.target.checked)}
-              />
+                required />
               By submitting, you allow the creator to email you occasionally.
             </label>
           </div>
 
+
+
           <button
             form="ticket-form"
             type="submit"
-            className={`${isPriority ? "bg-coral" : "bg-blue"
-              } text-text uppercase text-[24px] px-3 py-3.5 w-full flex items-center justify-between`}
+            className={`${isPriority ? "bg-coral hover:bg-coral/80" : "bg-blue hover:bg-blue/80"
+              } cursor-pointer text-text uppercase text-[24px] px-6 py-3.5 w-full font-bold flex items-center justify-between`}
             style={{ fontFamily: "var(--font-body)" }}
           >
             <span>
@@ -423,6 +427,7 @@ export default function SubmitClient({
             </span>
             <span>&gt;</span>
           </button>
+
         </aside>
       </div>
 

@@ -27,6 +27,7 @@ export interface TableComponentProps {
   clickToScrollBreakpoint?: "mobile" | "desktop" | "both"; // NEW: Control when click-to-scroll is active
   disableFocusStyling?: boolean; // NEW: Disable focus styling for dashboard context
   variant?: TableVariant; // NEW: Table variant for different layouts
+  disableCollapse?: boolean; // NEW: Disable collapse functionality
 }
 
 // Helper function to filter data based on variant (moved outside component)
@@ -62,6 +63,7 @@ export function TableComponent({
   clickToScrollBreakpoint = "desktop",
   disableFocusStyling = false,
   variant = "active",
+  disableCollapse = false,
 }: TableComponentProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [isMobile, setIsMobile] = useState(false);
@@ -153,50 +155,35 @@ export function TableComponent({
 
   // NEW: Scroll to corresponding TaskCard in NextUpSection
   const scrollToTaskCard = (ref: string) => {
-    const taskCardElement = document.querySelector(`[data-task-ref="${ref}"]`);
-    const outerContainer = document.querySelector(
-      '[data-element="NEXT-UP-COLUMN"]'
-    );
-
-    // Find the actual scrollable container - try multiple selectors
-    let scrollContainer = outerContainer?.querySelector(
-      ".overflow-y-auto"
-    ) as HTMLElement;
-    if (!scrollContainer) {
-      scrollContainer = outerContainer?.querySelector(
-        ".md\\:overflow-y-auto"
+    // Wait for React to finish rendering and layout to settle
+    setTimeout(() => {
+      // Find the scrollable container using the data-element attribute
+      const scrollContainer = document.querySelector(
+        '[data-element="NEXT-UP-SCROLL-CONTAINER"]'
       ) as HTMLElement;
-    }
-    if (!scrollContainer) {
-      // Fallback: find any child with scrollHeight > clientHeight
-      const children = Array.from(outerContainer?.querySelectorAll("*") || []);
-      for (const child of children) {
-        const element = child as HTMLElement;
-        if (element.scrollHeight > element.clientHeight) {
-          scrollContainer = element;
-          break;
-        }
+
+      // Scope search to the container to avoid finding hidden mobile elements
+      const taskCardElement = scrollContainer?.querySelector(`[data-task-ref="${ref}"]`);
+
+      if (taskCardElement && scrollContainer) {
+        // Get current scroll position to account for manual scrolling
+        const currentScrollTop = scrollContainer.scrollTop;
+
+        // Scroll to top of ScrollTrigger trigger zone (40% position for last card compatibility)
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const cardRect = taskCardElement.getBoundingClientRect();
+
+        // Calculate relative position and add current scroll offset
+        const relativeScrollTop =
+          cardRect.top - containerRect.top - containerRect.height * 0.1;
+        const targetScrollTop = currentScrollTop + relativeScrollTop;
+
+        scrollContainer.scrollTo({
+          top: targetScrollTop,
+          behavior: "smooth",
+        });
       }
-    }
-
-    if (taskCardElement && scrollContainer) {
-      // Get current scroll position to account for manual scrolling
-      const currentScrollTop = scrollContainer.scrollTop;
-
-      // Scroll to top of ScrollTrigger trigger zone (40% position for last card compatibility)
-      const containerRect = scrollContainer.getBoundingClientRect();
-      const cardRect = taskCardElement.getBoundingClientRect();
-
-      // Calculate relative position and add current scroll offset
-      const relativeScrollTop =
-        cardRect.top - containerRect.top - containerRect.height * 0.1;
-      const targetScrollTop = currentScrollTop + relativeScrollTop;
-
-      scrollContainer.scrollTo({
-        top: targetScrollTop,
-        behavior: "smooth",
-      });
-    }
+    }, 100); // Wait 100ms for React layout to settle
   };
 
   const isWideLayout = variant === "past" || variant === "all";
@@ -204,24 +191,36 @@ export function TableComponent({
   return (
     <div className={`flex flex-col h-full min-h-0 ${className}`}>
       {/* Clickable title matching page.tsx style */}
-      <button
-        onClick={toggleCollapse}
-        className="flex items-center justify-between w-full mb-4 pb-2 border-b border-gray-subtle text-left sticky top-0 bg-bg z-10"
-        aria-expanded={!isCollapsed}
-      >
-        <h2 className="text-xl font-bold">
-          {variant === "past"
-            ? "PAST FAVORS"
-            : variant === "all"
-              ? "ALL FAVORS"
-              : "ACTIVE FAVORS"}
-        </h2>
-        <span
-          className={`text-xs text-gray-subtle transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
+      {disableCollapse ? (
+        <div className="flex items-center justify-between w-full md:mb-2 pb-2 md:px-4 border-b border-gray-subtle sticky top-0 bg-bg z-10">
+          <h2 className="text-xl font-bold">
+            {variant === "past"
+              ? "PAST FAVORS"
+              : variant === "all"
+                ? "ALL FAVORS"
+                : "ACTIVE FAVORS"}
+          </h2>
+        </div>
+      ) : (
+        <button
+          onClick={toggleCollapse}
+          className="flex items-center justify-between w-full  border-b border-gray-subtle text-left sticky top-0 bg-bg pb-2 z-10"
+          aria-expanded={!isCollapsed}
         >
-          ▼
-        </span>
-      </button>
+          <h2 className="text-xl font-bold">
+            {variant === "past"
+              ? "PAST FAVORS"
+              : variant === "all"
+                ? "ALL FAVORS"
+                : "ACTIVE FAVORS"}
+          </h2>
+          <span
+            className={`text-xs text-gray-subtle transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
+          >
+            ▼
+          </span>
+        </button>
+      )}
 
       {/* Collapsible content wrapper with grid animation */}
       <div
@@ -235,7 +234,7 @@ export function TableComponent({
               {/* Header Row - Sticky */}
               <div className="flex-none sticky top-0 z-10 bg-bg">
                 <div
-                  className={`grid gap-4 items-center p-4 border-b-2 border-gray-subtle`}
+                  className={`grid gap-4 items-center px-4 pb-2 border-b-2 border-gray-subtle`}
                   style={{
                     gridTemplateColumns: getGridColumns(variant),
                   }}

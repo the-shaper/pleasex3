@@ -14,6 +14,8 @@ interface QueueSettingsProps {
   showAutoqueueCard?: boolean;
   onToggleAutoqueueCard?: (value: boolean) => void;
   minPriorityTipCents?: number;
+  hasStripeAccount?: boolean;
+  onNavigateToEarnings?: () => void;
 }
 
 export function QueueSettings({
@@ -27,6 +29,8 @@ export function QueueSettings({
   showAutoqueueCard,
   onToggleAutoqueueCard,
   minPriorityTipCents = 0,
+  hasStripeAccount = false,
+  onNavigateToEarnings,
 }: QueueSettingsProps) {
   const updateSettings = useMutation(api.queues.updateQueueSettings);
   const updateMinPriorityFee = useMutation(api.creators.updateMinPriorityFee);
@@ -89,8 +93,8 @@ export function QueueSettings({
   }
 
   return (
-    <div className="flex items-start justify-start min-h-[calc(100vh-200px)]  ">
-      <div className="w-full  max-w-2xl space-y-3 ">
+    <div className="flex items-start justify-start min-h-[calc(100vh-200px)] w-full  ">
+      <div className="w-full  space-y-3 ">
         {/* Title */}
         <h2
           className="text-xl font-bold text-left uppercase tracking-tight border-b border-gray-subtle pb-2"
@@ -99,31 +103,38 @@ export function QueueSettings({
           QUEUE SETTINGS
         </h2>
 
-        <button
-          onClick={handleCopyUrl}
-          className="group w-full flex flex-col md:flex-row gap-4 justify-center p-2 bg-blue-2 hover:bg-text hover:cursor-pointer transition-colors border hover:border-text  border-blue-2"
-        >
-          <div>
-            <h4 className="uppercase text-left font-bold group-hover:text-white transition-colors">
-              Your public queue url:
-            </h4>
-            <p className={`text-left text-xs group-hover:text-white transition-colors ${isCopied ? 'text-coral' : ''}`}>
-              {isCopied ? 'LINK COPIED!' : 'CLICK/TAP TO COPY'}
-            </p>
-          </div>
-          <div className="">
-            <p className="font-bold text-left group-hover:text-white transition-colors text-xs uppercase">
-              https://pleasepleaseplease.me/{slug}
-            </p>
-            <p className="text-left text-xs group-hover:text-white transition-colors">
-              Share this with your friends to get them in line!
-            </p>
-          </div>
-        </button>
+        <div className="flex flex-col md:flex-row gap-2">
+          <button
+            onClick={handleCopyUrl}
+            className="group w-6/8 flex flex-col md:flex-row gap-4 justify-center p-2 bg-blue-2 hover:bg-text hover:cursor-pointer transition-colors border hover:border-text  border-blue-2"
+          >
+            <div>
+              <h4 className="uppercase text-left font-bold group-hover:text-white transition-colors">
+                Your public queue url:
+              </h4>
+              <p className={`text-left text-xs group-hover:text-white transition-colors ${isCopied ? 'text-coral' : ''}`}>
+                {isCopied ? 'LINK COPIED!' : 'CLICK/TAP TO COPY'}
+              </p>
+            </div>
+            <div className="">
+              <p className="font-bold text-left group-hover:text-white transition-colors text-xs uppercase">
+                https://pleasepleaseplease.me/{slug}
+              </p>
+              <p className="text-left text-xs group-hover:text-white transition-colors">
+                Share this with your friends to get them in line!
+              </p>
+            </div>
+          </button>
+          <a className="bg-greenlite text-center content-center leading-none font-bold text-sm w-2/8"
+            href={`/${slug}`}>
+            OPEN PAGE &gt;
+          </a>
+        </div>
+
 
         <div className="flex flex-col md:flex-row gap-2">
           {/* Personal Queue Settings */}
-          <div className="overflow-hidden border border-gray-subtle">
+          <div className="overflow-hidden border border-gray-subtle w-1/2">
             {/* Header */}
             <div
               className="bg-greenlite  px-6 text-center"
@@ -226,7 +237,7 @@ export function QueueSettings({
           </div>
 
           {/* Priority Queue Settings */}
-          <div className="overflow-hidden border border-gray-subtle">
+          <div className="overflow-hidden border border-gray-subtle w-1/2">
             {/* Header */}
             <div
               className="bg-gold px-6 text-center "
@@ -237,6 +248,24 @@ export function QueueSettings({
 
             {/* Content */}
             <div className=" space-y-4 p-6 ">
+              {/* Stripe Connection Warning */}
+              {!hasStripeAccount && (
+                <div className="bg-blue-2 border border-blue-2 p-4 mb-4">
+                  <p className="text-sm font-bold mb-2 uppercase">Connect Stripe Required</p>
+                  <p className="text-xs mb-3">
+                    Please connect to Stripe to enable priority queue and accept payments.
+                  </p>
+                  {onNavigateToEarnings && (
+                    <button
+                      onClick={onNavigateToEarnings}
+                      className="text-xs uppercase font-bold bg-text text-coral px-3 py-1 hover:bg-coral hover:text-text transition-colors"
+                    >
+                      Go to Earnings →
+                    </button>
+                  )}
+                </div>
+              )}
+
               {/* Queue Status */}
               <div className="flex items-center justify-between">
                 <label
@@ -248,7 +277,7 @@ export function QueueSettings({
                 <div className="flex gap-2">
                   <button
                     onClick={async () => {
-                      if (!priorityEnabled) {
+                      if (!priorityEnabled && hasStripeAccount) {
                         const result = await toggleQueue({
                           creatorSlug: slug,
                           kind: "priority",
@@ -256,17 +285,18 @@ export function QueueSettings({
                         setPriorityEnabled(result.enabled);
                       }
                     }}
+                    disabled={!hasStripeAccount}
                     className={`px-6 py-2 text-[14px] font-bold uppercase ${priorityEnabled
                       ? "bg-coral text-text"
                       : "bg-gray-300 text-text-muted"
-                      }`}
+                      } ${!hasStripeAccount ? "opacity-50 cursor-not-allowed" : ""}`}
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     ON
                   </button>
                   <button
                     onClick={async () => {
-                      if (priorityEnabled) {
+                      if (priorityEnabled && hasStripeAccount) {
                         const result = await toggleQueue({
                           creatorSlug: slug,
                           kind: "priority",
@@ -274,10 +304,11 @@ export function QueueSettings({
                         setPriorityEnabled(result.enabled);
                       }
                     }}
+                    disabled={!hasStripeAccount}
                     className={`px-6 py-2 text-[14px] font-bold uppercase ${!priorityEnabled
                       ? "bg-text text-coral"
                       : "bg-gray-200 text-text-muted"
-                      }`}
+                      } ${!hasStripeAccount ? "opacity-50 cursor-not-allowed" : ""}`}
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     OFF

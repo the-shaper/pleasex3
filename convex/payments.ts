@@ -353,7 +353,7 @@ export const createManualCheckoutSession = action({
           price_data: {
             currency: args.currency ?? "usd",
             product_data: {
-              name: "Ticket tip",
+              name: `Tipping ${creator.displayName} for a favor`,
             },
             unit_amount: args.amountCents,
           },
@@ -591,7 +591,7 @@ export const createCheckoutSession = action({
           price_data: {
             currency: args.currency ?? "usd",
             product_data: {
-              name: "Ticket tip",
+              name: `Tipping ${creator.displayName} for a favor`,
             },
             unit_amount: args.amountCents,
           },

@@ -232,7 +232,7 @@ export default function QueueCard({
           {data.enabled ? (
             <Link
               href={claimHref}
-              className={`${isPriority ? "bg-coral" : "bg-blue"} uppercase text-[24px] px-6 py-3.5 w-full flex items-center justify-between ${claimDisabled ? "opacity-60 pointer-events-none" : ""}`}
+              className={`${isPriority ? "bg-coral hover:bg-coral/80" : "bg-blue hover:bg-blue/80"} cursor-pointer text-text uppercase text-[24px] px-6 py-3.5 w-full font-bold flex items-center justify-between ${claimDisabled ? "opacity-60 pointer-events-none" : ""}`}
               aria-label={`Claim a ${kind} ticket`}
               style={{ fontFamily: "var(--font-body)" }}
             >

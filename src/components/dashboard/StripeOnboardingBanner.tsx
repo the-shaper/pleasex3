@@ -22,7 +22,7 @@ export function StripeOnboardingBanner({
                 </span>
                 <button
                     onClick={onNavigateToEarnings}
-                    className="bg-text text-coral px-4 py-1 uppercase text-sm font-bold hover:opacity-90 transition-opacity"
+                    className="bg-text text-coral px-4 py-1 uppercase text-sm font-bold hover:bg-coral hover:text-text transition-colors"
                     style={{ fontFamily: "var(--font-body)" }}
                 >
                     Connect Stripe

@@ -89,17 +89,13 @@ export function AboutModal({ isOpen, onClose, className = "" }: AboutModalProps)
 
                             <div className="flex flex-col gap-3 mt-8">
                                 <ButtonBase
-                                    variant="primary"
-                                    className="w-full bg-coral text-text hover:bg-coral/90"
+                                    variant="neutral"
+                                    className="w-full bg-greenlite hover:bg-greenlite/90 hover:font-bold"
+                                    href="/sign-up"
                                 >
-                                    I WANT TO DO FAVORS
+                                    SIGN UP TO DO FAVORS
                                 </ButtonBase>
-                                <ButtonBase
-                                    variant="default"
-                                    className="w-full bg-ielo text-text hover:bg-ielo/90"
-                                >
-                                    THIS IS DUMB!
-                                </ButtonBase>
+
                             </div>
                         </div>
                     )}

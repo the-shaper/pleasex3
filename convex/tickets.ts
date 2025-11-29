@@ -5,6 +5,7 @@ import {
   assignNumbersOnApprove,
   computeTagsForCreator,
 } from "./lib/ticketEngine";
+import { requireCreatorOwnership } from "./lib/auth";
 
 export const getByRef = query({
   args: { ref: v.string() },
@@ -120,6 +121,10 @@ export const approve = mutation({
       .withIndex("by_ref", (q) => q.eq("ref", args.ref))
       .unique();
     if (!ticket) return { ok: true } as const;
+
+    // 🔒 Security: Verify the authenticated user owns this ticket's creator
+    await requireCreatorOwnership(ctx, ticket.creatorSlug);
+
     // Allow approval for both open (free) and pending_payment (paid) tickets
     if (ticket.status !== "open" && ticket.status !== "pending_payment") return { ok: true } as const;
 
@@ -188,6 +193,10 @@ export const reject = mutation({
       .withIndex("by_ref", (q) => q.eq("ref", args.ref))
       .unique();
     if (!ticket) return { ok: true } as const;
+
+    // 🔒 Security: Verify the authenticated user owns this ticket's creator
+    await requireCreatorOwnership(ctx, ticket.creatorSlug);
+
     // Allow rejection for both open (free) and pending_payment (paid) tickets
     if (ticket.status !== "open" && ticket.status !== "pending_payment") return { ok: true } as const;
 
@@ -234,6 +243,9 @@ export const addTag = mutation({
 
     if (!ticket) return { ok: false } as const;
 
+    // 🔒 Security: Verify the authenticated user owns this ticket's creator
+    await requireCreatorOwnership(ctx, ticket.creatorSlug);
+
     const currentTags = ticket.tags || [];
     if (!currentTags.includes(args.tag)) {
       await ctx.db.patch(ticket._id, {
@@ -253,6 +265,9 @@ export const removeTag = mutation({
       .unique();
 
     if (!ticket) return { ok: false } as const;
+
+    // 🔒 Security: Verify the authenticated user owns this ticket's creator
+    await requireCreatorOwnership(ctx, ticket.creatorSlug);
 
     const currentTags = ticket.tags || [];
     await ctx.db.patch(ticket._id, {
@@ -281,6 +296,9 @@ export const toggleCurrentAwaiting = mutation({
       .unique();
 
     if (!ticket) return { ok: false as const };
+
+    // 🔒 Security: Verify the authenticated user owns this ticket's creator
+    await requireCreatorOwnership(ctx, ticket.creatorSlug);
 
     const tags = ticket.tags || [];
     const hasAwaiting = tags.includes("awaiting-feedback");
@@ -320,6 +338,9 @@ export const markAsFinished = mutation({
 
     if (!ticket) return { ok: false as const };
     if (ticket.status === "closed") return { ok: true as const };
+
+    // 🔒 Security: Verify the authenticated user owns this ticket's creator
+    await requireCreatorOwnership(ctx, ticket.creatorSlug);
 
     const currentTags = ticket.tags || [];
     const cleanedTags = currentTags.filter(

@@ -9,14 +9,18 @@ import type { Ticket } from "@/lib/types";
 
 const dataProvider = new ConvexDataProvider();
 
+import { QueueSnapshot } from "@/lib/types";
+
 interface ApprovalPanelProps {
   tickets: Ticket[];
   onTicketUpdate?: (ticket: Ticket) => void;
+  queueSnapshot: QueueSnapshot;
 }
 
 export default function ApprovalPanel({
   tickets,
   onTicketUpdate,
+  queueSnapshot,
 }: ApprovalPanelProps) {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -93,8 +97,11 @@ export default function ApprovalPanel({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 space-y-6 overflow-y-auto">
+      <div className="flex-1 space-y-6 overflow-y-auto no-scrollbar">
         {tickets.map((ticket) => {
+          const queueKind = ticket.queueKind === "priority" ? "priority" : "personal";
+          const queueMetrics = queueSnapshot[queueKind];
+
           // Map ticket data to the format expected by TicketApprovalCard
           const ticketData = {
             form: {
@@ -109,14 +116,14 @@ export default function ApprovalPanel({
             },
             isPriority: ticket.queueKind === "priority",
             activeQueue: {
-              nextTurn: 1, // Could be calculated from queue position
-              activeCount: 1, // Could be calculated from queue metrics
+              nextTurn: queueMetrics.activeCount + 1,
+              activeCount: queueMetrics.activeCount,
             },
             tipDollarsInt: Math.floor(ticket.tipCents / 100),
             minPriorityTipCents: 1500, // Should come from creator data
             queueMetrics: {
-              personal: { etaMins: 90 },
-              priority: { etaMins: 45 },
+              personal: { etaMins: queueSnapshot.personal.etaDays ? queueSnapshot.personal.etaDays * 24 * 60 : 0 },
+              priority: { etaMins: queueSnapshot.priority.etaDays ? queueSnapshot.priority.etaDays * 24 * 60 : 0 },
             },
             userName: "Alejandro", // Should come from creator data
             referenceNumber: ticket.ref,

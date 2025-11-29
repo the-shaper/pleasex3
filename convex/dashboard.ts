@@ -25,7 +25,11 @@ export const getAllCreators = query({
 export const getOverview = query({
   args: { creatorSlug: v.string() },
   handler: async (ctx, args) => {
-    const creator = await requireCreatorOwnership(ctx, args.creatorSlug);
+    const creator = await requireCreatorOwnership(ctx, args.creatorSlug, { throwIfNotFound: false });
+
+    if (!creator) {
+      return null;
+    }
 
     const queues = await getQueueSnapshot(ctx, args.creatorSlug);
 
@@ -39,11 +43,7 @@ export const getOverview = query({
     const openTickets = allTickets.filter((t) => t.status === "open");
 
     return {
-      creator: creator ?? {
-        slug: args.creatorSlug,
-        displayName: args.creatorSlug,
-        minPriorityTipCents: 1500,
-      },
+      creator,
       queues,
       openTickets,
       approvedTickets: allTickets.filter((t) => t.status === "approved"),
@@ -57,7 +57,8 @@ export const getOverview = query({
 export const getAllTicketsWithPositions = query({
   args: { creatorSlug: v.string() },
   handler: async (ctx, args) => {
-    await requireCreatorOwnership(ctx, args.creatorSlug);
+    const creator = await requireCreatorOwnership(ctx, args.creatorSlug, { throwIfNotFound: false });
+    if (!creator) return [];
     const positions = await getTicketPositions(ctx, args.creatorSlug);
     return positions;
   },
@@ -66,7 +67,8 @@ export const getAllTicketsWithPositions = query({
 export const getActiveTicketPositions = query({
   args: { creatorSlug: v.string() },
   handler: async (ctx, args): Promise<TicketPosition[]> => {
-    await requireCreatorOwnership(ctx, args.creatorSlug);
+    const creator = await requireCreatorOwnership(ctx, args.creatorSlug, { throwIfNotFound: false });
+    if (!creator) return [];
     const positions = await getActiveTicketPositionsEngine(ctx, args.creatorSlug);
     return positions;
   },
