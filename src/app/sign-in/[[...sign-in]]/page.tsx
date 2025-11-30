@@ -1,13 +1,10 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+
 import Image from "next/image";
 import { SignIn } from "@clerk/nextjs";
 
 export default function SignInPage() {
-  const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect_url") || "/";
-
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-bg gap-8 py-10">
       <Image
@@ -19,7 +16,7 @@ export default function SignInPage() {
         priority
       />
       <SignIn
-        afterSignInUrl={redirectUrl}
+        fallbackRedirectUrl="/dashboard-redirect"
         signUpUrl="/sign-up"
         appearance={{
           variables: {

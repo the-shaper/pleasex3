@@ -121,7 +121,7 @@ export default function CreatorQueuesPage() {
               target="_blank"
               style={{ fontFamily: "var(--font-body)" }}
             >
-              please please please! is shareware provided by <span className="font-bold">twilight fringe</span>
+              please please please! is a proof of concept by <span className="font-bold">twilight fringe</span>
             </a>
           </div>
         </footer>

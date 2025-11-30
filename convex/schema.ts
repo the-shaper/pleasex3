@@ -60,7 +60,8 @@ export default defineSchema({
         v.literal("requires_capture"),
         v.literal("succeeded"),
         v.literal("canceled"),
-        v.literal("refunded")
+        v.literal("refunded"),
+        v.literal("pending")
       )
     ),
     resolvedAt: v.optional(v.number()),

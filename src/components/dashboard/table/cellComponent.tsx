@@ -80,7 +80,7 @@ export function CellComponent({
   return (
     // UPDATED: Make entire row clickable; remove button column
     <div
-      className={`grid gap-4 items-center p-4 border-b border-gray-subtle cursor-pointer hover:bg-gray-subtle/50 transition-colors whitespace-nowrap ${className} ${isClickable ? "focus:bg-gray-subtle" : ""
+      className={`grid gap-4 items-center p-2 border-b border-gray-subtle cursor-pointer hover:bg-gray-subtle/50 transition-colors whitespace-nowrap ${className} ${isClickable ? "focus:bg-gray-subtle" : ""
         } ${isActive ? "bg-gray-subtle" : "" // NEW: Highlight when active from ScrollTrigger
         }`}
       style={{

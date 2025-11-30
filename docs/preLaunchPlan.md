@@ -21,8 +21,8 @@
 
 ## 4. Codebase Cleanup
 **Objective**: Reduce technical debt and confusion.
-- [ ] **Archive Demo**: Archive or remove the `src/app/demo` directory to prevent confusion with the production `[slug]` routes.
-- [ ] **Dead Code**: Identify and remove unused mock data or prototype components.
+- [x] **Archive Demo**: Archive or remove the `src/app/demo` directory to prevent confusion with the production `[slug]` routes.
+- [x] **Dead Code**: Identify and remove unused mock data or prototype components.
 
 ## 5. Identity & Profile Management (Clerk vs. Convex)
 **Context**:
@@ -59,3 +59,6 @@
 
 **Create terms of service page**
 - [ ] Create a terms of service page and link to it from the about modal.
+
+
+## 7. Paid submission fix: When tips are added, the tickets are being submitted before the payment intent is created, so even if a user cancels the payment flow, the ticket is still created. Fix this

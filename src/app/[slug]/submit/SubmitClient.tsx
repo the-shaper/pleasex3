@@ -208,11 +208,19 @@ export default function SubmitClient({
     }
   }
 
-  const handlePaymentSuccess = () => {
+  const finalizeTicketSubmission = useAction(api.payments.finalizeTicketSubmission);
+
+  const handlePaymentSuccess = async () => {
     if (pendingTicketRef) {
-      router.push(
-        `/${slug}/submit/success?ref=${encodeURIComponent(pendingTicketRef)}`
-      );
+      try {
+        await finalizeTicketSubmission({ ticketRef: pendingTicketRef });
+        router.push(
+          `/${slug}/submit/success?ref=${encodeURIComponent(pendingTicketRef)}`
+        );
+      } catch (e) {
+        console.error("Failed to finalize ticket", e);
+        alert("Payment successful but failed to finalize ticket. Please contact support.");
+      }
     }
   };
 
@@ -234,7 +242,7 @@ export default function SubmitClient({
       <div className="flex flex-col md:flex-row gap-6 w-full items-center">
         <div className="w-full md:w-1/2 md:sticky md:top-6 space-y-4">
           <h1
-            className="text-[32px] font-bold leading-none"
+            className="text-[32px] font-bold leading-none uppercase tracking-tighter"
             style={{ fontFamily: "var(--font-heading)" }}
           >
             Claim a ticket

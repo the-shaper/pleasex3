@@ -35,7 +35,7 @@ export default function Home() {
 
           {/* Row 2: Titles */}
           <div className="p-8 flex flex-col items-center justify-center w-full max-w-full">
-            <h1 className="md:hidden text-6xl sm:text-5xl font-bold text-text tracking-tighter leading-[0.8] text-center break-words max-w-full">PLEASE PLEASE PLEASE</h1>
+            <h1 className="md:hidden text-6xl sm:text-5xl font-bold text-text tracking-tighter leading-[0.8] text-center break-words max-w-full">PLEASE PLEASE PLEASE!</h1>
             <h2 className="md:hidden text-center text-xl sm:text-2xl text-text md:tracking-[1.77rem] leading-[1] break-words max-w-full mt-2">VIRTUAL TICKET MACHINE</h2>
             <img src="/px3-maintitle.svg" alt="" className="hidden md:flex  w-2/3 h-full text-text" />
           </div>
@@ -49,7 +49,7 @@ export default function Home() {
 
 
 
-              <a href={userSlug ? `/${userSlug}/dashboard` : "/sign-in"} className="text-text px-4 py-1 font-bold text-2xl sm:text-3xl cursor-pointer hover:underline text-center">CONTINUE</a>
+              <a href={userSlug ? `/${userSlug}/dashboard` : "/sign-in"} className="text-text px-4 py-1 font-bold text-2xl sm:text-3xl cursor-pointer hover:underline text-center">{userSlug ? "DASHBOARD" : "CONTINUE"}</a>
 
 
               {isLoaded && userSlug && (
@@ -70,7 +70,7 @@ export default function Home() {
           </div>
         </main>
         <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center text-center text-xs">
-          <h6>PLEASE PLEASE PLEASE IS A PROOF OF CONCEPT BY TWILIGHT FRINGE.</h6>
+          <h6>PLEASE PLEASE PLEASE IS A PROOF OF CONCEPT BY <span className="font-bold cursor-pointer" onClick={() => window.open("https://twilightfringe.com", "_blank")}>TWILIGHT FRINGE</span>.</h6>
         </footer>
       </div>
 

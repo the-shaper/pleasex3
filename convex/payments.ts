@@ -312,7 +312,7 @@ export const createManualPaymentIntent = action({
     await ctx.runMutation(api.payments.setPaymentIntentForTicket, {
       ticketRef: args.ticketRef,
       paymentIntentId: paymentIntent.id,
-      status: "requires_capture",
+      status: "pending",
     });
 
     return {
@@ -385,7 +385,7 @@ export const createManualCheckoutSession = action({
       await ctx.runMutation(api.payments.setPaymentIntentForTicket, {
         ticketRef: args.ticketRef,
         paymentIntentId: piId,
-        status: "requires_capture", // It will be authorized once the user completes checkout
+        status: "pending", // It will be authorized once the user completes checkout
       });
     }
 
@@ -405,7 +405,8 @@ export const setPaymentIntentForTicket = mutation({
       v.literal("requires_capture"),
       v.literal("succeeded"),
       v.literal("canceled"),
-      v.literal("refunded")
+      v.literal("refunded"),
+      v.literal("pending")
     ),
   },
   handler: async (ctx, args) => {
@@ -610,5 +611,28 @@ export const createCheckoutSession = action({
       url: session.url,
       id: session.id,
     };
+  },
+});
+
+export const finalizeTicketSubmission = action({
+  args: { ticketRef: v.string() },
+  handler: async (ctx, args): Promise<{ ok: boolean; status?: string }> => {
+    // 1. Get ticket
+    const ticket = await ctx.runQuery(api.tickets.getByRef, { ref: args.ticketRef });
+    if (!ticket) throw new Error("Ticket not found");
+    if (!ticket.paymentIntentId) throw new Error("No payment intent found");
+
+    // 2. Retrieve PI from Stripe
+    const pi = await stripe.paymentIntents.retrieve(ticket.paymentIntentId);
+
+    // 3. Verify status
+    if (pi.status === "requires_capture") {
+      // 4. Confirm authorization in DB and send emails
+      await ctx.runMutation(api.tickets.confirmTicketAuthorized, { ref: args.ticketRef });
+      return { ok: true };
+    } else {
+      console.error("PaymentIntent not authorized", pi.status);
+      return { ok: false, status: pi.status };
+    }
   },
 });

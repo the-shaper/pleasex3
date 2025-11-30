@@ -7,6 +7,37 @@ import {
 } from "./lib/ticketEngine";
 import { requireCreatorOwnership } from "./lib/auth";
 
+async function scheduleTicketEmails(ctx: any, ticket: any) {
+  if (ticket.email) {
+    // 1. Receipt to User
+    await ctx.scheduler.runAfter(0, internal.emails.sendTicketReceipt, {
+      email: ticket.email,
+      userName: ticket.name || "User",
+      ticketRef: ticket.ref,
+      trackingUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/tracking/${ticket.ref}`,
+      creatorName: ticket.creatorSlug, // Ideally fetch display name, but slug works for now
+      ticketType: ticket.queueKind,
+    });
+
+    // 2. Alert to Creator
+    const creator = await ctx.db
+      .query("creators")
+      .withIndex("by_slug", (q: any) => q.eq("slug", ticket.creatorSlug))
+      .unique();
+
+    if (creator && creator.email) {
+      await ctx.scheduler.runAfter(0, internal.emails.sendCreatorAlert, {
+        email: creator.email,
+        creatorName: creator.displayName || ticket.creatorSlug,
+        userName: ticket.name || "User",
+        ticketType: ticket.queueKind,
+        tipAmount: ticket.tipCents ? ticket.tipCents / 100 : 0,
+        dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
+      });
+    }
+  }
+}
+
 export const getByRef = query({
   args: { ref: v.string() },
   handler: async (ctx, args) => {
@@ -80,34 +111,12 @@ export const create = mutation({
     });
 
 
-    // Trigger emails
-    if (args.email) {
-      // 1. Receipt to User
-      await ctx.scheduler.runAfter(0, internal.emails.sendTicketReceipt, {
-        email: args.email,
-        userName: args.name || "User",
-        ticketRef: ref,
-        trackingUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/tracking/${ref}`,
-        creatorName: args.creatorSlug, // Ideally fetch display name, but slug works for now
-        ticketType: args.queueKind,
+    // Trigger emails ONLY if open (free). Paid tickets trigger emails after payment confirmation.
+    if (args.tipCents <= 0) {
+      await scheduleTicketEmails(ctx, {
+        ref,
+        ...args,
       });
-
-      // 2. Alert to Creator
-      const creator = await ctx.db
-        .query("creators")
-        .withIndex("by_slug", (q) => q.eq("slug", args.creatorSlug))
-        .unique();
-
-      if (creator && creator.email) {
-        await ctx.scheduler.runAfter(0, internal.emails.sendCreatorAlert, {
-          email: creator.email,
-          creatorName: creator.displayName || args.creatorSlug,
-          userName: args.name || "User",
-          ticketType: args.queueKind,
-          tipAmount: args.tipCents ? args.tipCents / 100 : 0,
-          dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
-        });
-      }
     }
     return { ref } as const;
   },
@@ -396,6 +405,31 @@ export const markAsOpen = mutation({
     if (ticket.status !== "pending_payment") return { ok: true } as const;
 
     await ctx.db.patch(ticket._id, { status: "open" });
+    return { ok: true } as const;
+  },
+});
+
+export const confirmTicketAuthorized = mutation({
+  args: { ref: v.string() },
+  handler: async (ctx, args) => {
+    const ticket = await ctx.db
+      .query("tickets")
+      .withIndex("by_ref", (q) => q.eq("ref", args.ref))
+      .unique();
+
+    if (!ticket) return { ok: false } as const;
+
+    // Only proceed if pending_payment
+    if (ticket.status !== "pending_payment") return { ok: true } as const;
+
+    // Update payment status to requires_capture
+    await ctx.db.patch(ticket._id, {
+      paymentStatus: "requires_capture",
+    });
+
+    // Send emails
+    await scheduleTicketEmails(ctx, ticket);
+
     return { ok: true } as const;
   },
 });

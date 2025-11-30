@@ -30,6 +30,7 @@ import { EarningsPanel } from "@/components/dashboard/earnings/EarningsPanel";
 import { StripeOnboardingBanner } from "@/components/dashboard/StripeOnboardingBanner";
 import { ResizableDivider } from "@/components/dashboard/ResizableDivider";
 import { MyAccount } from "@/components/dashboard/MyAccount";
+import { ReadMeModal } from "@/components/readMeModal";
 
 const dataProvider = new ConvexDataProvider();
 
@@ -79,6 +80,7 @@ export default function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [splitPercentage, setSplitPercentage] = useState(50); // For resizable divider
+  const [isFaqModalOpen, setIsFaqModalOpen] = useState(false); // For FAQ modal
 
   // Unauth or Non-Owner: redirect
   useEffect(() => {
@@ -633,6 +635,7 @@ export default function DashboardPage() {
         <DashHeaderOG
           onMenuClick={() => setIsSidebarOpen(true)}
           isOpen={isSidebarOpen}
+          onFaqClick={() => setIsFaqModalOpen(true)}
         />
 
         {/* Desktop sidebar (static, correct spacing) */}
@@ -878,6 +881,13 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* FAQ Modal */}
+      <ReadMeModal
+        isOpen={isFaqModalOpen}
+        onClose={() => setIsFaqModalOpen(false)}
+        title="Cheatsheet"
+      />
     </>
   );
 }

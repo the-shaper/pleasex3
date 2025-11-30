@@ -16,14 +16,16 @@ export interface DashboardHeaderProps {
   className?: string;
   onMenuClick?: () => void; // NEW: Prop for menu toggle
   isOpen?: boolean; // NEW: Prop for menu state
+  onFaqClick?: () => void; // NEW: Prop for FAQ modal toggle
   // Removed unused onMenuClick - simplify unless needed
 }
 
 export default function DashboardHeader({
-  title = "PLEASE PLEASE PLEASE",
+  title = "PLEASE PLEASE PLEASE!",
   className = "",
   onMenuClick, // NEW: Destructure
   isOpen, // NEW: Destructure
+  onFaqClick, // NEW: Destructure for FAQ modal
 }: DashboardHeaderProps) {
   const { user, isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk(); // Fixed: Use useClerk for signOut
@@ -64,8 +66,18 @@ export default function DashboardHeader({
           </div>
 
           {/* Auth buttons */}
-          <div data-element="HEADER-CONTROLS-WRAPPER">
+          <div data-element="HEADER-CONTROLS-WRAPPER" className="flex flex-row gap-1">
+            <ButtonBase
+              variant="default"
+              size="sm"
+              onClick={onFaqClick}
+              className="text-xs hover:bg-gold"
+            >
+              Cheatsheet
+            </ButtonBase>
+
             <SignedIn>
+
               <ButtonBase
                 variant="default"
                 size="sm"
@@ -74,6 +86,7 @@ export default function DashboardHeader({
               >
                 SIGN OUT
               </ButtonBase>
+
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">
