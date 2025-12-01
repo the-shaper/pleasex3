@@ -6,11 +6,13 @@ import { HandsSettings, HandConfig } from "./types";
 interface HandsCanvasProps {
     settings: HandsSettings;
     className?: string;
+    onCanvasReady?: (canvas: HTMLCanvasElement) => void;
 }
 
 export const HandsCanvas: React.FC<HandsCanvasProps> = ({
     settings,
     className,
+    onCanvasReady,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const settingsRef = useRef(settings);
@@ -198,6 +200,11 @@ export const HandsCanvas: React.FC<HandsCanvasProps> = ({
         const canvas = canvasRef.current;
         if (!canvas) return;
 
+        // Notify parent when canvas is ready
+        if (onCanvasReady) {
+            onCanvasReady(canvas);
+        }
+
         const resize = () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -224,7 +231,7 @@ export const HandsCanvas: React.FC<HandsCanvasProps> = ({
             window.removeEventListener("touchmove", handleTouchMove);
             if (reqRef.current) cancelAnimationFrame(reqRef.current);
         };
-    }, [draw]);
+    }, [draw, onCanvasReady]);
 
     return <canvas ref={canvasRef} className={className} />;
 };
