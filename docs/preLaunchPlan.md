@@ -31,16 +31,16 @@
 - This discrepancy can be confusing for users who might expect their display name to match their URL or vice versa.
 
 **Proposed Solution**:
-- [ ] **Sidebar Update**: Replace the "My Skills" button in the dashboard sidebar with a **"My Account"** button.
-- [ ] **My Account View**: Create a simple view/modal that displays:
+- [x] **Sidebar Update**: Replace the "My Skills" button in the dashboard sidebar with a **"My Account"** button.
+- [x] **My Account View**: Create a simple view/modal that displays:
     - **Username**: The slug used for their public URL (e.g., `pleasex3.com/alex`).
     - **Display Name**: The name used for greetings and emails (e.g., "Alejandro").
 - [ ] **Future Editing**: Plan for functionality to allow users to edit these fields, ensuring changes sync correctly between Clerk and Convex and handle unique constraints.
 
 ## 6. Stripe Onboarding & Monetization Logic
 **Context**:
-- New creators start without a connected Stripe account.
-- We want to encourage them to connect Stripe to monetize, but the system must work (for free) without it.
+- [x] New creators start without a connected Stripe account.
+- [x] We want to encourage them to connect Stripe to monetize, but the system must work (for free) without it.
 
 **Proposed Solution**:
 - [x] **Monetization Banner**: Create a global top bar component (visible on dashboard pages) for creators who haven't connected Stripe yet.
@@ -61,4 +61,7 @@
 - [ ] Create a terms of service page and link to it from the about modal.
 
 
-## 7. Paid submission fix: When tips are added, the tickets are being submitted before the payment intent is created, so even if a user cancels the payment flow, the ticket is still created. Fix this
+## 7. -[x] Paid submission fix: When tips are added, the tickets are being submitted before the payment intent is created, so even if a user cancels the payment flow, the ticket is still created. Fix this
+
+## 8. -[ ] Deleting user flashing screen. 
+- Currently, after deleting a user, the dashboard screen flashes an "error reading dashboard" before redirecting to the home page. Instead of having the flash "error reading dashboard" the text should be "User deleted successfully" and the user should be redirected to the home page.

@@ -223,7 +223,7 @@ export default function TaskModule({
               </div>
 
               {/* Description wrapper */}
-              <div className="mt-6">
+              <div className="mt-6 pb-4">
                 <div className="text-coral">DESCRIPTION</div>
                 <p className="mt-2 font-mono text-sm whitespace-pre-wrap break-words">
                   {data.message || data.needText || "—"}

@@ -25,18 +25,46 @@ The queues are where the tickets are stored. There are two queues: the PERSONAL 
 
 People can ask you favors for free or for any tip under the amount you set for the Priority queue.
 
+AVG TIME/FAVOR: You can set the "average" amount it takes you to complete a ticket in the QUEUE SETTINGS panel. The app calculates the estimated time it will take you to complete all tickets based on this, so your users can see how long it will take you to complete their ticket.
+
 #### PRIORITY
 
 People can ask you favors for any tip above the amount you set for this queue.
 
+AVG TIME/FAVOR: You can set the "average" amount it takes you to complete a ticket in the QUEUE SETTINGS panel. The app calculates the estimated time it will take you to complete all tickets based on this, so your users can see how long it will take you to complete their ticket.
+
+MINIMUM FEE: You can set the minimum fee for this queue in the QUEUE SETTINGS panel. This is the minimum amount of tip that a user can give you for a ticket in this queue.
+
+#### GENERAL QUEUE
+
+If you look at the list of "ACTIVE" "PAST" or "ALL" favors, you will see a "General" number. This number is the sum of all tickets, past and present, numbered by the time in which they were created. Only you can see this number. Ticket requesters only get to see their assigned ticket number per type of queue.
+
 #### 3:1 HIERARCHY
 
-By default, there is a 3:1 hierarchy in how tasks are executed. **Per every 3 Priority tickets served, 1 Personal ticket is served.**
+By default, there is a 3:1 hierarchy in which tickets are automatically ordered. **Per every 3 Priority tickets served, 1 Personal ticket is served.**
 
 Why? Because it's a way to motivate users and creators to use the Priority queue. The more you get done, the more you earn.
 
 What if you want to change the hierarchy? For now, you can only turn off the Priority queue. 
 If this feature is requested enough times, we will add it.
+
+#### TICKET STATES
+
+##### CURRENT: 
+Current is the ticket at the top of your queue. You need to serve this ticket before you can serve the next one.
+
+##### AWAITING FEEDBACK:
+Awaiting feedback is a "limbo" for your ticket. You activate it by clicking the "Current" button on the TASK DETAILS panel. It means you have completed the task, but the user has not yet given you feedback or confirmed the completion of the task. 
+
+##### NEXT UP:
+Next up is the next ticket in line. This sets up automatically.
+
+##### PENDING:
+Pending is every ticket waiting to be served after the "Next-Up" ticket. This sets up automatically.
+
+
+
+
 
 ### EARNINGS
 
@@ -53,7 +81,7 @@ We take a $3 per every $50 you make, and your payouts are scheduled at the end o
 
 ### A PROOF OF CONCEPT
 
-This is a proof of concept and we are looking for feedback. Please please please let us know if you have any issues or suggestions drop us a line to create@twilightfringe.com with the subject 'PPP' or click 'here'
+This is a proof of concept and we are looking for feedback. Please please please let us know if you have any issues or suggestions drop us a line to create@twilightfringe.com with the subject 'PPP' or click the "contact us" button.
 `;
 
     return (
@@ -87,7 +115,7 @@ This is a proof of concept and we are looking for feedback. Please please please
 
 
                     {/* Markdown Content */}
-                    <div className="readme-content font-mono text-sm text-text leading-relaxed">
+                    <div className="readme-content font-spaceMono text-sm text-text leading-relaxed">
                         <ReactMarkdown
                             components={{
                                 h1: ({ children }) => (

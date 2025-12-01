@@ -153,7 +153,9 @@ export const ensureQueueExists = mutation({
     kind: v.union(v.literal("personal"), v.literal("priority")),
   },
   handler: async (ctx, args) => {
-    await requireCreatorOwnership(ctx, args.creatorSlug);
+    // NOTE: No auth check here - this is a system-level function called during
+    // ticket submission by unauthenticated users. It ensures queue records exist
+    // for data integrity.
     const queue = await ctx.db
       .query("queues")
       .withIndex("by_creator_kind", (q) =>

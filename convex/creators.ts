@@ -3,6 +3,101 @@ import { v } from "convex/values";
 import { internal, api } from "./_generated/api";
 import { requireCreatorOwnership } from "./lib/auth";
 
+// Shared helper for initializing a creator and their queues/tickets
+async function initializeCreator(
+  ctx: any,
+  args: {
+    slug: string;
+    displayName: string;
+    minPriorityTipCents: number;
+    email?: string;
+    clerkUserId: string;
+  }
+) {
+  // Insert creator
+  const creatorId = await ctx.db.insert("creators", {
+    slug: args.slug,
+    displayName: args.displayName,
+    minPriorityTipCents: args.minPriorityTipCents,
+    email: args.email,
+    showAutoqueueCard: true,
+    clerkUserId: args.clerkUserId,
+  });
+
+  // Insert personal queue (enabled by default)
+  await ctx.db.insert("queues", {
+    creatorSlug: args.slug,
+    kind: "personal",
+    activeTurn: 0,
+    nextTurn: 1,
+    etaDays: 0,
+    activeCount: 0,
+    enabled: true,
+    avgDaysPerTicket: 1,
+  });
+
+  // Insert priority queue (enabled by default)
+  await ctx.db.insert("queues", {
+    creatorSlug: args.slug,
+    kind: "priority",
+    activeTurn: 0,
+    nextTurn: 1,
+    etaDays: 0,
+    activeCount: 0,
+    enabled: false,
+    avgDaysPerTicket: 1,
+  });
+
+  // Create Onboarding Ticket
+  const prefix = args.slug.toUpperCase();
+  let ref: string;
+  // Simple retry loop for uniqueness (same as in tickets.ts)
+  while (true) {
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    const candidate = `${prefix}-PPP-${rand}`;
+    const existing = await ctx.db
+      .query("tickets")
+      .withIndex("by_ref", (q: any) => q.eq("ref", candidate))
+      .unique();
+    if (!existing) {
+      ref = candidate;
+      break;
+    }
+  }
+
+  await ctx.db.insert("tickets", {
+    ref,
+    creatorSlug: args.slug,
+    queueKind: "personal",
+    tipCents: 0,
+    taskTitle: "Get around this app",
+    message: `You have three important things to know. 
+
+1.  YOU CAN APPROVE OR REJECT TICKET REQUESTS LIKE THIS ONE. Click the "Approve" button at the bottom of this ticket to approve it. Once approved, the ticket will move to the "NEXT UP" section. (If you reject, go check the "ALL" tab to see it again. Please note that once you reject a ticket, you can't approve it again.) 
+
+2.  TO MANAGE YOUR QUEUES (PERSONAL AND PRIORITY) GO TO THE "QUEUE SETTINGS" TAB. Please note that you can only enable the Priority queue if your stripe account is connected.
+
+3.  TO GET PAID, YOU NEED TO CONNECT STRIPE. Go to the "EARNINGS" tab to connect your stripe account. 
+
+
+There are more features to this app, but these are the essentials.`,
+    status: "open",
+    createdAt: Date.now(),
+    name: "PLEASE PLEASE PLEASE!",
+    email: "create@twilightfringe.com",
+    location: "Ensenada, Mexico",
+    attachments: ["https://youtu.be/v_Yeu0RSAOQ?si=EkaA0Suk3nLqvnbZ"],
+  });
+
+  if (args.email) {
+    await ctx.scheduler.runAfter(0, internal.emails.sendWelcomeEmail, {
+      email: args.email,
+    });
+  }
+
+  return creatorId;
+}
+
 export const create = mutation({
   args: {
     slug: v.string(),
@@ -16,45 +111,10 @@ export const create = mutation({
       throw new Error("Unauthorized");
     }
 
-    // Insert creator
-    const creatorId = await ctx.db.insert("creators", {
-      slug: args.slug,
-      displayName: args.displayName,
-      minPriorityTipCents: args.minPriorityTipCents,
-      email: args.email,
-      showAutoqueueCard: true,
+    const creatorId = await initializeCreator(ctx, {
+      ...args,
       clerkUserId: identity.subject,
     });
-
-    // Insert personal queue (enabled by default)
-    await ctx.db.insert("queues", {
-      creatorSlug: args.slug,
-      kind: "personal",
-      activeTurn: 0,
-      nextTurn: 1,
-      etaDays: 0,
-      activeCount: 0,
-      enabled: true,
-      avgDaysPerTicket: 1,
-    });
-
-    // Insert priority queue (enabled by default)
-    await ctx.db.insert("queues", {
-      creatorSlug: args.slug,
-      kind: "priority",
-      activeTurn: 0,
-      nextTurn: 1,
-      etaDays: 0,
-      activeCount: 0,
-      enabled: false,
-      avgDaysPerTicket: 1,
-    });
-
-    if (args.email) {
-      await ctx.scheduler.runAfter(0, internal.emails.sendWelcomeEmail, {
-        email: args.email,
-      });
-    }
 
     return { success: true, creatorId };
   },
@@ -82,60 +142,14 @@ export const upsertBySlug = mutation({
       // Backfill clerkUserId if missing
       if (!existing.clerkUserId) {
         await ctx.db.patch(existing._id, { clerkUserId: identity.subject });
-      } else if (existing.clerkUserId !== identity.subject) {
-        // If the slug is claimed by someone else, we might want to error or handle it.
-        // For now, let's just return existing (and let the dashboard fail if they try to access it)
-        // OR, we could throw an error here to prevent "taking over" a slug.
-        // But upsert is often used for "ensure I exist".
-        // If I am user B and I say "upsert userA", and userA exists and belongs to userA...
-        // I shouldn't be able to edit it.
-        // But this mutation doesn't edit much, just returns ID.
-        // However, the backfill above is dangerous if we don't check.
-        // Let's only backfill if we are sure? 
-        // Actually, if it exists and has a DIFFERENT clerkUserId, we should probably NOT return it as if it's yours?
-        // But for now, let's just patch if missing.
       }
       return { creatorId: existing._id };
     }
 
-    const creatorId = await ctx.db.insert("creators", {
-      slug: args.slug,
-      displayName: args.displayName,
-      minPriorityTipCents: args.minPriorityTipCents,
-      email: args.email,
-      showAutoqueueCard: true,
+    const creatorId = await initializeCreator(ctx, {
+      ...args,
       clerkUserId: identity.subject,
     });
-
-    // Insert personal queue (enabled by default)
-    await ctx.db.insert("queues", {
-      creatorSlug: args.slug,
-      kind: "personal",
-      activeTurn: 0,
-      nextTurn: 1,
-      etaDays: 0,
-      activeCount: 0,
-      enabled: true,
-      avgDaysPerTicket: 1,
-    });
-
-    // Insert priority queue (enabled by default)
-    await ctx.db.insert("queues", {
-      creatorSlug: args.slug,
-      kind: "priority",
-      activeTurn: 0,
-      nextTurn: 1,
-      etaDays: 0,
-      activeCount: 0,
-      enabled: false,
-      avgDaysPerTicket: 1,
-    });
-
-    if (args.email) {
-      await ctx.scheduler.runAfter(0, internal.emails.sendWelcomeEmail, {
-        email: args.email,
-      });
-    }
 
     return { creatorId };
   },

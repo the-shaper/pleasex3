@@ -80,7 +80,7 @@ export function CellComponent({
   return (
     // UPDATED: Make entire row clickable; remove button column
     <div
-      className={`grid gap-4 items-center p-2 border-b border-gray-subtle cursor-pointer hover:bg-gray-subtle/50 transition-colors whitespace-nowrap ${className} ${isClickable ? "focus:bg-gray-subtle" : ""
+      className={`grid gap-4 items-start px-4 py-2 border-b border-gray-subtle cursor-pointer hover:bg-gray-subtle/50 transition-colors whitespace-nowrap ${className} ${isClickable ? "focus:bg-gray-subtle" : ""
         } ${isActive ? "bg-gray-subtle" : "" // NEW: Highlight when active from ScrollTrigger
         }`}
       style={{
@@ -102,7 +102,7 @@ export function CellComponent({
       aria-label={isClickable ? `Open ticket ${data.ref}` : undefined}
     >
       {/* General Number */}
-      <div className="flex justify-center">
+      <div className="flex justify-start">
         {data.generalNumber != null ? (
           <GeneralNumber
             data={{ activeTurn: data.generalNumber }}
@@ -114,7 +114,7 @@ export function CellComponent({
       </div>
 
       {/* Ticket Number */}
-      <div className="flex justify-center">
+      <div className="flex justify-start">
         {data.ticketNumber != null ? (
           <TagBase variant={data.queueKind}>{data.ticketNumber}</TagBase>
         ) : (
@@ -123,7 +123,7 @@ export function CellComponent({
       </div>
 
       {/* Queue Type */}
-      <div className="flex justify-center">
+      <div className="flex justify-start">
         <TagBase variant={data.queueKind}>
           {data.queueKind.toUpperCase()}
         </TagBase>

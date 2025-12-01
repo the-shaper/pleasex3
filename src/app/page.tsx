@@ -7,6 +7,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { AboutModal } from "@/components/aboutModal";
 import { TrackingModal } from "@/components/trackingModal";
 
+import { HandsBackground } from "@/components/HandsBackground";
+
 export default function Home() {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
@@ -22,7 +24,10 @@ export default function Home() {
 
   return (
     <>
-      <div className={`w-full font-space grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 sm:p-20 bg-[url('/px3-hands.svg')] bg-cover bg-center transition-all ${isAboutModalOpen || isTrackingModalOpen ? 'blur-sm' : ''}`}>
+      <HandsBackground
+        className={`fixed inset-0 -z-10 transition-all ${isAboutModalOpen || isTrackingModalOpen ? 'blur-sm' : ''}`}
+        showControls={false} />
+      <div className={`w-full font-space grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 sm:p-20 transition-all ${isAboutModalOpen || isTrackingModalOpen ? 'blur-sm' : ''}`}>
         <main className="grid grid-rows-[auto_1fr_1fr] md:grid-rows-3 row-start-2 h-full" id="titles">
           {/* Row 1: Signed in status */}
           <div className="flex items-start justify-center pb-4">

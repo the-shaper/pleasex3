@@ -241,7 +241,7 @@ export function TableComponent({
                 >
                   {/* GENERAL - Sortable */}
                   <button
-                    className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-center gap-1"
+                    className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-start gap-1"
                     onClick={table.getColumn("general")?.getToggleSortingHandler()}
                   >
                     GENERAL

@@ -2,16 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
+import { useUser } from "@clerk/nextjs";
 import QueueCard from "../../../ui-backup/QueueCard";
 import { TrackingModal } from "@/components/trackingModal";
+import { ButtonBase } from "@/components/general/buttonBase";
 
 export default function CreatorQueuesPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const router = useRouter();
+  const { user, isLoaded } = useUser();
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
 
   // Reactive queries (auto-update on DB changes)
@@ -66,10 +70,11 @@ export default function CreatorQueuesPage() {
               <span className="text-coral">{creatorInfo.displayName}?</span>
             </p>
             <h1
-              className="text-[40px] font-bold leading-none tracking-tighter "
+              className="text-[40px] font-bold leading-none tracking-tighter cursor-pointer"
               style={{ fontFamily: "var(--font-heading)" }}
+              onClick={() => router.push(`./`)}
             >
-              PLEASE PLEASE PLEASE
+              PLEASE PLEASE PLEASE!
             </h1>
             <p
               className="uppercase text-coral"
@@ -78,13 +83,25 @@ export default function CreatorQueuesPage() {
               JOIN THE QUEUE
             </p>
           </div>
-          <button
-            onClick={() => setIsTrackingModalOpen(true)}
-            className="bg-blue-2 px-6 py-1 uppercase cursor-pointer hover:opacity-90 transition-opacity"
-            style={{ fontFamily: "var(--font-body)" }}
-          >
-            I HAVE A TRACKING NUMBER
-          </button>
+          <div className="flex flex-col items-end gap-2">
+            <button
+              onClick={() => setIsTrackingModalOpen(true)}
+              className="bg-blue-2 px-6 py-1 uppercase cursor-pointer hover:opacity-90 transition-opacity"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              I HAVE A TRACKING NUMBER
+            </button>
+            {isLoaded && user && (
+              <ButtonBase
+                variant="neutral"
+                onClick={() => router.push(`/${slug}/dashboard`)}
+                className="bg-blue-2 px-6 py-1 uppercase cursor-pointer hover:opacity-90 transition-opacity"
+                style={{ fontFamily: "var(--font-body)" }}
+              >
+                GO TO DASHBOARD
+              </ButtonBase>
+            )}
+          </div>
         </header>
         <main className="flex-1 flex items-center">
           <div className="flex flex-row w-full items-stretch content-stretch justify-center gap-6">

@@ -137,6 +137,10 @@ export default function SubmitClient({
       );
       return;
     }
+    if (!form.consentEmail) {
+      alert("Please agree to the email consent checkbox to proceed.");
+      return;
+    }
     const attachments = form.attachments
       .split(/\s+/)
       .map((s) => s.trim())

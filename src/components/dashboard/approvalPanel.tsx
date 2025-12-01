@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import TicketApprovalCreatorCard from "../checkout/ticketApprovalCreatorCard";
+import ConfirmReject from "./confirmReject";
 import { ConvexDataProvider } from "@/lib/data/convex";
 import { useAction } from "convex/react";
 import { api } from "@convex/_generated/api";
@@ -23,6 +24,7 @@ export default function ApprovalPanel({
   queueSnapshot,
 }: ApprovalPanelProps) {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [ticketToReject, setTicketToReject] = useState<Ticket | null>(null);
 
   const formatEtaMins = (mins: number): string => {
     if (!mins || mins <= 0) return "—";
@@ -57,21 +59,31 @@ export default function ApprovalPanel({
     }
   };
 
-  const handleReject = async (ticket: Ticket) => {
-    setActionLoading(ticket.ref);
+  const handleReject = (ticket: Ticket) => {
+    // Show confirmation modal instead of immediately rejecting
+    setTicketToReject(ticket);
+  };
+
+  const handleConfirmReject = async () => {
+    if (!ticketToReject) return;
+
+    setActionLoading(ticketToReject.ref);
     try {
       // V3: Cancel/Refund payment
-      const result = await cancelOrRefund({ ticketRef: ticket.ref });
+      const result = await cancelOrRefund({ ticketRef: ticketToReject.ref });
 
       if (!result.ok) {
         throw new Error(`Rejection failed: ${result.status}`);
       }
 
       // Refresh ticket data
-      const updatedTicket = await dataProvider.getTicketByRef(ticket.ref);
+      const updatedTicket = await dataProvider.getTicketByRef(ticketToReject.ref);
       if (onTicketUpdate && updatedTicket) {
         onTicketUpdate(updatedTicket);
       }
+
+      // Close modal
+      setTicketToReject(null);
     } catch (err: any) {
       console.error("Error rejecting ticket:", err);
       alert(`Failed to reject ticket: ${err.message}`);
@@ -171,6 +183,15 @@ export default function ApprovalPanel({
           );
         })}
       </div>
+
+      {/* Reject Confirmation Modal */}
+      <ConfirmReject
+        isOpen={!!ticketToReject}
+        onCancel={() => setTicketToReject(null)}
+        onConfirm={handleConfirmReject}
+        isSubmitting={!!actionLoading}
+        ticketRef={ticketToReject?.ref || ""}
+      />
     </div>
   );
 }
