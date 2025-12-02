@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useRef, useEffect, useCallback } from "react";
-import { ShaderSettings, ShaderLayerType } from "./types";
+import {
+  ShaderSettings,
+  ShaderLayer,
+  HalftoneSettings,
+  AdjustmentsSettings,
+} from "./types";
 import {
   halftoneVertexShader,
   halftoneFragmentShader,
@@ -208,6 +213,7 @@ export const ShaderPipeline: React.FC<ShaderPipelineProps> = ({
         "u_pattern",
         "u_colorMode",
         "u_monoColor",
+        "u_monoBackground",
         "u_showOriginal",
       ]
     );
@@ -274,44 +280,9 @@ export const ShaderPipeline: React.FC<ShaderPipelineProps> = ({
     [createFramebuffer]
   );
 
-  // Run a single shader pass
-  const runShaderPass = useCallback(
-    (
-      gl: WebGLRenderingContext,
-      shaderProgram: ShaderProgram,
-      inputTexture: WebGLTexture,
-      outputFramebuffer: WebGLFramebuffer | null, // null = render to screen
-      width: number,
-      height: number,
-      setUniforms: (
-        uniforms: Record<string, WebGLUniformLocation | null>
-      ) => void
-    ) => {
-      gl.useProgram(shaderProgram.program);
-      setupAttributes(gl, shaderProgram.program);
-
-      gl.bindFramebuffer(gl.FRAMEBUFFER, outputFramebuffer);
-      gl.viewport(0, 0, width, height);
-
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, inputTexture);
-
-      gl.uniform1i(shaderProgram.uniforms.u_texture, 0);
-      setUniforms(shaderProgram.uniforms);
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-    },
-    [setupAttributes]
-  );
-
-  // Get active layers in order (only enabled ones)
-  const getActiveLayers = useCallback((): ShaderLayerType[] => {
-    const s = settingsRef.current;
-    return s.layerOrder.filter((layer) => {
-      if (layer === "halftone") return s.halftone.enabled;
-      if (layer === "adjustments") return s.adjustments.enabled;
-      return false;
-    });
+  // Get active layers (enabled only)
+  const getActiveLayers = useCallback((): ShaderLayer[] => {
+    return settingsRef.current.layers.filter((layer) => layer.enabled);
   }, []);
 
   // Main render loop
@@ -334,7 +305,6 @@ export const ShaderPipeline: React.FC<ShaderPipelineProps> = ({
       return;
     }
 
-    const s = settingsRef.current;
     const width = sourceCanvas.width;
     const height = sourceCanvas.height;
 
@@ -363,15 +333,14 @@ export const ShaderPipeline: React.FC<ShaderPipelineProps> = ({
 
     // If no layers are active, just passthrough
     if (activeLayers.length === 0) {
-      runShaderPass(
-        gl,
-        programs.passthrough,
-        sourceTexture,
-        null,
-        width,
-        height,
-        () => {}
-      );
+      gl.useProgram(programs.passthrough.program);
+      setupAttributes(gl, programs.passthrough.program);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, width, height);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, sourceTexture);
+      gl.uniform1i(programs.passthrough.uniforms.u_texture, 0);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
       reqRef.current = requestAnimationFrame(render);
       return;
     }
@@ -388,67 +357,64 @@ export const ShaderPipeline: React.FC<ShaderPipelineProps> = ({
         : framebuffersRef.current[fbIndex]?.fb || null;
       const outputTexture = framebuffersRef.current[fbIndex]?.texture;
 
-      if (layer === "adjustments") {
-        runShaderPass(
-          gl,
-          programs.adjustments,
-          currentInput,
-          outputFb,
-          width,
-          height,
-          (uniforms) => {
-            gl.uniform2f(uniforms.u_resolution, width, height);
-            gl.uniform1f(uniforms.u_blurRadius, s.adjustments.blur);
-            gl.uniform1f(uniforms.u_gamma, s.adjustments.gamma);
-            gl.uniform1f(uniforms.u_contrast, s.adjustments.contrast);
-            gl.uniform1f(uniforms.u_brightness, s.adjustments.brightness);
-            gl.uniform1f(uniforms.u_saturation, s.adjustments.saturation);
-          }
+      const shaderProgram =
+        layer.type === "halftone" ? programs.halftone : programs.adjustments;
+
+      gl.useProgram(shaderProgram.program);
+      setupAttributes(gl, shaderProgram.program);
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, outputFb);
+      gl.viewport(0, 0, width, height);
+
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, currentInput);
+      gl.uniform1i(shaderProgram.uniforms.u_texture, 0);
+
+      if (layer.type === "adjustments") {
+        const s = layer.settings as AdjustmentsSettings;
+        gl.uniform2f(shaderProgram.uniforms.u_resolution, width, height);
+        gl.uniform1f(shaderProgram.uniforms.u_blurRadius, s.blur);
+        gl.uniform1f(shaderProgram.uniforms.u_gamma, s.gamma);
+        gl.uniform1f(shaderProgram.uniforms.u_contrast, s.contrast);
+        gl.uniform1f(shaderProgram.uniforms.u_brightness, s.brightness);
+        gl.uniform1f(shaderProgram.uniforms.u_saturation, s.saturation);
+      } else if (layer.type === "halftone") {
+        const s = layer.settings as HalftoneSettings;
+        gl.uniform2f(shaderProgram.uniforms.u_resolution, width, height);
+        gl.uniform1f(shaderProgram.uniforms.u_dotSize, s.dotSize);
+        gl.uniform1f(shaderProgram.uniforms.u_gridSpacing, s.gridSpacing);
+        gl.uniform1f(
+          shaderProgram.uniforms.u_gridAngle,
+          (s.gridAngle * Math.PI) / 180
         );
-      } else if (layer === "halftone") {
-        runShaderPass(
-          gl,
-          programs.halftone,
-          currentInput,
-          outputFb,
-          width,
-          height,
-          (uniforms) => {
-            gl.uniform2f(uniforms.u_resolution, width, height);
-            gl.uniform1f(uniforms.u_dotSize, s.halftone.dotSize);
-            gl.uniform1f(uniforms.u_gridSpacing, s.halftone.gridSpacing);
-            gl.uniform1f(
-              uniforms.u_gridAngle,
-              (s.halftone.gridAngle * Math.PI) / 180
-            );
-            gl.uniform1f(uniforms.u_smoothness, s.halftone.smoothness);
-            gl.uniform1i(
-              uniforms.u_pattern,
-              s.halftone.pattern === "dot" ? 0 : 1
-            );
-            gl.uniform1i(
-              uniforms.u_colorMode,
-              s.halftone.colorMode === "cmyk"
-                ? 0
-                : s.halftone.colorMode === "rgb"
-                  ? 1
-                  : 2
-            );
-            gl.uniform3f(uniforms.u_monoColor, ...s.halftone.monoColor);
-            gl.uniform1f(uniforms.u_showOriginal, s.halftone.showOriginal);
-          }
+        gl.uniform1f(shaderProgram.uniforms.u_smoothness, s.smoothness);
+        gl.uniform1i(
+          shaderProgram.uniforms.u_pattern,
+          s.pattern === "dot" ? 0 : 1
         );
+        gl.uniform1i(
+          shaderProgram.uniforms.u_colorMode,
+          s.colorMode === "cmyk" ? 0 : s.colorMode === "rgb" ? 1 : 2
+        );
+        gl.uniform3f(shaderProgram.uniforms.u_monoColor, ...s.monoColor);
+        gl.uniform3f(
+          shaderProgram.uniforms.u_monoBackground,
+          ...s.monoBackgroundColor
+        );
+        gl.uniform1f(shaderProgram.uniforms.u_showOriginal, s.showOriginal);
       }
+
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
 
       // Swap for next pass
       if (!isLastPass && outputTexture) {
         currentInput = outputTexture;
-        fbIndex = 1 - fbIndex; // Toggle between 0 and 1
+        fbIndex = 1 - fbIndex;
       }
     }
 
     reqRef.current = requestAnimationFrame(render);
-  }, [sourceCanvas, ensureFramebuffers, runShaderPass, getActiveLayers]);
+  }, [sourceCanvas, ensureFramebuffers, setupAttributes, getActiveLayers]);
 
   // Initialize and start render loop
   useEffect(() => {

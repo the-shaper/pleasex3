@@ -119,7 +119,7 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
             {variant.toUpperCase()}
           </h3>
         </div>
-        <div className="space-y-1 px-9">
+        <div className="space-y-1 px-6">
           {/* Header Section */}
           <div className="flex gap-2 items-stretch">
             {/* Main Content Area */}
@@ -135,12 +135,12 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
               </div>
 
               {/* Queue Information */}
-              <div className="flex flex-wrap items-end gap-6 pt-5">
-                <span className="text-[111px] leading-[77px] text-coral font-mono text-height-tight">
+              <div className="flex flex-wrap items-center justify-center gap-1 pt-5">
+                <span className="text-8xl text-coral font-mono text-height-tight">
                   {data.nextTurn}
                 </span>
                 <div
-                  className=" text-[11px] uppercase text-text text-left max-w-[44%] flex flex-col gap-1"
+                  className=" text-[11px] uppercase text-text text-left max-w-[60%] flex flex-col gap-1"
                   style={{ fontFamily: "var(--font-body)" }}
                 >
                   <div className="flex items-center gap-2 ">

@@ -23,7 +23,8 @@ export const halftoneFragmentShader = `
   uniform float u_smoothness;
   uniform int u_pattern;         // 0 = dot, 1 = square
   uniform int u_colorMode;       // 0 = cmyk, 1 = rgb, 2 = mono
-  uniform vec3 u_monoColor;
+  uniform vec3 u_monoColor;      // Dot/foreground color for mono mode
+  uniform vec3 u_monoBackground; // Background color for mono mode
   uniform float u_showOriginal;
   
   varying vec2 v_texCoord;
@@ -114,10 +115,10 @@ export const halftoneFragmentShader = `
       halftoneColor = vec3(r, g, b);
       
     } else {
-      // Mono mode - single color halftone
+      // Mono mode - dual color halftone (foreground dots on background)
       float grey = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
       float mono = halftonePattern(st, u_dotSize, grey, ANGLE_K);
-      halftoneColor = mix(vec3(1.0), u_monoColor, mono);
+      halftoneColor = mix(u_monoBackground, u_monoColor, mono);
     }
     
     // Blend with original based on showOriginal slider

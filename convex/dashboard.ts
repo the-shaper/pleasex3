@@ -96,3 +96,45 @@ export const getTicketPositionByRef = query({
     return await getTicketPosition(ctx, args.ref, args.creatorSlug);
   },
 });
+
+export const getCreatorStatusMetrics = query({
+  args: { creatorSlug: v.string() },
+  handler: async (ctx, args) => {
+    // Verify ownership - only the creator can see their status metrics
+    const creator = await requireCreatorOwnership(ctx, args.creatorSlug, { throwIfNotFound: false });
+
+    if (!creator) {
+      return null;
+    }
+
+    // Get all tickets for this creator
+    const allTickets = await ctx.db
+      .query("tickets")
+      .withIndex("by_creator", (q) =>
+        q.eq("creatorSlug", args.creatorSlug)
+      )
+      .collect();
+
+    // Count active approved tickets (excluding awaiting-feedback)
+    // These are the "queued tasks" in the active panel
+    const queuedTasks = allTickets.filter((t) => {
+      if (t.status !== "approved") return false;
+      const tags = t.tags || [];
+      // Exclude tickets that are awaiting-feedback (paused)
+      return !tags.includes("awaiting-feedback");
+    }).length;
+
+    // Count tickets awaiting approval
+    // Includes: open (free) + pending_payment that have been authorized
+    const newRequests = allTickets.filter((t) => {
+      if (t.status === "open") return true;
+      if (t.status === "pending_payment" && t.paymentStatus !== "pending") return true;
+      return false;
+    }).length;
+
+    return {
+      queuedTasks,
+      newRequests,
+    };
+  },
+});

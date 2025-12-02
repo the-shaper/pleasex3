@@ -9,7 +9,7 @@ export function MenuButton({ onClick, isOpen = false }: MenuButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="md:hidden p-2 text-gray-700 hover:text-gray-900 focus:outline-none"
+      className="md:hidden p-2 text-gray-700 hover:text-gray-900 focus:outline-none bg-greenlite"
       aria-label={isOpen ? "Close menu" : "Open menu"}
     >
       <svg

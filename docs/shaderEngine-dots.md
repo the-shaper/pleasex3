@@ -37,19 +37,29 @@ src/components/HandsBackground/
 
 ## Layer System
 
-Shader layers are processed in order (configurable). The pipeline uses **framebuffer ping-pong** to chain multiple shader passes efficiently.
+Shader layers are **dynamic** - you can create multiple instances of any layer type and stack them in any order. The pipeline uses **framebuffer ping-pong** to chain shader passes efficiently.
 
-| Layer         | Description                                   | Default Order |
-| ------------- | --------------------------------------------- | ------------- |
-| `adjustments` | Blur, brightness, contrast, gamma, saturation | 1 (bottom)    |
-| `halftone`    | Dot/square pattern halftone effect            | 2 (top)       |
+### Layer Types
 
-### Layer Ordering
+| Type          | Description                                   |
+| ------------- | --------------------------------------------- |
+| `adjustments` | Blur, brightness, contrast, gamma, saturation |
+| `halftone`    | Dot/square pattern halftone effect            |
 
-- Layers are processed in `layerOrder` array order
-- First layer receives the original canvas texture
-- Each subsequent layer receives output from previous layer
-- Last layer outputs to screen
+### Layer Features
+
+- **Add layers**: Click "+ Adjust" or "+ Halftone" to create new layers
+- **Reorder**: Use ▲/▼ buttons to move layers up/down the stack
+- **Duplicate**: Copy a layer with all its settings
+- **Delete**: Remove layers you don't need
+- **Enable/disable**: Toggle individual layers on/off
+- **Rename**: Click the layer name to edit it
+
+### Processing Order
+
+- Layers process bottom-to-top (first in list → last applied)
+- Each layer receives the output of the previous layer
+- Final layer outputs to screen
 
 ## Adjustments Shader Parameters
 
@@ -64,17 +74,18 @@ Shader layers are processed in order (configurable). The pipeline uses **framebu
 
 ## Halftone Shader Parameters
 
-| Parameter      | Type      | Range                   | Description                           |
-| -------------- | --------- | ----------------------- | ------------------------------------- |
-| `enabled`      | boolean   | on/off                  | Toggle halftone effect                |
-| `dotSize`      | number    | 0.1 - 1.0               | Dot radius within cell (independent)  |
-| `pattern`      | enum      | "dot" / "square"        | Shape of halftone elements            |
-| `gridSpacing`  | number    | 10 - 150                | Cells per unit (more = smaller dots)  |
-| `gridAngle`    | number    | -180 - 180              | Global rotation of dot grid (degrees) |
-| `smoothness`   | number    | 0 - 1                   | Edge softness (anti-aliasing)         |
-| `colorMode`    | enum      | "cmyk" / "rgb" / "mono" | Color separation mode                 |
-| `monoColor`    | RGB tuple | [0-1, 0-1, 0-1]         | Dot color for mono mode               |
-| `showOriginal` | number    | 0 - 1                   | Blend factor with original            |
+| Parameter             | Type      | Range                   | Description                           |
+| --------------------- | --------- | ----------------------- | ------------------------------------- |
+| `enabled`             | boolean   | on/off                  | Toggle halftone effect                |
+| `dotSize`             | number    | 0.1 - 1.0               | Dot radius within cell (independent)  |
+| `pattern`             | enum      | "dot" / "square"        | Shape of halftone elements            |
+| `gridSpacing`         | number    | 10 - 150                | Cells per unit (more = smaller dots)  |
+| `gridAngle`           | number    | -180 - 180              | Global rotation of dot grid (degrees) |
+| `smoothness`          | number    | 0 - 1                   | Edge softness (anti-aliasing)         |
+| `colorMode`           | enum      | "cmyk" / "rgb" / "mono" | Color separation mode                 |
+| `monoColor`           | RGB tuple | [0-1, 0-1, 0-1]         | Dot/foreground color (mono)           |
+| `monoBackgroundColor` | RGB tuple | [0-1, 0-1, 0-1]         | Background color (mono)               |
+| `showOriginal`        | number    | 0 - 1                   | Blend factor with original            |
 
 ## How It Works
 

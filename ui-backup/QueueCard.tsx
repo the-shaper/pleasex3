@@ -141,7 +141,7 @@ export default function QueueCard({
                     ? "PRIORITY QUEUE PRIORITIZES WORK AND BUSINESS-RELATED FAVORS"
                     : "PERSONAL QUEUE PRIORITIZES PERSONAL FAVORS"}
                 </p>
-                <p className="text-coral underline">"READ WHY"</p>
+                <p className="text-coral underline hidden">"READ WHY"</p>
               </div>
               <span
                 className="text-[22px]"

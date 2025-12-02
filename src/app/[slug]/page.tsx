@@ -60,8 +60,8 @@ export default function CreatorQueuesPage() {
   return (
     <div className="bg-bg">
       <div className="max-w-6xl mx-auto p-8 min-h-screen flex flex-col">
-        <header className="flex items-start justify-between">
-          <div className="space-y-2">
+        <header className="flex md:flex-row flex-col-reverse items-start justify-between md:gap-0 gap-4 pb-4">
+          <div className="space-y-0">
             <p
               className="uppercase text-text-muted"
               style={{ fontFamily: "var(--font-body)" }}
@@ -83,7 +83,7 @@ export default function CreatorQueuesPage() {
               JOIN THE QUEUE
             </p>
           </div>
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col items-end gap-2 md:w-1/3 w-full">
             <button
               onClick={() => setIsTrackingModalOpen(true)}
               className="bg-blue-2 px-6 py-1 uppercase cursor-pointer hover:opacity-90 transition-opacity"
@@ -103,8 +103,8 @@ export default function CreatorQueuesPage() {
             )}
           </div>
         </header>
-        <main className="flex-1 flex items-center">
-          <div className="flex flex-row w-full items-stretch content-stretch justify-center gap-6">
+        <main className="flex-1 flex items-center md:pb-0 pb-6">
+          <div className="flex md:flex-row flex-col w-full items-stretch content-stretch justify-center gap-6">
             <QueueCard
               kind="personal"
               slug={slug}
@@ -124,10 +124,10 @@ export default function CreatorQueuesPage() {
           </div>
         </main>
         <footer className="py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex md:flex-row flex-col items-center justify-between gap-2 md:gap-0">
             <a
               href="/about"
-              className="bg-greenlite px-6 py-1 uppercase"
+              className="bg-greenlite px-6 py-1 uppercase md:w-1/3 w-full"
               style={{ fontFamily: "var(--font-body)" }}
             >
               I WANT TO DO FAVORS TOO

@@ -6,6 +6,8 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { AboutModal } from "@/components/aboutModal";
 import { TrackingModal } from "@/components/trackingModal";
+import { useQuery } from "convex/react";
+import { api } from "@convex/_generated/api";
 
 import { HandsBackground } from "@/components/HandsBackground";
 
@@ -23,11 +25,17 @@ export default function Home() {
   const userSlug =
     user?.username || user?.primaryEmailAddress?.emailAddress || null;
 
+  // Query creator status metrics (only when signed in and has slug)
+  const statusMetrics = useQuery(
+    api.dashboard.getCreatorStatusMetrics,
+    userSlug ? { creatorSlug: userSlug } : "skip"
+  );
+
   return (
     <>
       <HandsBackground
-        className={`fixed inset-0 -z-10 transition-all ${isAboutModalOpen || isTrackingModalOpen ? "blur-sm" : ""}`}
-        showControls={true}
+        className={`fixed inset-0 -z-10 transition-all ${isAboutModalOpen || isTrackingModalOpen ? "blur-md" : ""}`}
+        showControls={false}
         showShaderControls={false}
       />
       <div
@@ -37,27 +45,33 @@ export default function Home() {
           className="grid grid-rows-[auto_1fr_1fr] md:grid-rows-3 row-start-2 h-full"
           id="titles"
         >
-          {/* Row 1: Signed in status */}
-          <div className="flex items-start justify-center pb-4">
-            {isLoaded && user && userSlug && (
-              <h6 className="text-xs font-bold text-text uppercase tracking-widest">
-                signed in as{" "}
-                <a
-                  href={`/${userSlug}`}
-                  className="text-text underline hover:opacity-80 transition-opacity cursor-pointer"
-                >
-                  {userSlug}
-                </a>
-              </h6>
-            )}
+          {/* Row 1: Signed in + status bar */}
+          <div className="flex flex-row items-start justify-center gap-1">
+            <a href={`/${userSlug}`} className="flex items-start justify-center">
+              {isLoaded && user && userSlug && (
+                <h6 className="text-xs font-bold text-text uppercase tracking-widest border bg-bg py-2 px-4">
+                  signed in as{" "}
+
+                  <span className="text-text underline">{userSlug}</span>
+
+                </h6>
+              )}
+            </a>
+            <a href={`/${userSlug}/dashboard`} className="flex items-start justify-center ">
+              {isLoaded && user && userSlug && statusMetrics && (
+                <h6 className="text-xs  text-bg uppercase tracking-widest bg-text py-2 px-4 border border-text">
+                  You have <span className="font-bold text-coral">{statusMetrics.queuedTasks}</span> queued {statusMetrics.queuedTasks === 1 ? 'task' : 'tasks'} and <span className="font-bold text-coral">{statusMetrics.newRequests}</span> new {statusMetrics.newRequests === 1 ? 'request' : 'requests'}
+                </h6>
+              )}
+            </a>
           </div>
 
           {/* Row 2: Titles */}
-          <div className="p-8 flex flex-col items-center justify-center w-full max-w-full">
-            <h1 className="md:hidden text-6xl sm:text-5xl font-bold text-text tracking-tighter leading-[0.8] text-center break-words max-w-full">
+          <div className="md:p-8 pt-3 flex flex-col md:items-center items-start justify-center w-full max-w-full">
+            <h1 className="md:hidden text-6xl sm:text-5xl font-bold text-text tracking-tighter leading-[0.8] text-left break-words max-w-full">
               PLEASE PLEASE PLEASE!
             </h1>
-            <h2 className="md:hidden text-center text-xl sm:text-2xl text-text md:tracking-[1.77rem] leading-[1] break-words max-w-full mt-2">
+            <h2 className="md:hidden text-left text-xl sm:text-2xl text-text md:tracking-[1.77rem] leading-[1] break-words max-w-full mt-2">
               VIRTUAL TICKET MACHINE
             </h2>
             <img

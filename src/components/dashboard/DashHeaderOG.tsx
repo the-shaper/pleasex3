@@ -49,14 +49,14 @@ export default function DashboardHeader({
     <div data-element="HEADER" className={`col-span-2 ${className}`}>
       <div className="flex flex-col gap-4">
         {/* Top row: DASHBOARD tag + MenuButton and Auth buttons */}
-        <div className="flex md:justify-between justify-between items-center">
-          <div className="flex flex-row items-center gap-2">
+        <div className="flex md:justify-between justify-between md:items-center items-start">
+          <div className="flex flex-row md:items-center items-start gap-2">
             {/* MenuButton on mobile */}
             {onMenuClick && (
               <MenuButton
                 onClick={onMenuClick}
                 isOpen={isOpen || false}
-                className="md:hidden"
+                className="md:hidden bg-greelite"
               />
             )}
             {/* DASHBOARD tag */}
@@ -66,7 +66,7 @@ export default function DashboardHeader({
           </div>
 
           {/* Auth buttons */}
-          <div data-element="HEADER-CONTROLS-WRAPPER" className="flex flex-row gap-1">
+          <div data-element="HEADER-CONTROLS-WRAPPER" className="flex md:flex-row flex-col gap-1">
             <ButtonBase
               variant="default"
               size="sm"
