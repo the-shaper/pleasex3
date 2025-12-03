@@ -16,7 +16,7 @@ export function ConnectStripeCard({
       <section className="border border-text/20 bg-bg px-6 py-4 flex flex-col gap-2">
         <div className="text-xs uppercase text-text-muted">Payouts</div>
         <div className="text-lg font-bold text-text">
-          Connect Stripe to receive your earnings
+          Connect Stripe to enable tipping
         </div>
         <p className="text-sm text-text-muted max-w-xl">
           Earnings are calculated in USD. We keep $3.33 for every $50 you make

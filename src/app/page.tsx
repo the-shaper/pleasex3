@@ -10,6 +10,7 @@ import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 
 import { HandsBackground } from "@/components/HandsBackground";
+import { StatusBar } from "@/components/dashboard/statusBar";
 
 export default function Home() {
   const { user, isLoaded } = useUser();
@@ -57,13 +58,14 @@ export default function Home() {
                 </h6>
               )}
             </a>
-            <a href={`/${userSlug}/dashboard`} className="flex items-start justify-center ">
-              {isLoaded && user && userSlug && statusMetrics && (
-                <h6 className="text-xs  text-bg uppercase tracking-widest bg-text py-2 px-4 border border-text">
-                  You have <span className="font-bold text-coral">{statusMetrics.queuedTasks}</span> queued {statusMetrics.queuedTasks === 1 ? 'task' : 'tasks'} and <span className="font-bold text-coral">{statusMetrics.newRequests}</span> new {statusMetrics.newRequests === 1 ? 'request' : 'requests'}
-                </h6>
-              )}
-            </a>
+            {isLoaded && user && userSlug && statusMetrics && (
+              <StatusBar
+                queuedTasks={statusMetrics.queuedTasks}
+                newRequests={statusMetrics.newRequests}
+                userSlug={userSlug}
+                variant="dark"
+              />
+            )}
           </div>
 
           {/* Row 2: Titles */}

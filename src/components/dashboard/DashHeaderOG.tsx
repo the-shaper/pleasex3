@@ -10,6 +10,9 @@ import {
 } from "@clerk/nextjs"; // Updated: Added useClerk, removed useSignOut
 import { useRouter } from "next/navigation";
 import { MenuButton } from "@/components/sidebar/menuButton"; // NEW: Import MenuButton
+import { StatusBar } from "./statusBar";
+import { useQuery } from "convex/react";
+import { api } from "@convex/_generated/api";
 
 export interface DashboardHeaderProps {
   title?: string;
@@ -31,6 +34,16 @@ export default function DashboardHeader({
   const { signOut } = useClerk(); // Fixed: Use useClerk for signOut
   const router = useRouter();
 
+  // Derive the user's slug (matches dashboard logic)
+  const userSlug =
+    user?.username || user?.primaryEmailAddress?.emailAddress || null;
+
+  // Query creator status metrics (only when signed in and has slug)
+  const statusMetrics = useQuery(
+    api.dashboard.getCreatorStatusMetrics,
+    userSlug ? { creatorSlug: userSlug } : "skip"
+  );
+
   // Early return for loading (prevents unauth flash)
   if (!isLoaded) {
     return (
@@ -45,25 +58,38 @@ export default function DashboardHeader({
     router.push("/"); // Redirect to home post-sign-out
   };
 
+
   return (
     <div data-element="HEADER" className={`col-span-2 ${className}`}>
       <div className="flex flex-col gap-4">
         {/* Top row: DASHBOARD tag + MenuButton and Auth buttons */}
         <div className="flex md:justify-between justify-between md:items-center items-start">
-          <div className="flex flex-row md:items-center items-start gap-2">
+          <div className="flex md:flex-row flex-col-reverse pr-2 md:items-center items-start gap-2">
             {/* MenuButton on mobile */}
             {onMenuClick && (
               <MenuButton
                 onClick={onMenuClick}
                 isOpen={isOpen || false}
-                className="md:hidden bg-greelite"
+                className="md:hidden"
               />
             )}
             {/* DASHBOARD tag */}
             <p className="text-sm bg-purple text-text-bright w-fit py-1 px-2">
               DASHBOARD
             </p>
+            {isLoaded && user && userSlug && statusMetrics && (
+              <StatusBar
+                queuedTasks={statusMetrics.queuedTasks}
+                newRequests={statusMetrics.newRequests}
+                userSlug={userSlug}
+                variant="light"
+                clickable={false}
+              />
+            )}
+
           </div>
+
+
 
           {/* Auth buttons */}
           <div data-element="HEADER-CONTROLS-WRAPPER" className="flex md:flex-row flex-col gap-1">

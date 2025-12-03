@@ -17,7 +17,7 @@
 - [x] **Signup Flow**: Test the end-to-end flow for a brand new user signing up via Clerk.
 - [x] **Data Initialization**: Verify that a `Creator` record is automatically created in Convex upon signup.
 - [x] **Default State**: Ensure default queues and settings are correctly initialized so the user doesn't land on a broken dashboard.
-- [] **Creator Intro Task**: Add a default "tutorial" task: It should be set for pending approval and as a way for new users to get started with the platform.
+- [x] **Creator Intro Task**: Add a default "tutorial" task: It should be set for pending approval and as a way for new users to get started with the platform.
 
 ## 4. Codebase Cleanup
 **Objective**: Reduce technical debt and confusion.
@@ -65,3 +65,12 @@
 
 ## 8. -[ ] Deleting user flashing screen. 
 - Currently, after deleting a user, the dashboard screen flashes an "error reading dashboard" before redirecting to the home page. Instead of having the flash "error reading dashboard" the text should be "User deleted successfully" and the user should be redirected to the home page.
+
+## 9. -[x] Complete About Modal
+
+## 10. -[ ] Connect Stripe connect check
+- Currently, upon clicking the "connect stripe" button, the state of the component changes to "connected to stripe" immediately. Is this because we in "test mode" or because the component is not waiting for proper stripe confirmation?
+
+## 11. -[] Add Posthog
+
+

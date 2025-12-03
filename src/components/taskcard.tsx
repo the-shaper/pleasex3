@@ -147,7 +147,7 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
                     <div
                       className={`${queueInfoBg} px-3 flex items-center gap-2`}
                     >
-                      <p className="leading-none text-[0.6rem] md:-mr-2 ">
+                      <p className="leading-none text-[0.6rem] md:mr-2 ">
                         out of
                       </p>
                       <p className="text-text-muted text-xl">
