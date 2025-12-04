@@ -44,8 +44,8 @@ export default function SubmitPage() {
 
         const creator = {
           slug,
-          displayName: creatorInfo.displayName || slug,
-          minPriorityTipCents: creatorInfo.minPriorityTipCents || 1500,
+          displayName: creatorInfo?.displayName || slug,
+          minPriorityTipCents: creatorInfo?.minPriorityTipCents || 1500,
         };
 
         setInitialQueue({

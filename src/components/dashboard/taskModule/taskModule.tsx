@@ -63,7 +63,7 @@ export default function TaskModule({
 
     const tagsSource = (liveTicket?.tags as TaskTag[] | undefined) ?? data.tags;
     const chosen = tagsSource?.find((t) =>
-      priorityOrder.includes(t as TaskTag)
+      priorityOrder.includes(t as typeof priorityOrder[number])
     );
 
     const result = chosen ?? (data.status as TaskTag) ?? "pending";
@@ -217,7 +217,7 @@ export default function TaskModule({
                 <h3 className="text-2xl font-mono break-words min-w-0">
                   {data.needText || "—"}
                 </h3>
-                <TagBase variant={statusTag as TaskTag}>
+                <TagBase variant={(statusTag === "closed" ? "finished" : statusTag) as Exclude<TaskTag, "closed">}>
                   {String(statusTag).replace("-", " ").toUpperCase()}
                 </TagBase>
               </div>

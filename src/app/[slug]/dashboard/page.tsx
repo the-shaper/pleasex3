@@ -66,32 +66,32 @@ export default function DashboardPage() {
     api.dashboard.getOverview,
     shouldFetch
       ? {
-          creatorSlug: slug,
-        }
+        creatorSlug: slug,
+      }
       : "skip"
   );
   const positions = useQuery(
     api.dashboard.getAllTicketsWithPositions,
     shouldFetch
       ? {
-          creatorSlug: slug,
-        }
+        creatorSlug: slug,
+      }
       : "skip"
   );
   const activePositions = useQuery(
     api.dashboard.getActiveTicketPositions,
     shouldFetch
       ? {
-          creatorSlug: slug,
-        }
+        creatorSlug: slug,
+      }
       : "skip"
   );
   const earningsData = useQuery(
     api.lib.stripeEngine.getEarningsDashboardData,
     shouldFetch
       ? {
-          creatorSlug: slug,
-        }
+        creatorSlug: slug,
+      }
       : "skip"
   );
 
@@ -622,36 +622,36 @@ export default function DashboardPage() {
   const currentPosition = enginePositions.find((p) => p.tag === "current");
   const autoqueueCardData: TaskCardData | null = currentPosition
     ? (() => {
-        const t = ticketByRef[currentPosition.ref];
-        const displayNumber =
-          currentPosition.queueNumber ?? currentPosition.ticketNumber ?? 0;
-        const totalInQueue =
-          currentPosition.queueKind === "personal"
-            ? maxPersonalQueueNumber
-            : maxPriorityQueueNumber;
-        return {
-          currentTurn: displayNumber,
-          nextTurn: displayNumber,
-          etaDays: queues?.general?.etaDays ?? null,
-          // Static "out of" for the queue this current ticket belongs to
-          activeCount: totalInQueue,
-          enabled: queues?.general?.enabled ?? true,
-          name: t?.name || "Anonymous",
-          email: t?.email || "user@example.com",
-          phone: t?.phone || "",
-          location: t?.location || "",
-          social: t?.social || "",
-          needText: t?.taskTitle || "No description provided",
-          message: t?.message || "No description provided",
-          attachments: t?.attachments || [],
-          tipCents: t?.tipCents || 0,
-          queueKind: currentPosition.queueKind,
-          status: "current",
-          tags: ["current" as TaskTag],
-          createdAt: t?.createdAt || 0,
-          ref: currentPosition.ref,
-        } satisfies TaskCardData;
-      })()
+      const t = ticketByRef[currentPosition.ref];
+      const displayNumber =
+        currentPosition.queueNumber ?? currentPosition.ticketNumber ?? 0;
+      const totalInQueue =
+        currentPosition.queueKind === "personal"
+          ? maxPersonalQueueNumber
+          : maxPriorityQueueNumber;
+      return {
+        currentTurn: displayNumber,
+        nextTurn: displayNumber,
+        etaDays: queues?.general?.etaDays ?? null,
+        // Static "out of" for the queue this current ticket belongs to
+        activeCount: totalInQueue,
+        enabled: queues?.general?.enabled ?? true,
+        name: t?.name || "Anonymous",
+        email: t?.email || "user@example.com",
+        phone: t?.phone || "",
+        location: t?.location || "",
+        social: t?.social || "",
+        needText: t?.taskTitle || "No description provided",
+        message: t?.message || "No description provided",
+        attachments: t?.attachments || [],
+        tipCents: t?.tipCents || 0,
+        queueKind: currentPosition.queueKind,
+        status: "current",
+        tags: ["current" as TaskTag],
+        createdAt: t?.createdAt || 0,
+        ref: currentPosition.ref,
+      } satisfies TaskCardData;
+    })()
     : null;
 
   // Approved task cards for NextUpSection = all engine-approved positions in UI order (awaiting-feedback first)
@@ -803,11 +803,10 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div
-              className={`flex flex-col w-full no-scrollbar md:grid md:gap-4 h-full md:h-[86svh] min-h-0 md:min-h-0 ${
-                hasPendingApprovals
-                  ? "w-full md:grid-cols-[400px_1fr]"
-                  : "w-full md:grid-cols-[400px_1fr]"
-              }`}
+              className={`flex flex-col w-full no-scrollbar md:grid md:gap-4 h-full md:h-[86svh] min-h-0 md:min-h-0 ${hasPendingApprovals
+                ? "w-full md:grid-cols-[400px_1fr]"
+                : "w-full md:grid-cols-[400px_1fr]"
+                }`}
             >
               <NextUpSection
                 approvedTaskCards={approvedTaskCards}
@@ -865,11 +864,11 @@ export default function DashboardPage() {
                   style={
                     isDesktop
                       ? {
-                          height:
-                            selectedTask || autoqueueCardData
-                              ? `${100 - splitPercentage}%`
-                              : "100%",
-                        }
+                        height:
+                          selectedTask || autoqueueCardData
+                            ? `${100 - splitPercentage}%`
+                            : "100%",
+                      }
                       : undefined
                   }
                 >

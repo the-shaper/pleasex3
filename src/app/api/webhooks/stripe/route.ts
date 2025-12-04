@@ -5,7 +5,7 @@ import { api } from "@convex/_generated/api";
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_API_KEY!, {
-    apiVersion: "2024-06-20",
+    apiVersion: "2022-11-15",
 });
 
 // Initialize Convex Client (for calling mutations)

@@ -191,7 +191,7 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
                         : data.tags?.[0]; // fallback to first tag if none match priority
 
                       return highestPriorityTag ? (
-                        <TagBase variant={highestPriorityTag}>
+                        <TagBase variant={(highestPriorityTag === "closed" ? "finished" : highestPriorityTag) as Exclude<TaskTag, "closed">}>
                           {highestPriorityTag.replace("-", " ").toUpperCase()}
                         </TagBase>
                       ) : (

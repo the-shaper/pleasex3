@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
-import QueueCard from "../../../ui-backup/QueueCard";
+import QueueCard from "../../components/QueueCard";
 import { TrackingModal } from "@/components/trackingModal";
 import { ButtonBase } from "@/components/general/buttonBase";
 

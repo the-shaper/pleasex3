@@ -67,11 +67,12 @@ export default function DashboardHeader({
           <div className="flex md:flex-row flex-col pr-2 md:items-center items-start gap-2">
             {/* MenuButton on mobile */}
             {onMenuClick && (
-              <MenuButton
-                onClick={onMenuClick}
-                isOpen={isOpen || false}
-                className="md:hidden"
-              />
+              <div className="md:hidden">
+                <MenuButton
+                  onClick={onMenuClick}
+                  isOpen={isOpen || false}
+                />
+              </div>
             )}
             {/* DASHBOARD tag */}
             <p className="text-sm bg-purple text-text-bright w-fit py-1 px-2">

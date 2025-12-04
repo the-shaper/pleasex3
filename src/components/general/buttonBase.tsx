@@ -119,11 +119,12 @@ export function ButtonBase({
   }
 
   // Render as button
+  const { href, ...buttonProps } = props as ButtonProps & { href?: never };
   return (
     <button
       className={combinedClasses}
       disabled={disabled || loading}
-      {...props}
+      {...buttonProps}
     >
       {loadingSpinner}
       {children}

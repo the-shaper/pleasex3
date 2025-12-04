@@ -166,17 +166,10 @@ export default function StatusPage({
           minPriorityTipCents={ticketData.minPriorityTipCents}
           queueMetrics={ticketData.queueMetrics}
           formatEtaMins={formatEtaMins}
-          onChange={() => {}}
+          onChange={() => { }}
           userName={ticketData.userName}
           referenceNumber={ticketData.referenceNumber}
-          approvedContext={
-            ticket.status === "approved"
-              ? {
-                  approvedAt: new Date(ticket.createdAt).toISOString(),
-                  note: "Ticket has been approved and is ready for fulfillment.",
-                }
-              : undefined
-          }
+          approvedContext={ticket.status === "approved"}
         />
       </div>
     </div>

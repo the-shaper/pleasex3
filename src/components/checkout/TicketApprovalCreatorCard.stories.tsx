@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
-import TicketApprovalCreatorCard from "./TicketApprovalCreatorCard";
-import type { FormData } from "@/lib/types"; // FormData has attachments as string (comma-separated or empty)
+import TicketApprovalCreatorCard from "./ticketApprovalCreatorCard";
 
 // Helper function for formatting ETA (as used in ApprovalPanel)
 const formatEtaMins = (mins: number): string => {
@@ -11,8 +10,7 @@ const formatEtaMins = (mins: number): string => {
   return `${hours}h`;
 };
 
-// Update the import comment for clarity
-import type { FormData } from "@/lib/types"; // FormData has attachments as string (comma-separated or empty)
+
 
 // Update sample form - add optional taskTitle (short), keep needText (long)
 const sampleForm = {
@@ -114,8 +112,7 @@ export const Default: Story = {
     minPriorityTipCents: 1500,
     queueMetrics: sampleQueueMetrics,
     formatEtaMins,
-    // Set to undefined for auto-binding
-    onChange: undefined,
+    onChange: () => { },
     userName: "Alejandro",
     referenceNumber: "TICKET-001",
     approvedContext: false,
