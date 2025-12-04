@@ -7,19 +7,12 @@ const stripeApiKey = process.env.STRIPE_API_KEY;
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 
-if (!stripeApiKey) {
-  throw new Error("STRIPE_API_KEY is required for Stripe webhook");
-}
-if (!webhookSecret) {
-  throw new Error("STRIPE_WEBHOOK_SECRET is required for webhook verification");
-}
-if (!convexUrl) {
-  throw new Error("NEXT_PUBLIC_CONVEX_URL is required to call Convex");
-}
+// Initialize Stripe with a fallback to prevent build-time errors
+const stripe = new Stripe(stripeApiKey || "dummy_key_for_build", { apiVersion: "2022-11-15" });
 
-const stripe = new Stripe(stripeApiKey, { apiVersion: "2022-11-15" });
-const formattedUrl = convexUrl.startsWith("http") ? convexUrl : `https://${convexUrl}`;
-const client = new ConvexHttpClient(formattedUrl);
+const formattedUrl = convexUrl?.startsWith("http") ? convexUrl : `https://${convexUrl}`;
+const client = new ConvexHttpClient(formattedUrl || "https://dummy.convex.cloud");
+
 const logPrefix = "[StripeWebhook]";
 
 function log(...args: unknown[]) {
@@ -35,12 +28,25 @@ function logError(...args: unknown[]) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!stripeApiKey) {
+    console.error("STRIPE_API_KEY is required for Stripe webhook");
+    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+  }
+  if (!webhookSecret) {
+    console.error("STRIPE_WEBHOOK_SECRET is required for webhook verification");
+    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+  }
+  if (!convexUrl) {
+    console.error("NEXT_PUBLIC_CONVEX_URL is required to call Convex");
+    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+  }
+
   const body = await req.text();
   const signature = req.headers.get("stripe-signature") ?? "";
 
   let event;
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret!);
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err: any) {
     console.error("Webhook signature verification failed:", err.message);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });

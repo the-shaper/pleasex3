@@ -4,7 +4,8 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@convex/_generated/api";
 
 // Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_API_KEY!, {
+// Initialize Stripe with a fallback to prevent build-time errors
+const stripe = new Stripe(process.env.STRIPE_API_KEY || "dummy_key_for_build", {
     apiVersion: "2022-11-15",
 });
 
