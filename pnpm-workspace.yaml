@@ -5,7 +5,9 @@ ignoredBuiltDependencies:
   - core-js-pure
 
 onlyBuiltDependencies:
-  - '@tailwindcss/oxide'
+  - "@clerk/shared"
+  - "@tailwindcss/oxide"
   - core-js
+  - esbuild
   - sharp
   - unrs-resolver
