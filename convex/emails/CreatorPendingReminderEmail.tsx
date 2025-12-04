@@ -30,8 +30,7 @@ export const CreatorPendingReminderEmail = ({
   <Html>
     <Head />
     <Preview>
-      {pendingCount} pending request{pendingCount > 1 ? "s" : ""} awaiting your
-      review
+      {`${pendingCount} pending request${pendingCount > 1 ? "s" : ""} awaiting your review`}
     </Preview>
     <Body style={main}>
       <Container style={container}>
