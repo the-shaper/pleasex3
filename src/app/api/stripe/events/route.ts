@@ -18,7 +18,8 @@ if (!convexUrl) {
 }
 
 const stripe = new Stripe(stripeApiKey, { apiVersion: "2022-11-15" });
-const client = new ConvexHttpClient(convexUrl);
+const formattedUrl = convexUrl.startsWith("http") ? convexUrl : `https://${convexUrl}`;
+const client = new ConvexHttpClient(formattedUrl);
 const logPrefix = "[StripeWebhook]";
 
 function log(...args: unknown[]) {

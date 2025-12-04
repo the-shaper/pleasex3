@@ -7,9 +7,9 @@ import { ConvexDataProvider } from "@/lib/data/convex";
 import { api } from "@convex/_generated/api";
 import { ConvexHttpClient } from "convex/browser";
 
-const httpClient = new ConvexHttpClient(
-  process.env.NEXT_PUBLIC_CONVEX_URL as string
-);
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || "";
+const formattedUrl = convexUrl.startsWith("http") ? convexUrl : `https://${convexUrl}`;
+const httpClient = new ConvexHttpClient(formattedUrl);
 
 type QueuePayload = {
   creator: { slug: string; displayName: string; minPriorityTipCents: number };

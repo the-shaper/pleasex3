@@ -4,9 +4,9 @@ import type { CreateTicketInput, DashboardOverview, Ticket } from "@/lib/types";
 import type { DataProvider } from "@/lib/data";
 import type { CellComponentData } from "@/components/dashboard/table/cellComponent";
 
-const client = new ConvexHttpClient(
-  process.env.NEXT_PUBLIC_CONVEX_URL as string
-);
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || "";
+const formattedUrl = convexUrl.startsWith("http") ? convexUrl : `https://${convexUrl}`;
+const client = new ConvexHttpClient(formattedUrl);
 
 export class ConvexDataProvider implements DataProvider {
   async getDashboardOverview(creatorSlug: string): Promise<DashboardOverview> {

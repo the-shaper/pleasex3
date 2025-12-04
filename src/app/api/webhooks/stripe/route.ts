@@ -9,7 +9,9 @@ const stripe = new Stripe(process.env.STRIPE_API_KEY!, {
 });
 
 // Initialize Convex Client (for calling mutations)
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || "";
+const formattedUrl = convexUrl.startsWith("http") ? convexUrl : `https://${convexUrl}`;
+const convex = new ConvexHttpClient(formattedUrl);
 
 export async function POST(req: NextRequest) {
     const body = await req.text();
