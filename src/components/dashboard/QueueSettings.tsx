@@ -106,7 +106,7 @@ export function QueueSettings({
         <div className="flex flex-col md:flex-row gap-2">
           <button
             onClick={handleCopyUrl}
-            className="group w-6/8 flex flex-col md:flex-row gap-4 justify-center p-2 bg-blue-2 hover:bg-text hover:cursor-pointer transition-colors border hover:border-text  border-blue-2"
+            className="group md:w-6/8 w-full flex flex-col md:flex-row gap-4 justify-center p-2 bg-blue hover:bg-text hover:cursor-pointer transition-colors border hover:border-text  border-blue-2"
           >
             <div>
               <h4 className="uppercase text-left font-bold group-hover:text-white transition-colors">
@@ -125,7 +125,7 @@ export function QueueSettings({
               </p>
             </div>
           </button>
-          <a className="bg-greenlite text-center content-center leading-none font-bold text-sm w-2/8"
+          <a className="md:bg-greenlite bg-blue md:text-center text-right md:p-0 p-2 content-center leading-none font-bold text-sm md:w-2/8 w-full hover:bg-blue"
             href={`/${slug}`}>
             OPEN PAGE &gt;
           </a>
@@ -134,7 +134,7 @@ export function QueueSettings({
 
         <div className="flex flex-col md:flex-row gap-2">
           {/* Personal Queue Settings */}
-          <div className="overflow-hidden border border-gray-subtle w-1/2">
+          <div className="overflow-hidden border border-gray-subtle md:w-1/2 w-full">
             {/* Header */}
             <div
               className="bg-greenlite  px-6 text-center"
@@ -237,7 +237,7 @@ export function QueueSettings({
           </div>
 
           {/* Priority Queue Settings */}
-          <div className="overflow-hidden border border-gray-subtle w-1/2">
+          <div className="overflow-hidden border border-gray-subtle md:w-1/2 w-full">
             {/* Header */}
             <div
               className="bg-gold px-6 text-center "

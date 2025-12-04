@@ -64,7 +64,7 @@ export default function DashboardHeader({
       <div className="flex flex-col gap-4">
         {/* Top row: DASHBOARD tag + MenuButton and Auth buttons */}
         <div className="flex md:justify-between justify-between md:items-center items-start">
-          <div className="flex md:flex-row flex-col-reverse pr-2 md:items-center items-start gap-2">
+          <div className="flex md:flex-row flex-col pr-2 md:items-center items-start gap-2">
             {/* MenuButton on mobile */}
             {onMenuClick && (
               <MenuButton
@@ -97,18 +97,28 @@ export default function DashboardHeader({
               variant="default"
               size="sm"
               onClick={onFaqClick}
-              className="text-xs hover:bg-gold"
+              className="text-xs hover:bg-gold cursor-pointer"
             >
               Cheatsheet
             </ButtonBase>
 
             <SignedIn>
 
+
+              <ButtonBase
+                variant="default"
+                size="sm"
+                onClick={() => router.push("/" + userSlug)}
+                className="text-xs hover:bg-blue cursor-pointer "
+              >
+                Public Page
+              </ButtonBase>
+
               <ButtonBase
                 variant="default"
                 size="sm"
                 onClick={handleSignOut}
-                className="text-xs"
+                className="text-xs hover:bg-coral cursor-pointer"
               >
                 SIGN OUT
               </ButtonBase>

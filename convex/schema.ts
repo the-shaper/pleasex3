@@ -12,7 +12,8 @@ export default defineSchema({
     stripeAccountId: v.optional(v.string()),
     payoutEnabled: v.optional(v.boolean()),
     clerkUserId: v.optional(v.string()),
-  }).index("by_slug", ["slug"])
+  })
+    .index("by_slug", ["slug"])
     .index("by_clerk_user", ["clerkUserId"]),
 
   queues: defineTable({
@@ -65,6 +66,12 @@ export default defineSchema({
       )
     ),
     resolvedAt: v.optional(v.number()),
+    // Rejection tracking
+    rejectionReason: v.optional(
+      v.union(v.literal("creator_rejected"), v.literal("expired"))
+    ),
+    // Reminder tracking (to avoid spamming creators)
+    reminderSentAt: v.optional(v.number()),
   })
     .index("by_ref", ["ref"])
     .index("by_creator", ["creatorSlug"]),

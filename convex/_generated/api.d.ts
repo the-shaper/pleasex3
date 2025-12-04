@@ -14,8 +14,10 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as creators from "../creators.js";
+import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
 import type * as emails_CreatorAlertEmail from "../emails/CreatorAlertEmail.js";
+import type * as emails_CreatorPendingReminderEmail from "../emails/CreatorPendingReminderEmail.js";
 import type * as emails_TicketApprovedEmail from "../emails/TicketApprovedEmail.js";
 import type * as emails_TicketReceiptEmail from "../emails/TicketReceiptEmail.js";
 import type * as emails_TicketRejectedEmail from "../emails/TicketRejectedEmail.js";
@@ -43,8 +45,10 @@ import type * as tickets from "../tickets.js";
  */
 declare const fullApi: ApiFromModules<{
   creators: typeof creators;
+  crons: typeof crons;
   dashboard: typeof dashboard;
   "emails/CreatorAlertEmail": typeof emails_CreatorAlertEmail;
+  "emails/CreatorPendingReminderEmail": typeof emails_CreatorPendingReminderEmail;
   "emails/TicketApprovedEmail": typeof emails_TicketApprovedEmail;
   "emails/TicketReceiptEmail": typeof emails_TicketReceiptEmail;
   "emails/TicketRejectedEmail": typeof emails_TicketRejectedEmail;

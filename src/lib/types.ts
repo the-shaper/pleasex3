@@ -10,7 +10,12 @@ export type TaskTag =
   | "rejected"
   | "closed";
 
-export type TicketStatus = "open" | "approved" | "rejected" | "closed" | "pending_payment";
+export type TicketStatus =
+  | "open"
+  | "approved"
+  | "rejected"
+  | "closed"
+  | "pending_payment";
 
 export interface Creator {
   slug: string;
@@ -153,6 +158,8 @@ export interface StripeConnectionStatus {
   connected: boolean;
   stripeAccountId?: string;
   detailsSubmitted?: boolean;
+  /** True when account exists but onboarding is not yet complete */
+  onboardingStarted?: boolean;
 }
 
 export interface EarningsDashboardData {

@@ -5,6 +5,7 @@ import CheckoutDonation from "@/components/checkout/checkoutDonation";
 import { useAction } from "convex/react";
 import { api } from "@convex/_generated/api";
 import PaymentWrapper from "@/components/checkout/PaymentWrapper";
+import { TosModal } from "@/components/general/tosModal";
 
 type QueuePayload = {
   creator: { slug: string; displayName: string; minPriorityTipCents: number };
@@ -43,12 +44,17 @@ export default function SubmitClient({
 }) {
   const sp = useSearchParams();
   const router = useRouter();
-  const createManualPaymentIntent = useAction(api.payments.createManualPaymentIntent);
+  const createManualPaymentIntent = useAction(
+    api.payments.createManualPaymentIntent
+  );
 
   // Payment State
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [pendingTicketRef, setPendingTicketRef] = useState<string | null>(null);
+
+  // TOS Modal State
+  const [isTosModalOpen, setIsTosModalOpen] = useState(false);
 
   function formatEtaMins(etaMins: number | null | undefined): string {
     if (!etaMins || etaMins <= 0) return "—";
@@ -88,7 +94,6 @@ export default function SubmitClient({
     needText: "",
     attachments: "",
     priorityTipCents: initialTip,
-    consentEmail: false,
   });
   const [minPriorityTipCents] = useState(
     initialQueue?.creator?.minPriorityTipCents || 0
@@ -96,7 +101,9 @@ export default function SubmitClient({
   const [lastPersonalTipCents, setLastPersonalTipCents] = useState(
     initialQueueTab === "personal" ? initialTip : 0
   );
-  const [queueMetrics, setQueueMetrics] = useState<QueuePayload | null>(initialQueue);
+  const [queueMetrics, setQueueMetrics] = useState<QueuePayload | null>(
+    initialQueue
+  );
   const tipDollarsInt = useMemo(
     () => Math.round(form.priorityTipCents / 100),
     [form.priorityTipCents]
@@ -105,7 +112,11 @@ export default function SubmitClient({
   // Auto-switch queue based on tip threshold in both directions
   useEffect(() => {
     if (minPriorityTipCents <= 0) return;
-    if (form.priorityTipCents >= minPriorityTipCents && queue !== "priority" && priorityEnabled) {
+    if (
+      form.priorityTipCents >= minPriorityTipCents &&
+      queue !== "priority" &&
+      priorityEnabled
+    ) {
       setQueue("priority");
     } else if (
       form.priorityTipCents < minPriorityTipCents &&
@@ -137,10 +148,6 @@ export default function SubmitClient({
       );
       return;
     }
-    if (!form.consentEmail) {
-      alert("Please agree to the email consent checkbox to proceed.");
-      return;
-    }
     const attachments = form.attachments
       .split(/\s+/)
       .map((s) => s.trim())
@@ -163,7 +170,6 @@ export default function SubmitClient({
         needText: form.needText,
         attachments,
         priorityTipCents: form.priorityTipCents,
-        consentEmail: form.consentEmail,
       }),
     });
     const json = await res.json();
@@ -189,7 +195,9 @@ export default function SubmitClient({
 
       // Verify the action is available
       if (!createManualPaymentIntent) {
-        throw new Error("createManualPaymentIntent action is not available. Check Convex provider setup.");
+        throw new Error(
+          "createManualPaymentIntent action is not available. Check Convex provider setup."
+        );
       }
 
       const result = await createManualPaymentIntent({
@@ -208,11 +216,15 @@ export default function SubmitClient({
         message: err.message,
         stack: err.stack,
       });
-      alert(`Payment setup failed: ${err.message || 'Unknown error'}\n\nPlease check the console for details.`);
+      alert(
+        `Payment setup failed: ${err.message || "Unknown error"}\n\nPlease check the console for details.`
+      );
     }
   }
 
-  const finalizeTicketSubmission = useAction(api.payments.finalizeTicketSubmission);
+  const finalizeTicketSubmission = useAction(
+    api.payments.finalizeTicketSubmission
+  );
 
   const handlePaymentSuccess = async () => {
     if (pendingTicketRef) {
@@ -223,7 +235,9 @@ export default function SubmitClient({
         );
       } catch (e) {
         console.error("Failed to finalize ticket", e);
-        alert("Payment successful but failed to finalize ticket. Please contact support.");
+        alert(
+          "Payment successful but failed to finalize ticket. Please contact support."
+        );
       }
     }
   };
@@ -253,8 +267,11 @@ export default function SubmitClient({
           </h1>
           <div className="flex gap-2">
             <button
-              className={`px-3 py-1 uppercase ${queue === "personal" ? "bg-greenlite text-text font-bold" : "bg-slate-200"
-                }`}
+              className={`px-3 py-1 uppercase ${
+                queue === "personal"
+                  ? "bg-greenlite text-text font-bold"
+                  : "bg-slate-200"
+              }`}
               onClick={() => {
                 // Restore last personal tip and switch tab
                 if (form.priorityTipCents !== lastPersonalTipCents) {
@@ -267,8 +284,11 @@ export default function SubmitClient({
             </button>
             {priorityEnabled && (
               <button
-                className={`px-3 py-1 uppercase ${queue === "priority" ? "bg-gold text-tex font-bold" : "bg-slate-200"
-                  }`}
+                className={`px-3 py-1 uppercase ${
+                  queue === "priority"
+                    ? "bg-gold text-tex font-bold"
+                    : "bg-slate-200"
+                }`}
                 onClick={() => {
                   const adjusted = Math.max(
                     form.priorityTipCents,
@@ -323,14 +343,16 @@ export default function SubmitClient({
               placeholder="Subject | Favor Title"
               value={form.favorTitle}
               onChange={(e) => onChange("favorTitle", e.target.value)}
-              required />
+              required
+            />
             <textarea
               className="w-full border p-2 "
               placeholder="Describe your need"
               rows={5}
               value={form.needText}
               onChange={(e) => onChange("needText", e.target.value)}
-              required />
+              required
+            />
             <textarea
               className="w-full border p-2 "
               placeholder="Links to files (space-separated)"
@@ -348,8 +370,9 @@ export default function SubmitClient({
 
         <aside className="w-full md:w-1/2 space-y-2 pt-3 ">
           <div
-            className={`${isPriority ? "bg-gold" : "bg-greenlite"
-              } box-border content-stretch flex flex-row items-center justify-center px-[13px] py-2 w-full text-center uppercase`}
+            className={`${
+              isPriority ? "bg-gold" : "bg-greenlite"
+            } box-border content-stretch flex flex-row items-center justify-center px-[13px] py-2 w-full text-center uppercase`}
             style={{ fontFamily: "var(--font-body)" }}
           >
             <span className="text-[15.98px] tracking-[-0.3196px] text-text font-bold">
@@ -377,16 +400,17 @@ export default function SubmitClient({
               <div className="text-sm space-y-1 min-w-0 break-words">
                 {form.attachments.trim()
                   ? form.attachments.split(/\s+/).map((u, i) => (
-                    <div key={i} className="truncate" title={u}>
-                      {u}
-                    </div>
-                  ))
+                      <div key={i} className="truncate" title={u}>
+                        {u}
+                      </div>
+                    ))
                   : "—"}
               </div>
             </div>
             <div
-              className={`${isPriority ? "bg-gold" : "bg-greenlite"
-                } pt-4 pb-4 px-9 border border-gray-subtle text-text text-center flex flex-col items-center`}
+              className={`${
+                isPriority ? "bg-gold" : "bg-greenlite"
+              } pt-4 pb-4 px-9 border border-gray-subtle text-text text-center flex flex-col items-center`}
             >
               <div
                 className="text-[18px]"
@@ -415,31 +439,38 @@ export default function SubmitClient({
               priorityTipCents={form.priorityTipCents}
               onChangeTip={(cents) => onChange("priorityTipCents", cents)}
             />
-            <label className="flex px-6 py-3 items-center gap-2 text-sm justify-center">
-              <input
-                type="checkbox"
-                checked={form.consentEmail}
-                onChange={(e) => onChange("consentEmail", e.target.checked)}
-                required />
-              By submitting, you allow the creator to email you occasionally.
-            </label>
+            <div className="flex flex-col gap-2 px-6 py-3 text-sm justify-center">
+              <p className="text-xs text-center opacity-70">
+                By submitting, you agree to the PLEASE PLEASE PLEASE!{" "}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsTosModalOpen(true);
+                  }}
+                  className="text-text font-bold underline cursor-pointer"
+                >
+                  Terms of Service
+                </button>{" "}
+                and you allow the creator to keep your contact information for
+                future communication.
+              </p>
+            </div>
           </div>
-
-
 
           <button
             form="ticket-form"
             type="submit"
-            className={`${isPriority ? "bg-coral hover:bg-coral/80" : "bg-blue hover:bg-blue/80"
-              } cursor-pointer text-text uppercase text-[24px] px-6 py-3.5 w-full font-bold flex items-center justify-between`}
+            className={`${
+              isPriority
+                ? "bg-coral hover:bg-coral/80"
+                : "bg-blue hover:bg-blue/80"
+            } cursor-pointer text-text uppercase text-[24px] px-6 py-3.5 w-full font-bold flex items-center justify-between`}
             style={{ fontFamily: "var(--font-body)" }}
           >
-            <span>
-              CLAIM TICKET {displayedNextNumber ?? ""}
-            </span>
+            <span>CLAIM TICKET {displayedNextNumber ?? ""}</span>
             <span>&gt;</span>
           </button>
-
         </aside>
       </div>
 
@@ -450,6 +481,11 @@ export default function SubmitClient({
           onCancel={() => setShowPaymentModal(false)}
         />
       )}
+
+      <TosModal
+        isOpen={isTosModalOpen}
+        onClose={() => setIsTosModalOpen(false)}
+      />
     </div>
   );
 }

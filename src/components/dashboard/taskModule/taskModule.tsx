@@ -167,7 +167,7 @@ export default function TaskModule({
       {/* Title row - collapse disabled in dashboard view */}
       <div className="flex items-center justify-between w-full border-b border-gray-subtle">
         <h2 className="text-xl tracking-tight font-mono font-bold pb-2 ">
-          TASK DETAILS:
+          TASK DETAILS
         </h2>
       </div>
 

@@ -108,6 +108,34 @@ export async function POST(req: NextRequest) {
         }
         break;
       }
+
+      // Handle Stripe Connect account updates (onboarding completion)
+      case "account.updated": {
+        const account = event.data.object as Stripe.Account;
+        log("Account updated", {
+          id: account.id,
+          details_submitted: account.details_submitted,
+          charges_enabled: account.charges_enabled,
+          payouts_enabled: account.payouts_enabled,
+        });
+
+        // Check if onboarding is complete (details submitted and payouts enabled)
+        if (account.details_submitted && account.payouts_enabled) {
+          try {
+            await client.mutation(api.stripeOnboarding.markOnboardingComplete, {
+              stripeAccountId: account.id,
+            });
+            log("Marked onboarding complete for account", account.id);
+          } catch (mutationError) {
+            logError(
+              "Failed to mark onboarding complete in Convex",
+              mutationError
+            );
+          }
+        }
+        break;
+      }
+
       default:
         log("Unhandled event type", event.type);
     }

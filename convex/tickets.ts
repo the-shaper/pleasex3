@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import {
@@ -110,7 +110,6 @@ export const create = mutation({
       kind: args.queueKind,
     });
 
-
     // Trigger emails ONLY if open (free). Paid tickets trigger emails after payment confirmation.
     if (args.tipCents <= 0) {
       await scheduleTicketEmails(ctx, {
@@ -135,7 +134,8 @@ export const approve = mutation({
     await requireCreatorOwnership(ctx, ticket.creatorSlug);
 
     // Allow approval for both open (free) and pending_payment (paid) tickets
-    if (ticket.status !== "open" && ticket.status !== "pending_payment") return { ok: true } as const;
+    if (ticket.status !== "open" && ticket.status !== "pending_payment")
+      return { ok: true } as const;
 
     // Attempt to capture payment first (v3)
     if (ticket.paymentIntentId) {
@@ -207,7 +207,8 @@ export const reject = mutation({
     await requireCreatorOwnership(ctx, ticket.creatorSlug);
 
     // Allow rejection for both open (free) and pending_payment (paid) tickets
-    if (ticket.status !== "open" && ticket.status !== "pending_payment") return { ok: true } as const;
+    if (ticket.status !== "open" && ticket.status !== "pending_payment")
+      return { ok: true } as const;
 
     // Similar to approve:
     // Real paid tickets should use `cancelOrRefundPaymentForTicket` action.
@@ -215,7 +216,9 @@ export const reject = mutation({
 
     const currentTags = ticket.tags || [];
     // Remove status-related tags if any (though open tickets shouldn't have them usually)
-    const nextTags = currentTags.filter(t => t !== "current" && t !== "next-up" && t !== "awaiting-feedback");
+    const nextTags = currentTags.filter(
+      (t) => t !== "current" && t !== "next-up" && t !== "awaiting-feedback"
+    );
     if (!nextTags.includes("rejected")) {
       nextTags.push("rejected");
     }
@@ -237,6 +240,68 @@ export const reject = mutation({
     }
 
     return { ok: true } as const;
+  },
+});
+
+// Internal mutation for auto-expiring tickets (called by cron, no auth required)
+export const rejectExpired = internalMutation({
+  args: { ref: v.string() },
+  handler: async (ctx, args) => {
+    const ticket = await ctx.db
+      .query("tickets")
+      .withIndex("by_ref", (q) => q.eq("ref", args.ref))
+      .unique();
+    if (!ticket) return { ok: false, reason: "not_found" } as const;
+
+    // Only expire open or pending_payment tickets
+    if (ticket.status !== "open" && ticket.status !== "pending_payment") {
+      return { ok: false, reason: "wrong_status" } as const;
+    }
+
+    const currentTags = ticket.tags || [];
+    const nextTags = currentTags.filter(
+      (t) => t !== "current" && t !== "next-up" && t !== "awaiting-feedback"
+    );
+    if (!nextTags.includes("rejected")) {
+      nextTags.push("rejected");
+    }
+
+    await ctx.db.patch(ticket._id, {
+      status: "rejected",
+      tags: nextTags,
+      resolvedAt: Date.now(),
+      rejectionReason: "expired",
+    });
+
+    // Send expiration email to user
+    if (ticket.email) {
+      await ctx.scheduler.runAfter(0, internal.emails.sendTicketRejected, {
+        email: ticket.email,
+        userName: ticket.name || "User",
+        ticketRef: ticket.ref,
+        creatorName: ticket.creatorSlug,
+        reason: "expired",
+      });
+    }
+
+    console.log(`[Cron] Auto-expired ticket ${ticket.ref} after 7 days`);
+    return { ok: true } as const;
+  },
+});
+
+// Internal mutation to mark reminder sent (called by cron)
+export const markReminderSent = internalMutation({
+  args: { ref: v.string() },
+  handler: async (ctx, args) => {
+    const ticket = await ctx.db
+      .query("tickets")
+      .withIndex("by_ref", (q) => q.eq("ref", args.ref))
+      .unique();
+    if (!ticket) return;
+
+    await ctx.db.patch(ticket._id, {
+      reminderSentAt: Date.now(),
+    });
   },
 });
 

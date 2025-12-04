@@ -86,7 +86,7 @@ There are more features to this app, but these are the essentials.`,
     name: "PLEASE PLEASE PLEASE!",
     email: "create@twilightfringe.com",
     location: "Ensenada, Mexico",
-    attachments: ["https://youtu.be/v_Yeu0RSAOQ?si=EkaA0Suk3nLqvnbZ"],
+    attachments: [`https://pleasepleaseplease.me/${args.slug}`],
   });
 
   if (args.email) {

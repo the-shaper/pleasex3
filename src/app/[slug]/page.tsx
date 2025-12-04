@@ -95,7 +95,7 @@ export default function CreatorQueuesPage() {
               <ButtonBase
                 variant="neutral"
                 onClick={() => router.push(`/${slug}/dashboard`)}
-                className="bg-blue-2 px-6 py-1 uppercase cursor-pointer hover:opacity-90 transition-opacity"
+                className="hover:bg-purple hover:text-white px-6 py-1 uppercase cursor-pointer hover:opacity-90 transition-opacity"
                 style={{ fontFamily: "var(--font-body)" }}
               >
                 GO TO DASHBOARD

@@ -38,9 +38,7 @@ function computePlatformFee(grossCents: number): {
   const platformFeeCents = blocks * FEE_PER_BLOCK_CENTS;
   const payoutCents = grossCents - platformFeeCents;
   const platformFeeRateBps =
-    grossCents > 0
-      ? Math.round((platformFeeCents / grossCents) * 10000)
-      : 0;
+    grossCents > 0 ? Math.round((platformFeeCents / grossCents) * 10000) : 0;
 
   return {
     platformFeeCents,
@@ -79,10 +77,7 @@ async function getEarningsForPeriodInternal(
   };
 }
 
-async function getCurrentPeriodSummaryInternal(
-  ctx: any,
-  creatorSlug: string
-) {
+async function getCurrentPeriodSummaryInternal(ctx: any, creatorSlug: string) {
   const { periodStart, periodEnd } = getCurrentMonthRangeUtc();
 
   const { grossCents } = await getEarningsForPeriodInternal(ctx, {
@@ -91,8 +86,12 @@ async function getCurrentPeriodSummaryInternal(
     periodEnd,
   });
 
-  const { platformFeeCents, payoutCents, thresholdReached, platformFeeRateBps } =
-    computePlatformFee(grossCents);
+  const {
+    platformFeeCents,
+    payoutCents,
+    thresholdReached,
+    platformFeeRateBps,
+  } = computePlatformFee(grossCents);
 
   return {
     creatorSlug,
@@ -139,8 +138,7 @@ async function getLastThreePeriodsSummariesInternal(
       payoutCents,
       thresholdReached,
       platformFeeRateBps,
-    } =
-      computePlatformFee(grossCents);
+    } = computePlatformFee(grossCents);
 
     results.push({
       creatorSlug,
@@ -251,10 +249,17 @@ export const getEarningsDashboardData = query({
       .withIndex("by_slug", (q: any) => q.eq("slug", creatorSlug))
       .first();
 
+    // Connection requires BOTH stripeAccountId AND completed onboarding (payoutEnabled)
+    // This prevents showing "connected" before the user finishes Stripe onboarding
+    const hasStripeAccount = !!creator?.stripeAccountId;
+    const onboardingComplete = creator?.payoutEnabled ?? false;
+
     const connection = {
-      connected: !!creator?.stripeAccountId,
+      connected: hasStripeAccount && onboardingComplete,
       stripeAccountId: creator?.stripeAccountId,
-      detailsSubmitted: creator?.payoutEnabled ?? false,
+      detailsSubmitted: onboardingComplete,
+      // New: expose whether account exists but onboarding is incomplete
+      onboardingStarted: hasStripeAccount && !onboardingComplete,
     } as const;
 
     const currentPeriod = await getCurrentPeriodSummaryInternal(
@@ -275,9 +280,8 @@ export const getEarningsDashboardData = query({
       .order("desc")
       .take(50);
 
-    const upcomingPayout = payoutHistory.find(
-      (p: any) => p.status === "pending"
-    ) ?? null;
+    const upcomingPayout =
+      payoutHistory.find((p: any) => p.status === "pending") ?? null;
 
     return {
       connection,

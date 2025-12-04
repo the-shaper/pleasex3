@@ -52,25 +52,47 @@ export default function DashboardPage() {
     isLoaded &&
     isSignedIn &&
     creator !== undefined &&
-    (creator === null || !creator.clerkUserId || creator.clerkUserId === user?.id);
+    (creator === null ||
+      !creator.clerkUserId ||
+      creator.clerkUserId === user?.id);
 
   const shouldFetch = isOwner;
 
-  const queueSnapshot = useQuery(api.queues.getSnapshot, shouldFetch ? { creatorSlug: slug } : "skip");
-  const dashboardOverview = useQuery(api.dashboard.getOverview, shouldFetch ? {
-    creatorSlug: slug,
-  } : "skip");
-  const positions = useQuery(api.dashboard.getAllTicketsWithPositions, shouldFetch ? {
-    creatorSlug: slug,
-  } : "skip");
-  const activePositions = useQuery(api.dashboard.getActiveTicketPositions, shouldFetch ? {
-    creatorSlug: slug,
-  } : "skip");
+  const queueSnapshot = useQuery(
+    api.queues.getSnapshot,
+    shouldFetch ? { creatorSlug: slug } : "skip"
+  );
+  const dashboardOverview = useQuery(
+    api.dashboard.getOverview,
+    shouldFetch
+      ? {
+          creatorSlug: slug,
+        }
+      : "skip"
+  );
+  const positions = useQuery(
+    api.dashboard.getAllTicketsWithPositions,
+    shouldFetch
+      ? {
+          creatorSlug: slug,
+        }
+      : "skip"
+  );
+  const activePositions = useQuery(
+    api.dashboard.getActiveTicketPositions,
+    shouldFetch
+      ? {
+          creatorSlug: slug,
+        }
+      : "skip"
+  );
   const earningsData = useQuery(
     api.lib.stripeEngine.getEarningsDashboardData,
-    shouldFetch ? {
-      creatorSlug: slug,
-    } : "skip"
+    shouldFetch
+      ? {
+          creatorSlug: slug,
+        }
+      : "skip"
   );
 
   const [personalEnabled, setPersonalEnabled] = useState(false);
@@ -100,12 +122,13 @@ export default function DashboardPage() {
     if (creator !== undefined) {
       // If creator exists and has an ID, and it doesn't match -> Redirect
       if (creator && creator.clerkUserId && creator.clerkUserId !== user?.id) {
-        console.warn("Unauthorized access attempt to dashboard. Redirecting to home.");
+        console.warn(
+          "Unauthorized access attempt to dashboard. Redirecting to home."
+        );
         router.push("/");
       }
     }
   }, [isLoaded, isSignedIn, router, slug, creator, user]);
-
 
   useEffect(() => {
     console.log("DEBUG engine positions", positions);
@@ -132,8 +155,40 @@ export default function DashboardPage() {
   // Ensure a Convex creator exists for this slug when a signed-in user visits the dashboard
   const upsertCreator = useMutation(api.creators.upsertBySlug);
   const toggleQueue = useMutation(api.queues.toggleEnabled);
-  const connectStripeAction = useAction(api.stripeOnboarding.createStripeAccountLink);
-  const recomputeWorkflowTags = useMutation(api.tickets.recomputeWorkflowTagsForCreator);
+  const connectStripeAction = useAction(
+    api.stripeOnboarding.createStripeAccountLink
+  );
+  const verifyStripeStatus = useAction(
+    api.stripeOnboarding.verifyAndSyncStripeStatus
+  );
+  const recomputeWorkflowTags = useMutation(
+    api.tickets.recomputeWorkflowTagsForCreator
+  );
+
+  // Auto-verify Stripe status when on earnings tab with incomplete onboarding
+  useEffect(() => {
+    if (
+      tab === "earnings" &&
+      earningsData?.connection?.onboardingStarted &&
+      slug
+    ) {
+      console.log(
+        "[Dashboard] Verifying Stripe status for incomplete onboarding..."
+      );
+      verifyStripeStatus({ creatorSlug: slug })
+        .then((result) => {
+          console.log("[Dashboard] Stripe verification result:", result);
+        })
+        .catch((err) => {
+          console.error("[Dashboard] Failed to verify Stripe status:", err);
+        });
+    }
+  }, [
+    tab,
+    earningsData?.connection?.onboardingStarted,
+    slug,
+    verifyStripeStatus,
+  ]);
 
   useEffect(() => {
     // Skip if not signed in or not loaded
@@ -186,7 +241,8 @@ export default function DashboardPage() {
   }, [queueSnapshot]);
 
   // Loading state is now derived from the queries
-  const isLoading = queueSnapshot === undefined || dashboardOverview === undefined;
+  const isLoading =
+    queueSnapshot === undefined || dashboardOverview === undefined;
 
   // Error handling is implicit (undefined result while loading), or we can check for null if the query returns null on error
   // For now, we'll rely on the loading state. If queries fail due to auth, they will throw or return undefined depending on setup.
@@ -391,7 +447,6 @@ export default function DashboardPage() {
 
   // Helper function to sort tickets with 3:1 priority-to-personal ratio
 
-
   const overview = dashboardOverview;
 
   // Build lookup map from tickets by ref using latest overview
@@ -453,7 +508,8 @@ export default function DashboardPage() {
   // Unified table data for all tabs - TableComponent will handle visual filtering
   const tableRows: CellComponentData[] = mapPositionsToCellData(positions);
   // Active table rows from engine-sorted active positions
-  const activeTableRows: CellComponentData[] = mapPositionsToCellData(activePositions);
+  const activeTableRows: CellComponentData[] =
+    mapPositionsToCellData(activePositions);
 
   // Show error state
   if (!queueSnapshot || !overview) {
@@ -468,9 +524,7 @@ export default function DashboardPage() {
             <h2 className="text-xl font-bold mb-4 text-red-600">
               Error loading dashboard
             </h2>
-            <p className="text-gray-600 mb-4">
-              Failed to load data
-            </p>
+            <p className="text-gray-600 mb-4">Failed to load data</p>
             <button
               onClick={() => window.location.reload()}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -515,8 +569,16 @@ export default function DashboardPage() {
 
   // Debug: Log the 3:1 ordering
   console.log("DEBUG 3:1 ticket ordering:", {
-    original: approvedPositions.map((p) => ({ ref: p.ref, tag: p.tag, queueKind: p.queueKind })),
-    sorted: orderedPositions.map((p) => ({ ref: p.ref, tag: p.tag, queueKind: p.queueKind })),
+    original: approvedPositions.map((p) => ({
+      ref: p.ref,
+      tag: p.tag,
+      queueKind: p.queueKind,
+    })),
+    sorted: orderedPositions.map((p) => ({
+      ref: p.ref,
+      tag: p.tag,
+      queueKind: p.queueKind,
+    })),
   });
 
   const nextUpTaskCards: TaskCardData[] = orderedPositions.map((p, index) => {
@@ -560,36 +622,36 @@ export default function DashboardPage() {
   const currentPosition = enginePositions.find((p) => p.tag === "current");
   const autoqueueCardData: TaskCardData | null = currentPosition
     ? (() => {
-      const t = ticketByRef[currentPosition.ref];
-      const displayNumber =
-        currentPosition.queueNumber ?? currentPosition.ticketNumber ?? 0;
-      const totalInQueue =
-        currentPosition.queueKind === "personal"
-          ? maxPersonalQueueNumber
-          : maxPriorityQueueNumber;
-      return {
-        currentTurn: displayNumber,
-        nextTurn: displayNumber,
-        etaDays: queues?.general?.etaDays ?? null,
-        // Static "out of" for the queue this current ticket belongs to
-        activeCount: totalInQueue,
-        enabled: queues?.general?.enabled ?? true,
-        name: t?.name || "Anonymous",
-        email: t?.email || "user@example.com",
-        phone: t?.phone || "",
-        location: t?.location || "",
-        social: t?.social || "",
-        needText: t?.taskTitle || "No description provided",
-        message: t?.message || "No description provided",
-        attachments: t?.attachments || [],
-        tipCents: t?.tipCents || 0,
-        queueKind: currentPosition.queueKind,
-        status: "current",
-        tags: ["current" as TaskTag],
-        createdAt: t?.createdAt || 0,
-        ref: currentPosition.ref,
-      } satisfies TaskCardData;
-    })()
+        const t = ticketByRef[currentPosition.ref];
+        const displayNumber =
+          currentPosition.queueNumber ?? currentPosition.ticketNumber ?? 0;
+        const totalInQueue =
+          currentPosition.queueKind === "personal"
+            ? maxPersonalQueueNumber
+            : maxPriorityQueueNumber;
+        return {
+          currentTurn: displayNumber,
+          nextTurn: displayNumber,
+          etaDays: queues?.general?.etaDays ?? null,
+          // Static "out of" for the queue this current ticket belongs to
+          activeCount: totalInQueue,
+          enabled: queues?.general?.enabled ?? true,
+          name: t?.name || "Anonymous",
+          email: t?.email || "user@example.com",
+          phone: t?.phone || "",
+          location: t?.location || "",
+          social: t?.social || "",
+          needText: t?.taskTitle || "No description provided",
+          message: t?.message || "No description provided",
+          attachments: t?.attachments || [],
+          tipCents: t?.tipCents || 0,
+          queueKind: currentPosition.queueKind,
+          status: "current",
+          tags: ["current" as TaskTag],
+          createdAt: t?.createdAt || 0,
+          ref: currentPosition.ref,
+        } satisfies TaskCardData;
+      })()
     : null;
 
   // Approved task cards for NextUpSection = all engine-approved positions in UI order (awaiting-feedback first)
@@ -599,7 +661,7 @@ export default function DashboardPage() {
   // Include both open tickets (free submissions) and pendingPayment tickets (paid submissions after auth)
   const ticketsAwaitingApproval = [
     ...(overview?.openTickets || []),
-    ...(overview?.pendingPaymentTickets || [])
+    ...(overview?.pendingPaymentTickets || []),
   ];
   const hasPendingApprovals = ticketsAwaitingApproval.length > 0;
 
@@ -611,7 +673,10 @@ export default function DashboardPage() {
     pendingPaymentCount: overview?.pendingPaymentTickets?.length || 0,
     totalAwaitingApproval: ticketsAwaitingApproval.length,
     hasPendingApprovals,
-    ticketsAwaitingApproval: ticketsAwaitingApproval.map(t => ({ ref: t.ref, status: t.status }))
+    ticketsAwaitingApproval: ticketsAwaitingApproval.map((t) => ({
+      ref: t.ref,
+      status: t.status,
+    })),
   });
 
   // autoqueue current card removed; NEXT UP is driven purely by engine positions
@@ -681,7 +746,9 @@ export default function DashboardPage() {
                 setPersonalEnabled={setPersonalEnabled}
                 priorityEnabled={priorityEnabled}
                 setPriorityEnabled={setPriorityEnabled}
-                minPriorityTipCents={dashboardOverview?.creator?.minPriorityTipCents}
+                minPriorityTipCents={
+                  dashboardOverview?.creator?.minPriorityTipCents
+                }
                 hasStripeAccount={!!creator?.stripeAccountId}
                 onNavigateToEarnings={() => {
                   const url = new URL(window.location.href);
@@ -736,10 +803,11 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div
-              className={`flex flex-col w-full no-scrollbar md:grid md:gap-4 h-full md:h-[86svh] min-h-0 md:min-h-0 ${hasPendingApprovals
-                ? "w-full md:grid-cols-[400px_1fr]"
-                : "w-full md:grid-cols-[400px_1fr]"
-                }`}
+              className={`flex flex-col w-full no-scrollbar md:grid md:gap-4 h-full md:h-[86svh] min-h-0 md:min-h-0 ${
+                hasPendingApprovals
+                  ? "w-full md:grid-cols-[400px_1fr]"
+                  : "w-full md:grid-cols-[400px_1fr]"
+              }`}
             >
               <NextUpSection
                 approvedTaskCards={approvedTaskCards}
@@ -797,8 +865,11 @@ export default function DashboardPage() {
                   style={
                     isDesktop
                       ? {
-                        height: (selectedTask || autoqueueCardData) ? `${100 - splitPercentage}%` : '100%'
-                      }
+                          height:
+                            selectedTask || autoqueueCardData
+                              ? `${100 - splitPercentage}%`
+                              : "100%",
+                        }
                       : undefined
                   }
                 >

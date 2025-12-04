@@ -57,8 +57,20 @@ export interface TaskCardProps {
 }
 
 const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
-  ({ variant, data, className = "", isActive = false, onOpen, forceExpanded = false }, ref) => {
-    const [isExpanded, setIsExpanded] = useState(variant === "autoqueue" || forceExpanded);
+  (
+    {
+      variant,
+      data,
+      className = "",
+      isActive = false,
+      onOpen,
+      forceExpanded = false,
+    },
+    ref
+  ) => {
+    const [isExpanded, setIsExpanded] = useState(
+      variant === "autoqueue" || forceExpanded
+    );
 
     const isPriority = variant === "priority";
     const isPersonal = variant === "personal";
@@ -218,9 +230,15 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
                 <div className="text-xs space-y-1 min-w-0 break-words mb-2">
                   {data.attachments.length > 0
                     ? data.attachments.map((url, i) => (
-                      <div key={i} className="truncate" title={url}>
+                      <a
+                        href={url}
+                        target="_blank"
+                        key={i}
+                        className="text-wrap underline"
+                        title={url}
+                      >
                         {url}
-                      </div>
+                      </a>
                     ))
                     : "—"}
                 </div>

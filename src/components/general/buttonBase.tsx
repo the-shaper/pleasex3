@@ -38,9 +38,9 @@ const getVariantClasses = (variant: ButtonVariant): string => {
     case "outline":
       return "border border-gray-subtle bg-transparent hover:bg-gray-subtle text-text";
     case "neutral":
-      return "bg-gray-subtle text-text hover:bg-gray-200";
+      return "bg-gray-subtle hover:bg-gray-200";
     default:
-      return "bg-gray-subtle text-text hover:bg-coral hover:text-text-bright";
+      return "bg-gray-subtle ";
   }
 };
 

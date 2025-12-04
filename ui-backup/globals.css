@@ -2,18 +2,30 @@
 
 :root {
   /* RU tokens (order aligned with RU-1 comp) */
-  --color-text: #372525; /* paragraph normal */
-  --color-text-muted: #6A8689; /* lighter dark */
-  --color-gray-subtle: #CCCCCC; /* subtle gray */
-  --color-bg: #E9F8EE; /* background */
-  --color-greenlite: #D0FF94; /* greenielo */
-  --color-coral: #FF5757; /* coral red */
-  --color-pink: #FFB9B0; /* light pink */
-  --color-gold: #DAB67F; /* ui gold */
-  --color-purple: #BE97FF; /* pupr */
-  --color-blue: #94ECFF; /* big blu */
-  --color-blue-2: #ACDDE0; /* other blu */
-  --color-bg-pink: #FEF1F1; /* bg pink */
+  --color-text: #372525;
+  /* paragraph normal */
+  --color-text-muted: #6A8689;
+  /* lighter dark */
+  --color-gray-subtle: #CCCCCC;
+  /* subtle gray */
+  --color-bg: #E9F8EE;
+  /* background */
+  --color-greenlite: #D0FF94;
+  /* greenielo */
+  --color-coral: #FF5757;
+  /* coral red */
+  --color-pink: #FFB9B0;
+  /* light pink */
+  --color-gold: #DAB67F;
+  /* ui gold */
+  --color-purple: #BE97FF;
+  /* pupr */
+  --color-blue: #94ECFF;
+  /* big blu */
+  --color-blue-2: #ACDDE0;
+  /* other blu */
+  --color-bg-pink: #FEF1F1;
+  /* bg pink */
 
   /* Back-compat base tokens */
   --background: var(--color-bg);
@@ -56,10 +68,12 @@ body {
   -webkit-appearance: none;
   margin: 0;
 }
+
 .no-spinners[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
 /* Some WebKit versions need this on the input itself */
 .no-spinners {
   -webkit-appearance: none;

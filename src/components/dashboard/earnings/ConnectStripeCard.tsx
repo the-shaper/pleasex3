@@ -11,6 +11,30 @@ export function ConnectStripeCard({
   connection,
   onConnectClick,
 }: ConnectStripeCardProps) {
+  // State 1: Onboarding started but not complete - show "in progress" UI
+  if (connection.onboardingStarted) {
+    return (
+      <section className="border border-text/20 bg-bg px-6 py-4 flex flex-col gap-2">
+        <div className="text-xs uppercase text-text-muted">Payouts</div>
+        <div className="text-lg font-bold text-text">
+          Stripe onboarding in progress
+        </div>
+        <p className="text-sm text-text-muted max-w-xl">
+          Complete your Stripe account setup to start receiving payouts. If you
+          closed the Stripe window, click the button below to continue.
+        </p>
+        <button
+          type="button"
+          onClick={onConnectClick}
+          className="mt-2 inline-flex items-center justify-center bg-text text-coral text-xs font-semibold uppercase px-6 py-2 hover:bg-coral hover:text-text transition-colors"
+        >
+          Continue Stripe setup
+        </button>
+      </section>
+    );
+  }
+
+  // State 2: Not connected at all - show "connect" UI
   if (!connection.connected) {
     return (
       <section className="border border-text/20 bg-bg px-6 py-4 flex flex-col gap-2">
@@ -34,6 +58,7 @@ export function ConnectStripeCard({
     );
   }
 
+  // State 3: Fully connected - show success UI
   return (
     <section className="border border-text/20 bg-gold px-6 py-4 flex flex-col gap-1">
       <div className="text-xs uppercase text-text font-bold">Payouts</div>
@@ -52,9 +77,12 @@ export function ConnectStripeCard({
           : "Verification in progress"}
       </div>
       <div className="text-xs text-text">
-        Earnings are calculated in USD. <span className="font-bold text-text">We keep $3.33 per $50 you make—if you
-          earn less than $50 for the period, we keep nothing. </span> Stripe’s fixed 2.9%
-        processing fee remains separate.
+        Earnings are calculated in USD.{" "}
+        <span className="font-bold text-text">
+          We keep $3.33 per $50 you make—if you earn less than $50 for the
+          period, we keep nothing.{" "}
+        </span>{" "}
+        Stripe's fixed 2.9% processing fee remains separate.
       </div>
     </section>
   );
