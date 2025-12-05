@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { ClerkProvider } from "@clerk/nextjs";
 import { ConvexProviderWrapper } from "@/components/ConvexProviderWrapper";
+import { PosthogInit } from "./posthog-init";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,7 +43,9 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} ${spaceMono.variable} antialiased`}
         >
-          <ConvexProviderWrapper>{children}</ConvexProviderWrapper>
+          <PosthogInit>
+            <ConvexProviderWrapper>{children}</ConvexProviderWrapper>
+          </PosthogInit>
         </body>
       </html>
     </ClerkProvider>

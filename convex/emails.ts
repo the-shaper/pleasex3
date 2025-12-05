@@ -34,6 +34,7 @@ async function sendEmail({
   }
 
   try {
+    console.info("[resend] sending", { to, subject, from: SENDER_EMAIL });
     const html = await render(react);
     const { data, error } = await resend.emails.send({
       from: SENDER_EMAIL,
@@ -49,7 +50,7 @@ async function sendEmail({
       );
     }
 
-    console.log("Email sent successfully:", data?.id);
+    console.info("[resend] sent", { id: data?.id, to, subject });
     return data;
   } catch (err: any) {
     if (
