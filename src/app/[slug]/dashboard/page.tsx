@@ -20,7 +20,13 @@ import DashHeaderOG from "@/components/dashboard/DashHeaderOG";
 import { ConvexDataProvider } from "@/lib/data/convex";
 import { CellComponentData } from "@/components/dashboard/table/cellComponent";
 import TaskModule from "@/components/dashboard/taskModule/taskModule";
-import { useUser } from "@clerk/nextjs";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  useClerk,
+  useUser,
+} from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@convex/_generated/api"; // Generated Convex API via path alias
@@ -31,6 +37,8 @@ import { StripeOnboardingBanner } from "@/components/dashboard/StripeOnboardingB
 import { ResizableDivider } from "@/components/dashboard/ResizableDivider";
 import { MyAccount } from "@/components/dashboard/MyAccount";
 import { ReadMeModal } from "@/components/readMeModal";
+import { ButtonBase } from "@/components/general/buttonBase";
+import { StatusBar } from "@/components/dashboard/statusBar";
 
 const dataProvider = new ConvexDataProvider();
 
@@ -40,6 +48,7 @@ export default function DashboardPage() {
 
   // All hooks first: Consistent order every render
   const { isSignedIn, isLoaded, user } = useUser();
+  const { signOut } = useClerk();
   const router = useRouter();
   // Reactive queries - automatically authenticated and updated
   const creator = useQuery(api.dashboard.getCreator, { creatorSlug: slug });
@@ -66,34 +75,41 @@ export default function DashboardPage() {
     api.dashboard.getOverview,
     shouldFetch
       ? {
-        creatorSlug: slug,
-      }
+          creatorSlug: slug,
+        }
       : "skip"
   );
   const positions = useQuery(
     api.dashboard.getAllTicketsWithPositions,
     shouldFetch
       ? {
-        creatorSlug: slug,
-      }
+          creatorSlug: slug,
+        }
       : "skip"
   );
   const activePositions = useQuery(
     api.dashboard.getActiveTicketPositions,
     shouldFetch
       ? {
-        creatorSlug: slug,
-      }
+          creatorSlug: slug,
+        }
       : "skip"
   );
   const earningsData = useQuery(
     api.lib.stripeEngine.getEarningsDashboardData,
     shouldFetch
       ? {
-        creatorSlug: slug,
-      }
+          creatorSlug: slug,
+        }
       : "skip"
   );
+  const statusMetrics = useQuery(
+    api.dashboard.getCreatorStatusMetrics,
+    shouldFetch ? { creatorSlug: slug } : "skip"
+  );
+
+  const userSlug =
+    user?.username || user?.primaryEmailAddress?.emailAddress || slug || null;
 
   const [personalEnabled, setPersonalEnabled] = useState(false);
   const [priorityEnabled, setPriorityEnabled] = useState(false);
@@ -103,6 +119,11 @@ export default function DashboardPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [splitPercentage, setSplitPercentage] = useState(50); // For resizable divider
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false); // For FAQ modal
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/");
+  };
 
   // Unauth or Non-Owner: redirect
   useEffect(() => {
@@ -622,36 +643,36 @@ export default function DashboardPage() {
   const currentPosition = enginePositions.find((p) => p.tag === "current");
   const autoqueueCardData: TaskCardData | null = currentPosition
     ? (() => {
-      const t = ticketByRef[currentPosition.ref];
-      const displayNumber =
-        currentPosition.queueNumber ?? currentPosition.ticketNumber ?? 0;
-      const totalInQueue =
-        currentPosition.queueKind === "personal"
-          ? maxPersonalQueueNumber
-          : maxPriorityQueueNumber;
-      return {
-        currentTurn: displayNumber,
-        nextTurn: displayNumber,
-        etaDays: queues?.general?.etaDays ?? null,
-        // Static "out of" for the queue this current ticket belongs to
-        activeCount: totalInQueue,
-        enabled: queues?.general?.enabled ?? true,
-        name: t?.name || "Anonymous",
-        email: t?.email || "user@example.com",
-        phone: t?.phone || "",
-        location: t?.location || "",
-        social: t?.social || "",
-        needText: t?.taskTitle || "No description provided",
-        message: t?.message || "No description provided",
-        attachments: t?.attachments || [],
-        tipCents: t?.tipCents || 0,
-        queueKind: currentPosition.queueKind,
-        status: "current",
-        tags: ["current" as TaskTag],
-        createdAt: t?.createdAt || 0,
-        ref: currentPosition.ref,
-      } satisfies TaskCardData;
-    })()
+        const t = ticketByRef[currentPosition.ref];
+        const displayNumber =
+          currentPosition.queueNumber ?? currentPosition.ticketNumber ?? 0;
+        const totalInQueue =
+          currentPosition.queueKind === "personal"
+            ? maxPersonalQueueNumber
+            : maxPriorityQueueNumber;
+        return {
+          currentTurn: displayNumber,
+          nextTurn: displayNumber,
+          etaDays: queues?.general?.etaDays ?? null,
+          // Static "out of" for the queue this current ticket belongs to
+          activeCount: totalInQueue,
+          enabled: queues?.general?.enabled ?? true,
+          name: t?.name || "Anonymous",
+          email: t?.email || "user@example.com",
+          phone: t?.phone || "",
+          location: t?.location || "",
+          social: t?.social || "",
+          needText: t?.taskTitle || "No description provided",
+          message: t?.message || "No description provided",
+          attachments: t?.attachments || [],
+          tipCents: t?.tipCents || 0,
+          queueKind: currentPosition.queueKind,
+          status: "current",
+          tags: ["current" as TaskTag],
+          createdAt: t?.createdAt || 0,
+          ref: currentPosition.ref,
+        } satisfies TaskCardData;
+      })()
     : null;
 
   // Approved task cards for NextUpSection = all engine-approved positions in UI order (awaiting-feedback first)
@@ -679,6 +700,66 @@ export default function DashboardPage() {
     })),
   });
 
+  const mobileHeaderControls = (
+    <div className="md:hidden flex flex-col gap-1 px-4 pt-4">
+      <ButtonBase
+        variant="default"
+        size="sm"
+        onClick={() => setIsFaqModalOpen(true)}
+        className="text-[0.6rem] hover:bg-gold cursor-pointer"
+      >
+        Cheatsheet
+      </ButtonBase>
+      <SignedIn>
+        <div className="flex flex-col gap-1">
+          <ButtonBase
+            variant="default"
+            size="sm"
+            onClick={() => router.push("/" + slug)}
+            className="text-[0.6rem] hover:bg-blue cursor-pointer bg-gold"
+          >
+            Public Page
+          </ButtonBase>
+          <ButtonBase
+            variant="default"
+            size="sm"
+            onClick={handleSignOut}
+            className="text-[0.6rem] hover:bg-coral cursor-pointer"
+          >
+            SIGN OUT
+          </ButtonBase>
+        </div>
+      </SignedIn>
+      <SignedOut>
+        <SignInButton mode="modal">
+          <ButtonBase variant="default" size="sm" className="text-xs">
+            SIGN IN
+          </ButtonBase>
+        </SignInButton>
+      </SignedOut>
+    </div>
+  );
+
+  const mobileStatusBar =
+    statusMetrics && userSlug ? (
+      <div className="md:hidden px-4">
+        <StatusBar
+          queuedTasks={statusMetrics.queuedTasks}
+          newRequests={statusMetrics.newRequests}
+          userSlug={userSlug}
+          variant="dark"
+          clickable={false}
+        />
+      </div>
+    ) : null;
+
+  const mobileSidebarTop = (
+    <>
+      {mobileHeaderControls}
+      {mobileStatusBar}
+    </>
+  );
+
   // autoqueue current card removed; NEXT UP is driven purely by engine positions
 
   return (
@@ -694,13 +775,15 @@ export default function DashboardPage() {
       />
       <div
         id="DASHBOARD-LAYOUT"
-        className="grid grid-cols-[0px_1fr] md:grid-cols-[250px_1fr] grid-rows-[auto_1fr] h-screen overflow-hidden overflow-x-visible bg-bg p-8" // Updated grid for mobile (0px sidebar col)
+        className="grid grid-cols-[0px_1fr] md:grid-cols-[250px_1fr] grid-rows-[auto_1fr] md:h-screen h-auto bg-bg md:p-8 px-8 pt-8" // Updated grid for mobile (0px sidebar col)
       >
         {/* Header - spans full width */}
         <DashHeaderOG
           onMenuClick={() => setIsSidebarOpen(true)}
           isOpen={isSidebarOpen}
           onFaqClick={() => setIsFaqModalOpen(true)}
+          statusMetrics={statusMetrics || undefined}
+          userSlug={userSlug}
         />
 
         {/* Desktop sidebar (static, correct spacing) */}
@@ -727,6 +810,7 @@ export default function DashboardPage() {
               mobileOverlay={true}
               isOpen={true}
               onClose={() => setIsSidebarOpen(false)}
+              topContent={mobileSidebarTop}
             />
           </div>
         )}
@@ -734,7 +818,7 @@ export default function DashboardPage() {
         {/* Main Content Area */}
         <div
           data-element="MAIN-CONTENT-WRAPPER"
-          className="flex md:w-full w-[calc(100svw-4rem)] flex-col md:col-start-2 md:row-start-2 md:overflow-hidden md:grid gap-4 md:p-4 md:h-[86svh] h-full md:overflow-y-hidden overflow-y-auto min-h-0 md:min-h-0 no-scrollbar"
+          className="flex md:w-full w-[calc(100svw-4rem)] flex-col md:col-start-2 md:row-start-2 md:overflow-hidden md:grid gap-4 md:p-4 md:h-[86svh] h-auto md:overflow-y-hidden overflow-visible min-h-0 md:min-h-0"
         >
           {tab === "queue-settings" ? (
             <div className="col-span-2">
@@ -803,10 +887,11 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div
-              className={`flex flex-col w-full no-scrollbar md:grid md:gap-4 h-full md:h-[86svh] min-h-0 md:min-h-0 ${hasPendingApprovals
-                ? "w-full md:grid-cols-[400px_1fr]"
-                : "w-full md:grid-cols-[400px_1fr]"
-                }`}
+              className={`flex flex-col w-full no-scrollbar md:grid md:gap-4 h-full md:h-[86svh] min-h-0 md:min-h-0 ${
+                hasPendingApprovals
+                  ? "w-full md:grid-cols-[400px_1fr]"
+                  : "w-full md:grid-cols-[400px_1fr]"
+              }`}
             >
               <NextUpSection
                 approvedTaskCards={approvedTaskCards}
@@ -864,11 +949,11 @@ export default function DashboardPage() {
                   style={
                     isDesktop
                       ? {
-                        height:
-                          selectedTask || autoqueueCardData
-                            ? `${100 - splitPercentage}%`
-                            : "100%",
-                      }
+                          height:
+                            selectedTask || autoqueueCardData
+                              ? `${100 - splitPercentage}%`
+                              : "100%",
+                        }
                       : undefined
                   }
                 >

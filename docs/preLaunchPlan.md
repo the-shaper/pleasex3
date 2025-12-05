@@ -73,7 +73,7 @@
 
 **Create terms of service page**
 
-- [ ] Create a terms of service page and link to it from the about modal.
+- [x] Create a terms of service page and link to it from the about modal.
 
 ## 7. -[x] Paid submission fix: When tips are added, the tickets are being submitted before the payment intent is created, so even if a user cancels the payment flow, the ticket is still created. Fix this
 
@@ -83,10 +83,11 @@
 
 ## 9. -[x] Complete About Modal
 
-## 10. -[ ] Connect Stripe connect check
+## 10. -[x] Connect Stripe connect check
 
-- Currently, upon clicking the "connect stripe" button, the state of the component changes to "connected to stripe" immediately. Is this because we in "test mode" or because the component is not waiting for proper stripe confirmation?
+- Currently, upon clicking the "connect stripe" button, the state of the component changes to "connected to stripe" immediately. Is this because we in "test mode" or because the component is not waiting for proper stripe confirmation? [**FIXED BUT** needs thorough user testing]
 
-## 11. -[] Release of Funds: "If a Creator rejects your Ticket, or if the Ticket remains 'Open' for [3] days without approval, the authorization hold will be released. We are not responsible for overdraft fees resulting from these holds." We needa fix this.
+## 11. -[x] Release of Funds: "If a Creator rejects your Ticket, or if the Ticket remains 'Open' for [7] days without approval, the authorization hold will be released. We are not responsible for overdraft fees resulting from these holds." 
+Solved by stripe... added e-mail reminders. NEEDS THOROUGH USER TESTING
 
 ## 12. -[] Add Posthog

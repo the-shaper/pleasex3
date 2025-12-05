@@ -8,10 +8,16 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 
 // Initialize Stripe with a fallback to prevent build-time errors
-const stripe = new Stripe(stripeApiKey || "dummy_key_for_build", { apiVersion: "2022-11-15" });
+const stripe = new Stripe(stripeApiKey || "dummy_key_for_build", {
+  apiVersion: "2022-11-15",
+});
 
-const formattedUrl = convexUrl?.startsWith("http") ? convexUrl : `https://${convexUrl}`;
-const client = new ConvexHttpClient(formattedUrl || "https://dummy.convex.cloud");
+const formattedUrl = convexUrl?.startsWith("http")
+  ? convexUrl
+  : `https://${convexUrl}`;
+const client = new ConvexHttpClient(
+  formattedUrl || "https://dummy.convex.cloud"
+);
 
 const logPrefix = "[StripeWebhook]";
 
@@ -30,15 +36,24 @@ function logError(...args: unknown[]) {
 export async function POST(req: NextRequest) {
   if (!stripeApiKey) {
     console.error("STRIPE_API_KEY is required for Stripe webhook");
-    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Server configuration error" },
+      { status: 500 }
+    );
   }
   if (!webhookSecret) {
     console.error("STRIPE_WEBHOOK_SECRET is required for webhook verification");
-    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Server configuration error" },
+      { status: 500 }
+    );
   }
   if (!convexUrl) {
     console.error("NEXT_PUBLIC_CONVEX_URL is required to call Convex");
-    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Server configuration error" },
+      { status: 500 }
+    );
   }
 
   const body = await req.text();

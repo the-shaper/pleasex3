@@ -12,7 +12,6 @@ import { CellComponent, type CellComponentData } from "./cellComponent";
 
 // Helper function to sort tickets with 3:1 priority-to-personal ratio (moved from page.tsx)
 
-
 // Re-export for convenience
 export type { CellComponentData };
 
@@ -163,7 +162,9 @@ export function TableComponent({
       ) as HTMLElement;
 
       // Scope search to the container to avoid finding hidden mobile elements
-      const taskCardElement = scrollContainer?.querySelector(`[data-task-ref="${ref}"]`);
+      const taskCardElement = scrollContainer?.querySelector(
+        `[data-task-ref="${ref}"]`
+      );
 
       if (taskCardElement && scrollContainer) {
         // Get current scroll position to account for manual scrolling
@@ -192,8 +193,8 @@ export function TableComponent({
     <div className={`flex flex-col h-full min-h-0 ${className}`}>
       {/* Clickable title matching page.tsx style */}
       {disableCollapse ? (
-        <div className="flex items-center justify-between w-full md:mb-2 pb-2 md:px-4 border-b border-gray-subtle sticky top-0 bg-bg z-10">
-          <h2 className="text-xl font-bold">
+        <div className="flex items-center justify-between w-full md:mb-2 md:pb-2 md:pt-0 py-2 md:px-4 border-b border-gray-subtle sticky top-0 bg-bg z-10">
+          <h2 className="md:text-xl text-md font-bold">
             {variant === "past"
               ? "PAST FAVORS"
               : variant === "all"
@@ -207,7 +208,7 @@ export function TableComponent({
           className="flex items-center justify-between w-full  border-b border-gray-subtle text-left sticky top-0 bg-bg pb-2 z-10"
           aria-expanded={!isCollapsed}
         >
-          <h2 className="text-xl font-bold">
+          <h2 className="md:text-xl text-md font-bold">
             {variant === "past"
               ? "PAST FAVORS"
               : variant === "all"
@@ -242,13 +243,16 @@ export function TableComponent({
                   {/* GENERAL - Sortable */}
                   <button
                     className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-start gap-1"
-                    onClick={table.getColumn("general")?.getToggleSortingHandler()}
+                    onClick={table
+                      .getColumn("general")
+                      ?.getToggleSortingHandler()}
                   >
                     GENERAL
                     {{
                       asc: " ↑",
                       desc: " ↓",
-                    }[table.getColumn("general")?.getIsSorted() as string] ?? " ⇅"}
+                    }[table.getColumn("general")?.getIsSorted() as string] ??
+                      " ⇅"}
                   </button>
 
                   {/* TICKET - Not sortable */}
@@ -308,13 +312,16 @@ export function TableComponent({
                   {(variant === "past" || variant === "all") && (
                     <button
                       className="font-semibold text-sm uppercase tracking-wider hover:text-text-muted transition-colors text-left flex items-center gap-1"
-                      onClick={table.getColumn("resolved")?.getToggleSortingHandler()}
+                      onClick={table
+                        .getColumn("resolved")
+                        ?.getToggleSortingHandler()}
                     >
                       RESOLVED ON
                       {{
                         asc: " ↑",
                         desc: " ↓",
-                      }[table.getColumn("resolved")?.getIsSorted() as string] ?? " ⇅"}
+                      }[table.getColumn("resolved")?.getIsSorted() as string] ??
+                        " ⇅"}
                     </button>
                   )}
                 </div>
@@ -345,10 +352,11 @@ export function TableComponent({
                   return (
                     <div
                       key={rowData.ref}
-                      className={`${isMobile ? "hover:bg-gray-subtle/20 cursor-pointer" : ""} ${shouldEnableClickToScroll
-                        ? "cursor-pointer hover:bg-gray-subtle/20"
-                        : ""
-                        }`}
+                      className={`${isMobile ? "hover:bg-gray-subtle/20 cursor-pointer" : ""} ${
+                        shouldEnableClickToScroll
+                          ? "cursor-pointer hover:bg-gray-subtle/20"
+                          : ""
+                      }`}
                       onClick={() => handleRowClick(rowData.ref)}
                     >
                       <CellComponent

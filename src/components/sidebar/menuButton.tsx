@@ -13,7 +13,7 @@ export function MenuButton({ onClick, isOpen = false }: MenuButtonProps) {
       aria-label={isOpen ? "Close menu" : "Open menu"}
     >
       <svg
-        className="w-6 h-6"
+        className="w-4 h-4"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"

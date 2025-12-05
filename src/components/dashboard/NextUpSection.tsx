@@ -38,7 +38,8 @@ export default function NextUpSection({
   const [isDesktop, setIsDesktop] = useState(false); // Track desktop breakpoint
 
   const toggleCollapse = () => setIsCollapsed(!isCollapsed);
-  const togglePendingCollapse = () => setIsPendingCollapsed(!isPendingCollapsed);
+  const togglePendingCollapse = () =>
+    setIsPendingCollapsed(!isPendingCollapsed);
 
   // Create refs for each task card
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -132,7 +133,9 @@ export default function NextUpSection({
             style={{ height: `${splitPercentage}%` }}
           >
             <div className="flex items-center justify-between w-full border-b border-gray-subtle pb-2 sticky top-0 bg-bg">
-              <h2 className="text-xl font-bold bg-bg w-full">PENDING REQUESTS</h2>
+              <h2 className="text-xl font-bold bg-bg w-full">
+                PENDING REQUESTS
+              </h2>
             </div>
             <div className="flex-1 overflow-y-auto no-scrollbar  min-h-0">
               <ApprovalPanel
@@ -153,7 +156,7 @@ export default function NextUpSection({
             style={{ height: `${100 - splitPercentage}%` }}
           >
             <div className="flex items-center justify-between w-full border-b border-gray-subtle pb-2 sticky top-0 bg-bg">
-              <h2 className="text-xl font-bold bg-bg w-full">NEXT UP</h2>
+              <h2 className="md:text-xl font-bold bg-bg w-full">NEXT UP</h2>
             </div>
             <div
               ref={(el) => {
@@ -163,12 +166,15 @@ export default function NextUpSection({
               className="flex-1 overflow-y-auto overflow-x-visible no-scrollbar px-4 min-h-0"
             >
               <div data-element="TASK-CARDS-WRAPPER" className="flex-1">
-                <div className="flex flex-col gap-4 pb-[50vh] mt-3">
+                <div className="flex flex-col  gap-4 pb-[50vh] mt-3">
                   {/* Approved ticket cards */}
                   {approvedTaskCards.length > 0 ? (
                     approvedTaskCards.map((taskCardData, index) => {
                       return (
-                        <div key={taskCardData.ref} data-task-ref={taskCardData.ref}>
+                        <div
+                          key={taskCardData.ref}
+                          data-task-ref={taskCardData.ref}
+                        >
                           <TaskCard
                             ref={(el) => {
                               cardRefs.current[index] = el;
@@ -189,7 +195,9 @@ export default function NextUpSection({
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       <p>No approved tickets in processing queue</p>
-                      <p className="text-sm mt-2">Approve tickets to see them here</p>
+                      <p className="text-sm mt-2">
+                        Approve tickets to see them here
+                      </p>
                     </div>
                   )}
                 </div>
@@ -208,7 +216,9 @@ export default function NextUpSection({
                 className="flex items-center justify-between w-full text-left border-b border-gray-subtle pb-2 sticky top-0 bg-bg md:hidden"
                 aria-expanded={!isPendingCollapsed}
               >
-                <h2 className="text-xl font-bold bg-bg w-full">PENDING REQUESTS</h2>
+                <h2 className="text-md font-bold bg-bg w-full">
+                  PENDING REQUESTS
+                </h2>
                 <span
                   className={`text-xs text-gray-subtle transition-transform duration-300 ${isPendingCollapsed ? "rotate-180" : ""}`}
                 >
@@ -218,7 +228,10 @@ export default function NextUpSection({
               <div
                 className={`overflow-hidden transition-all duration-300 ease-in-out md:hidden ${isPendingCollapsed ? "max-h-0" : "max-h-[66vh]"}`}
               >
-                <div data-element="PENDING-APPROVALS-COLUMN" className="h-full mb-8">
+                <div
+                  data-element="PENDING-APPROVALS-COLUMN"
+                  className="h-full mb-8"
+                >
                   <ApprovalPanel
                     tickets={openTickets}
                     onTicketUpdate={onTicketUpdate}
@@ -232,10 +245,10 @@ export default function NextUpSection({
           {/* Next Up - Mobile with collapse/expand */}
           <button
             onClick={toggleCollapse}
-            className="flex items-center justify-between w-full text-left border-b border-gray-subtle pb-2 sticky top-0 bg-bg md:hidden"
+            className="flex items-center justify-between w-full text-left border-b border-gray-subtle py-2 sticky top-0 bg-bg md:hidden"
             aria-expanded={!isCollapsed}
           >
-            <h2 className="text-xl font-bold bg-bg w-full">NEXT UP</h2>
+            <h2 className="text-md font-bold bg-bg w-full">NEXT UP</h2>
             <span
               className={`text-xs text-gray-subtle transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
             >
@@ -245,13 +258,19 @@ export default function NextUpSection({
           <div
             className={`overflow-x-auto md:overflow-y-auto md:overflow-x-visible no-scrollbar transition-all duration-300 ease-in-out md:px-4 ${isCollapsed ? "max-h-0" : "max-h-[80vh]"} scroll-pb-6 md:hidden`}
           >
-            <div data-element="TASK-CARDS-WRAPPER" className="md:flex-1 px-1 md:px-0">
+            <div
+              data-element="TASK-CARDS-WRAPPER"
+              className="md:flex-1 px-1 md:px-0"
+            >
               <div className="flex flex-col md:flex-col md:gap-4 gap-4 md:pl-0 md:pr-0 md:px-0 pb-4 md:pb-[50vh] mt-3">
                 {/* Approved ticket cards */}
                 {approvedTaskCards.length > 0 ? (
                   approvedTaskCards.map((taskCardData, index) => {
                     return (
-                      <div key={taskCardData.ref} data-task-ref={taskCardData.ref}>
+                      <div
+                        key={taskCardData.ref}
+                        data-task-ref={taskCardData.ref}
+                      >
                         <TaskCard
                           ref={(el) => {
                             cardRefs.current[index] = el;
@@ -272,7 +291,9 @@ export default function NextUpSection({
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <p>No approved tickets in processing queue</p>
-                    <p className="text-sm mt-2">Approve tickets to see them here</p>
+                    <p className="text-sm mt-2">
+                      Approve tickets to see them here
+                    </p>
                   </div>
                 )}
               </div>
@@ -283,7 +304,7 @@ export default function NextUpSection({
           {isDesktop && !hasPendingApprovals && (
             <>
               <div className="flex items-center justify-between w-full border-b border-gray-subtle pb-2 sticky top-0 bg-bg">
-                <h2 className="text-xl font-bold bg-bg w-full">NEXT UP</h2>
+                <h2 className="md:text-xl font-bold bg-bg w-full">NEXT UP</h2>
               </div>
               <div
                 ref={(el) => {
@@ -298,7 +319,10 @@ export default function NextUpSection({
                     {approvedTaskCards.length > 0 ? (
                       approvedTaskCards.map((taskCardData, index) => {
                         return (
-                          <div key={taskCardData.ref} data-task-ref={taskCardData.ref}>
+                          <div
+                            key={taskCardData.ref}
+                            data-task-ref={taskCardData.ref}
+                          >
                             <TaskCard
                               ref={(el) => {
                                 cardRefs.current[index] = el;
@@ -319,7 +343,9 @@ export default function NextUpSection({
                     ) : (
                       <div className="text-center py-8 text-gray-500">
                         <p>No approved tickets in processing queue</p>
-                        <p className="text-sm mt-2">Approve tickets to see them here</p>
+                        <p className="text-sm mt-2">
+                          Approve tickets to see them here
+                        </p>
                       </div>
                     )}
                   </div>

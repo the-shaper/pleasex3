@@ -122,8 +122,9 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
     return (
       <section
         ref={ref}
-        className={`space-y-1 ${className} bg-bg pb-4 min-w-[300px] md:w-full outline-1 transition-all ${isActive ? "outline-2 outline-coral" : "outline-gray-subtle"
-          }`}
+        className={`space-y-1 ${className} bg-bg pb-4 min-w-[269px] md:w-full outline-1 transition-all ${
+          isActive ? "outline-2 outline-coral" : "outline-gray-subtle"
+        }`}
       >
         {/* Queue Type Badge */}
         <div className={`flex justify-center ${queueBadgeBg}`}>
@@ -135,11 +136,11 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
           {/* Header Section */}
           <div className="flex gap-2 items-stretch">
             {/* Main Content Area */}
-            <div className={`w-full pt-4`}>
+            <div className={`w-full md:pt-4 pt-2`}>
               {/* Top Row with Status Badge */}
               <div className="flex justify-left">
                 <span
-                  className="text-lg text-text-muted "
+                  className="md:text-lg text-xs text-text-muted uppercase "
                   style={{ fontFamily: "var(--font-body)" }}
                 >
                   This Ticket:
@@ -147,8 +148,8 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
               </div>
 
               {/* Queue Information */}
-              <div className="flex flex-wrap items-center justify-center gap-1 pt-5">
-                <span className="text-8xl text-coral font-mono text-height-tight">
+              <div className="flex flex-wrap pt-2 items-center justify-center md:gap-1 gap-2 md:pt-5 ">
+                <span className="md:text-8xl text-6xl text-coral font-mono text-height-tight">
                   {data.nextTurn}
                 </span>
                 <div
@@ -191,7 +192,16 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
                         : data.tags?.[0]; // fallback to first tag if none match priority
 
                       return highestPriorityTag ? (
-                        <TagBase variant={(highestPriorityTag === "closed" ? "finished" : highestPriorityTag) as Exclude<TaskTag, "closed">}>
+                        <TagBase
+                          variant={
+                            (highestPriorityTag === "closed"
+                              ? "finished"
+                              : highestPriorityTag) as Exclude<
+                              TaskTag,
+                              "closed"
+                            >
+                          }
+                        >
                           {highestPriorityTag.replace("-", " ").toUpperCase()}
                         </TagBase>
                       ) : (
@@ -205,14 +215,14 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
           </div>
 
           {/* Name & Contact Section - Always Visible */}
-          <div className="px-3 pt-6 text-text">
-            <div className="flex flex-col gap-1">
-              <div className="text-coral">NAME</div>
-              <div className="font-semibold min-w-0 break-words whitespace-pre-wrap">
+          <div className="px-3 pt-3 text-text">
+            <div className="flex flex-col md:gap-1">
+              <div className="text-coral text-sm">NAME</div>
+              <div className="text-sm font-semibold min-w-0 break-words whitespace-pre-wrap">
                 {data.name || "—"}
               </div>
-              <div className="text-coral md:block hidden">E-MAIL</div>
-              <div className="font-semibold break-all min-w-0 md:block hidden">
+              <div className="text-coral md:block hidden text-sm">E-MAIL</div>
+              <div className="text-sm font-semibold break-all min-w-0 md:block hidden">
                 {data.email || "—"}
               </div>
             </div>
@@ -220,29 +230,29 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
 
           {/* Expandable Details Section */}
           {isExpanded && (
-            <div className="p-3 text-text space-y-3">
-              <div className="flex flex-col gap-x-6 gap-y-1">
-                <div className="text-coral">TASK</div>
+            <div className="px-3 pt-1 text-text space-y-3">
+              <div className="flex flex-col gap-x-6 md:gap-y-1">
+                <div className="text-coral text-sm">TASK</div>
                 <div className="font-mono text-xs min-w-0 break-words whitespace-pre-wrap mb-2">
                   {data.needText || "—"}
                 </div>
-                <div className="text-coral">LINKS</div>
+                <div className="text-coral text-sm">LINKS</div>
                 <div className="text-xs space-y-1 min-w-0 break-words mb-2">
                   {data.attachments.length > 0
                     ? data.attachments.map((url, i) => (
-                      <a
-                        href={url}
-                        target="_blank"
-                        key={i}
-                        className="text-wrap underline"
-                        title={url}
-                      >
-                        {url}
-                      </a>
-                    ))
+                        <a
+                          href={url}
+                          target="_blank"
+                          key={i}
+                          className="text-wrap underline"
+                          title={url}
+                        >
+                          {url}
+                        </a>
+                      ))
                     : "—"}
                 </div>
-                <div className="text-coral">REFERENCE</div>
+                <div className="text-coral text-sm">REFERENCE</div>
                 <div className="font-mono text-sm min-w-0 break-words mb-2">
                   {data.ref}
                 </div>

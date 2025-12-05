@@ -81,17 +81,19 @@ export default function TicketApprovalCreatorCard({
         <h3 className="text-medium px-3 py-0.5 uppercase">{queueType}</h3>
       </div>
 
-      <div className="space-y-1 px-9">
+      <div className="space-y-1 md:px-9 px-3">
         <div className="flex gap-2 items-stretch">
           <div className="w-full pt-4">
             <div className="flex justify-left">
-              <span className="text-lg text-text-muted">This Ticket:</span>
+              <span className="text-lg text-text-muted uppercase">
+                This Ticket:
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-end gap-6 pt-5">
-          <span className="text-[111px] leading-[77px] text-coral font-mono text-height-tight">
+        <div className="flex flex-wrap items-end md:gap-6 gap-4 md:pt-5 pt-2">
+          <span className="md:text-8xl text-6xl leading-[77px] text-coral font-mono text-height-tight">
             {displayedTicketNumber}
           </span>
           <div className="text-[11px] uppercase text-text text-left max-w-[44%] flex flex-col gap-1">
