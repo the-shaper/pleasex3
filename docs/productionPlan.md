@@ -296,3 +296,9 @@ When ready to add Apple Sign-In:
 1. Go to Stripe Dashboard → Developers → Webhooks → Recent Deliveries
 2. Look for failed delivery attempts
 3. Verify webhook secret matches exactly
+
+---
+
+LAST BUT NOT LEAST
+
+- [ ] **Create "HOW?" section in modal.** Explain Px3 in 3 steps.

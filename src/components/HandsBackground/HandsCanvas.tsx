@@ -21,6 +21,10 @@ export const HandsCanvas: React.FC<HandsCanvasProps> = ({
         right: null,
     });
     const reqRef = useRef<number | null>(null);
+    const lastInputRef = useRef(
+        typeof performance !== "undefined" ? performance.now() : Date.now()
+    );
+    const lastDrawRef = useRef(0);
     const mouseRef = useRef({ y: 0 });
     const isActivatedRef = useRef(false);
 
@@ -92,6 +96,18 @@ export const HandsCanvas: React.FC<HandsCanvasProps> = ({
         if (!canvas) return;
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
+
+        const now =
+            typeof performance !== "undefined" ? performance.now() : Date.now();
+        const isIdle = now - lastInputRef.current > 500;
+        const minFrameInterval = isIdle ? 100 : 16; // ~10fps when idle, ~60fps when active
+
+        // Skip rendering if we are throttling and the last frame was recent
+        if (now - lastDrawRef.current < minFrameInterval) {
+            reqRef.current = requestAnimationFrame(draw);
+            return;
+        }
+        lastDrawRef.current = now;
 
         const currentSettings = settingsRef.current;
         const width = canvas.width;
@@ -212,24 +228,54 @@ export const HandsCanvas: React.FC<HandsCanvasProps> = ({
 
         const handleMouseMove = (e: MouseEvent) => {
             mouseRef.current.y = e.clientY;
+            lastInputRef.current =
+                typeof performance !== "undefined" ? performance.now() : Date.now();
         };
 
         const handleTouchMove = (e: TouchEvent) => {
             mouseRef.current.y = e.touches[0].clientY;
-        }
+            lastInputRef.current =
+                typeof performance !== "undefined" ? performance.now() : Date.now();
+        };
+
+        const startLoop = () => {
+            if (reqRef.current !== null) return;
+            lastDrawRef.current = 0; // force immediate render
+            reqRef.current = requestAnimationFrame(draw);
+        };
+
+        const stopLoop = () => {
+            if (reqRef.current !== null) {
+                cancelAnimationFrame(reqRef.current);
+                reqRef.current = null;
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            const now =
+                typeof performance !== "undefined" ? performance.now() : Date.now();
+            lastInputRef.current = now;
+            if (document.visibilityState === "visible") {
+                startLoop();
+            } else {
+                stopLoop();
+            }
+        };
 
         window.addEventListener("resize", resize);
         window.addEventListener("mousemove", handleMouseMove);
         window.addEventListener("touchmove", handleTouchMove);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
 
         resize();
-        reqRef.current = requestAnimationFrame(draw);
+        startLoop();
 
         return () => {
             window.removeEventListener("resize", resize);
             window.removeEventListener("mousemove", handleMouseMove);
             window.removeEventListener("touchmove", handleTouchMove);
-            if (reqRef.current) cancelAnimationFrame(reqRef.current);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            stopLoop();
         };
     }, [draw, onCanvasReady]);
 

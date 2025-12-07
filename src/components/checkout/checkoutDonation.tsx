@@ -20,7 +20,7 @@ export default function CheckoutDonation({
           isPriority ? "text-gold" : "text-greenlite"
         }`}
       >
-        You chose to donate
+        You are choosing to donate (USD)
       </div>
       <div
         className={`inline-flex items-center gap-1 text-[16px] ${

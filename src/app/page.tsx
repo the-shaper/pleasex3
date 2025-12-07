@@ -48,13 +48,14 @@ export default function Home() {
         >
           {/* Row 1: Signed in + status bar */}
           <div className="flex flex-row items-start justify-center gap-1">
-            <a href={`/${userSlug}`} className="flex items-start justify-center">
+            <a
+              href={`/${userSlug}`}
+              className="flex items-start justify-center"
+            >
               {isLoaded && user && userSlug && (
                 <h6 className="text-xs font-bold text-text uppercase tracking-widest border bg-bg py-2 px-4">
                   signed in as{" "}
-
                   <span className="text-text underline">{userSlug}</span>
-
                 </h6>
               )}
             </a>

@@ -11,15 +11,18 @@ async function initializeCreator(
     displayName: string;
     minPriorityTipCents: number;
     email?: string;
+    identityEmail?: string;
     clerkUserId: string;
   }
 ) {
+  const creatorEmail = args.email ?? args.identityEmail;
+
   // Insert creator
   const creatorId = await ctx.db.insert("creators", {
     slug: args.slug,
     displayName: args.displayName,
     minPriorityTipCents: args.minPriorityTipCents,
-    email: args.email,
+    email: creatorEmail,
     showAutoqueueCard: true,
     clerkUserId: args.clerkUserId,
   });
@@ -113,6 +116,7 @@ export const create = mutation({
 
     const creatorId = await initializeCreator(ctx, {
       ...args,
+      identityEmail: identity.email,
       clerkUserId: identity.subject,
     });
 
@@ -143,11 +147,16 @@ export const upsertBySlug = mutation({
       if (!existing.clerkUserId) {
         await ctx.db.patch(existing._id, { clerkUserId: identity.subject });
       }
+      // Backfill email if missing
+      if (!existing.email && identity.email) {
+        await ctx.db.patch(existing._id, { email: identity.email });
+      }
       return { creatorId: existing._id };
     }
 
     const creatorId = await initializeCreator(ctx, {
       ...args,
+      identityEmail: identity.email,
       clerkUserId: identity.subject,
     });
 
@@ -255,7 +264,9 @@ export const deleteAccountAction = action({
     });
 
     if (!result.clerkUserId) {
-      console.warn("No clerkUserId found for deleted creator, skipping Clerk deletion");
+      console.warn(
+        "No clerkUserId found for deleted creator, skipping Clerk deletion"
+      );
       return;
     }
 
@@ -268,16 +279,21 @@ export const deleteAccountAction = action({
 
     // Assuming standard Clerk Backend API URL or derived from environment
     // We'll use the standard API endpoint
-    const response = await fetch(`https://api.clerk.com/v1/users/${result.clerkUserId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${clerkSecretKey}`,
-      },
-    });
+    const response = await fetch(
+      `https://api.clerk.com/v1/users/${result.clerkUserId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${clerkSecretKey}`,
+        },
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Failed to delete user from Clerk: ${response.status} ${errorText}`);
+      console.error(
+        `Failed to delete user from Clerk: ${response.status} ${errorText}`
+      );
       // We don't throw here because the data is already deleted, just log it.
     } else {
       console.log(`Successfully deleted Clerk user ${result.clerkUserId}`);

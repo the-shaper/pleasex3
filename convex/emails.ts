@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
-import { render } from "@react-email/render";
+import { renderToStaticMarkup } from "react-dom/server";
 import { WelcomeEmail } from "./emails/WelcomeEmail";
 import { TicketReceiptEmail } from "./emails/TicketReceiptEmail";
 import { CreatorAlertEmail } from "./emails/CreatorAlertEmail";
@@ -11,7 +11,8 @@ import { CreatorPendingReminderEmail } from "./emails/CreatorPendingReminderEmai
 import React from "react";
 
 const resend = new Resend(process.env.RESEND_API_KEY || "re_123");
-const SENDER_EMAIL = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+const SENDER_EMAIL =
+  process.env.RESEND_FROM_EMAIL || "no-reply@updates.pleasepleaseplease.me";
 
 // Helper to send email
 async function sendEmail({
@@ -35,7 +36,7 @@ async function sendEmail({
 
   try {
     console.info("[resend] sending", { to, subject, from: SENDER_EMAIL });
-    const html = await render(react);
+    const html = `<!DOCTYPE html>${renderToStaticMarkup(react)}`;
     const { data, error } = await resend.emails.send({
       from: SENDER_EMAIL,
       to,
@@ -44,7 +45,7 @@ async function sendEmail({
     });
 
     if (error) {
-      console.error("Error sending email:", error);
+      console.error("[resend] error sending email:", error);
       throw new Error(
         `Failed to send email: ${error.message || JSON.stringify(error)}`
       );
@@ -58,13 +59,13 @@ async function sendEmail({
         "You can only send testing emails to your own email address"
       )
     ) {
-      console.warn(
-        "Resend Dev Mode Restriction: Email not sent because recipient is not verified.",
-        to
-      );
+      console.warn("[resend] dev-mode restriction: recipient not verified", {
+        to,
+        subject,
+      });
       return;
     }
-    console.error("Unexpected error sending email:", err);
+    console.error("[resend] unexpected error sending email:", err);
     throw err;
   }
 }

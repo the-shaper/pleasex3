@@ -118,7 +118,7 @@ export default function QueueCard({
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 {isPriority
-                  ? `$${(minPriorityTipCents / 100).toFixed(0)} USD`
+                  ? `FROM $${(minPriorityTipCents / 100).toFixed(0)} USD`
                   : "GRATIS"}
               </span>
               <span
@@ -242,7 +242,9 @@ export default function QueueCard({
               <span>&gt;</span>
             </Link>
           ) : (
-            <div className="text-sm text-center  uppercase bg-ielo py-2">This queue is currently closed</div>
+            <div className="text-sm text-center  uppercase bg-ielo py-2">
+              This queue is currently closed
+            </div>
           )}
         </div>
       </div>

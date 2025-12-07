@@ -4,16 +4,21 @@ import ReactMarkdown from "react-markdown";
 import { ButtonBase } from "./general/buttonBase";
 
 export interface ReadMeModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    className?: string;
-    title?: string;
+  isOpen: boolean;
+  onClose: () => void;
+  className?: string;
+  title?: string;
 }
 
-export function ReadMeModal({ isOpen, onClose, className = "", title = "Cheatsheet" }: ReadMeModalProps) {
-    if (!isOpen) return null;
+export function ReadMeModal({
+  isOpen,
+  onClose,
+  className = "",
+  title = "Cheatsheet",
+}: ReadMeModalProps) {
+  if (!isOpen) return null;
 
-    const markdownContent = `# PLEASE PLEASE PLEASE!
+  const markdownContent = `# PLEASE PLEASE PLEASE!
 
 ## KEY TERMS:
 
@@ -75,7 +80,7 @@ This is not a shill for Stripe nor are we compensated in any way. Eventually we 
 
 ##### COMMISSIONS
 
-We take a $3 per every $50 you make, and your payouts are scheduled at the end of every month.
+We take a $3.33 per every $50 you make, and your payouts are scheduled at the end of every month.
 
 **Important:** Stripe charges separate fees per transaction and the specific amount is dependent on the account's region. 
 
@@ -84,103 +89,95 @@ We take a $3 per every $50 you make, and your payouts are scheduled at the end o
 This is a proof of concept and we are looking for feedback. Please please please let us know if you have any issues or suggestions drop us a line to create@twilightfringe.com with the subject 'PPP' or click the "contact us" button.
 `;
 
-    return (
-        <div
-            className="fixed inset-0 bg-text/50 flex items-center justify-center z-50 p-4"
-            onClick={onClose}
-        >
-            <div
-                className={`bg-bg border-2 border-text max-w-3xl w-full max-h-[90vh] flex flex-col ${className}`}
-                onClick={(e) => e.stopPropagation()}
+  return (
+    <div
+      className="fixed inset-0 bg-text/50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className={`bg-bg border-1 border-text-muted max-w-3xl w-full max-h-[90vh] flex flex-col ${className}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex border-b-1 border-text-muted bg-gold">
+          <div className="flex flex-row py-4 px-6 justify-between w-full">
+            <h2 className="text-lg font-bold uppercase text-text">{title}</h2>
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="top-4 right-4 w-8 h-8 flex items-center justify-center bg-gray-subtle hover:bg-text hover:text-bg transition-colors text-2xl leading-none"
+              aria-label="Close modal"
             >
-                {/* Header */}
-                <div className="flex border-b-2 border-text bg-gold">
-                    <div className="flex flex-row py-4 px-6 justify-between w-full">
-                        <h2 className="text-lg font-bold uppercase text-text">
-                            {title}
-                        </h2>
-                        {/* Close button */}
-                        <button
-                            onClick={onClose}
-                            className="top-4 right-4 w-8 h-8 flex items-center justify-center bg-gray-subtle hover:bg-text hover:text-bg transition-colors text-2xl leading-none"
-                            aria-label="Close modal"
-                        >
-                            ×
-                        </button>
-                    </div>
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto p-8 md:p-12 relative custom-scrollbar">
-
-
-                    {/* Markdown Content */}
-                    <div className="readme-content font-spaceMono text-sm text-text leading-relaxed">
-                        <ReactMarkdown
-                            components={{
-                                h1: ({ children }) => (
-                                    <h1 className="text-3xl md:text-4xl font-bold text-text mb-8 tracking-tighter">
-                                        {children}
-                                    </h1>
-                                ),
-                                h2: ({ children }) => (
-                                    <h2 className="text-2xl md:text-3xl font-bold text-text mt-8 mb-4 tracking-tight">
-                                        {children}
-                                    </h2>
-                                ),
-                                h3: ({ children }) => (
-                                    <h3 className="text-xl md:text-2xl font-bold text-text mt-6 mb-3">
-                                        {children}
-                                    </h3>
-                                ),
-                                h4: ({ children }) => (
-                                    <h4 className="text-lg md:text-xl font-bold text-text mt-4 mb-2">
-                                        {children}
-                                    </h4>
-                                ),
-                                h5: ({ children }) => (
-                                    <h5 className="text-base md:text-lg font-bold text-text mt-3 mb-2">
-                                        {children}
-                                    </h5>
-                                ),
-                                p: ({ children }) => (
-                                    <p className="mb-4 leading-relaxed">
-                                        {children}
-                                    </p>
-                                ),
-                                strong: ({ children }) => (
-                                    <strong className="font-bold text-coral">
-                                        {children}
-                                    </strong>
-                                ),
-                                a: ({ href, children }) => (
-                                    <a
-                                        href={href}
-                                        className="text-blue hover:text-blue-2 underline"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        {children}
-                                    </a>
-                                ),
-                            }}
-                        >
-                            {markdownContent}
-                        </ReactMarkdown>
-                    </div>
-
-                    {/* Contact Button */}
-                    <div className="flex flex-col gap-3 mt-8">
-                        <ButtonBase
-                            variant="neutral"
-                            className="w-full bg-blue hover:bg-blue-2 hover:font-bold"
-                            href="mailto:create@twilightfringe.com?subject=PPP"
-                        >
-                            CONTACT US
-                        </ButtonBase>
-                    </div>
-                </div>
-            </div>
+              ×
+            </button>
+          </div>
         </div>
-    );
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-8 md:p-12 relative custom-scrollbar">
+          {/* Markdown Content */}
+          <div className="readme-content font-spaceMono text-sm text-text leading-relaxed">
+            <ReactMarkdown
+              components={{
+                h1: ({ children }) => (
+                  <h1 className="text-3xl md:text-4xl font-bold text-text mb-8 tracking-tighter">
+                    {children}
+                  </h1>
+                ),
+                h2: ({ children }) => (
+                  <h2 className="text-2xl md:text-3xl font-bold text-text mt-8 mb-4 tracking-tight">
+                    {children}
+                  </h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 className="text-xl md:text-2xl font-bold text-text mt-6 mb-3">
+                    {children}
+                  </h3>
+                ),
+                h4: ({ children }) => (
+                  <h4 className="text-lg md:text-xl font-bold text-text mt-4 mb-2">
+                    {children}
+                  </h4>
+                ),
+                h5: ({ children }) => (
+                  <h5 className="text-base md:text-lg font-bold text-text mt-3 mb-2">
+                    {children}
+                  </h5>
+                ),
+                p: ({ children }) => (
+                  <p className="mb-4 leading-relaxed">{children}</p>
+                ),
+                strong: ({ children }) => (
+                  <strong className="font-bold text-coral">{children}</strong>
+                ),
+                a: ({ href, children }) => (
+                  <a
+                    href={href}
+                    className="text-blue hover:text-blue-2 underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {children}
+                  </a>
+                ),
+              }}
+            >
+              {markdownContent}
+            </ReactMarkdown>
+          </div>
+
+          {/* Contact Button */}
+          <div className="flex flex-col gap-3 mt-8">
+            <ButtonBase
+              variant="neutral"
+              className="w-full bg-blue hover:bg-blue-2 hover:font-bold"
+              href="mailto:create@twilightfringe.com?subject=PPP"
+            >
+              CONTACT US
+            </ButtonBase>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

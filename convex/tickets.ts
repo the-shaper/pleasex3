@@ -26,6 +26,11 @@ async function scheduleTicketEmails(ctx: any, ticket: any) {
       .unique();
 
     if (creator && creator.email) {
+      console.info("[email] scheduling creator alert", {
+        creator: creator.slug,
+        email: creator.email,
+        ticketRef: ticket.ref,
+      });
       await ctx.scheduler.runAfter(0, internal.emails.sendCreatorAlert, {
         email: creator.email,
         creatorName: creator.displayName || ticket.creatorSlug,
@@ -33,6 +38,13 @@ async function scheduleTicketEmails(ctx: any, ticket: any) {
         ticketType: ticket.queueKind,
         tipAmount: ticket.tipCents ? ticket.tipCents / 100 : 0,
         dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
+      });
+    } else {
+      console.warn("[email] creator alert skipped: missing creator or email", {
+        creatorSlug: ticket.creatorSlug,
+        creatorFound: Boolean(creator),
+        hasEmail: Boolean(creator?.email),
+        ticketRef: ticket.ref,
       });
     }
   }
