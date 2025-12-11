@@ -25,7 +25,9 @@ export function SidebarLink({
       href={href}
       onClick={onClick}
       className={`px-6 py-2 uppercase text-xs w-full text-left tracking-wider ${
-        computedIsActive ? "bg-coral text-text-bright" : "bg-gray-subtle"
+        computedIsActive
+          ? "bg-coral text-text-bright "
+          : "bg-gray-subtle hover:bg-blue-2"
       }`}
     >
       {label}

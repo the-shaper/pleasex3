@@ -148,7 +148,7 @@ export function QueueSettings({
 
         {/* Stripe Connection Warning */}
         {!hasStripeAccount && (
-          <div className="bg-gold border border-blue-2 p-4 mb-4">
+          <div className="bg-gold p-4 mb-4">
             <p className="text-sm font-bold mb-2 uppercase">
               Monetize your queues, connect Stripe.
             </p>
@@ -378,7 +378,7 @@ export function QueueSettings({
                       }
                     }}
                     disabled={!hasStripeAccount}
-                    className={`px-6 py-2 text-[14px] font-bold uppercase ${
+                    className={`px-4 py-2 text-[14px] font-bold uppercase ${
                       priorityEnabled
                         ? "bg-coral text-text"
                         : "bg-gray-300 text-text-muted"
@@ -398,11 +398,11 @@ export function QueueSettings({
                       }
                     }}
                     disabled={!hasStripeAccount}
-                    className={`px-6 py-2 text-[14px] font-bold uppercase ${
+                    className={`px-4 py-2 text-[14px] font-bold uppercase ${
                       !priorityEnabled
                         ? "bg-text text-coral"
                         : "bg-gray-200 text-text-muted"
-                    } ${!hasStripeAccount ? "opacity-50 cursor-not-allowed" : ""}`}
+                    } ${!hasStripeAccount ? "" : ""}`}
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     OFF

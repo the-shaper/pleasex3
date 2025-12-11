@@ -80,9 +80,11 @@ export function CellComponent({
   return (
     // UPDATED: Make entire row clickable; remove button column
     <div
-      className={`grid gap-4 items-start px-4 py-2 border-b border-gray-subtle cursor-pointer hover:bg-gray-subtle/50 transition-colors whitespace-nowrap ${className} ${isClickable ? "focus:bg-gray-subtle" : ""
-        } ${isActive ? "bg-gray-subtle" : "" // NEW: Highlight when active from ScrollTrigger
-        }`}
+      className={`grid gap-4 items-start px-4 py-2 border-b border-gray-subtle cursor-pointer hover:bg-blue-2 transition-colors whitespace-nowrap ${className} ${
+        isClickable ? "focus:bg-gray-subtle" : ""
+      } ${
+        isActive ? "bg-gray-subtle" : "" // NEW: Highlight when active from ScrollTrigger
+      }`}
       style={{
         gridTemplateColumns: getGridColumns(variant),
       }}

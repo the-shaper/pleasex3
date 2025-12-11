@@ -91,7 +91,7 @@ This is a proof of concept and we are looking for feedback. Please please please
 
   return (
     <div
-      className="fixed inset-0 bg-text/50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/50  backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <div

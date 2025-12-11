@@ -138,7 +138,7 @@ export default function QueueCard({
                 {nextTicketNumber ?? data.nextTicketNumber ?? "—"}
               </span>
               <div
-                className="flex-1 ml-[-6px] mr-2 text-[11px] uppercase text-text text-left max-w-[44%]"
+                className="flex-1 ml-[-6px] mr-2 text-[12px] uppercase text-text text-left max-w-[44%]"
                 style={{ fontFamily: "var(--font-body)" }}
               >
                 <p>
