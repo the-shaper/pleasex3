@@ -7,6 +7,31 @@ import type { Ticket } from "@/lib/types";
 
 const dataProvider = new ConvexDataProvider();
 
+const formatEtaDays = (etaDays: number | null | undefined): string => {
+  if (!etaDays || etaDays <= 0) return "—";
+  if (etaDays < 1) return "<1 day";
+  if (etaDays === 1) return "1 day";
+  return `${etaDays} days`;
+};
+
+const formatEtaDate = (etaDays: number | null | undefined): string => {
+  if (!etaDays || etaDays <= 0) return "—";
+  const ms = etaDays * 24 * 60 * 60 * 1000;
+  const d = new Date(Date.now() + ms);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${mm}.${dd}.${yy}`;
+};
+
+const formatDottedDate = (ms: number): string => {
+  const d = new Date(ms);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${mm}.${dd}.${yy}`;
+};
+
 export default function StatusPage({
   params,
 }: {
@@ -15,6 +40,11 @@ export default function StatusPage({
   const { ref } = use(params);
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [queueData, setQueueData] = useState<{
+    etaDays: number | null;
+    avgDaysPerTicket?: number;
+    activeCount?: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +65,37 @@ export default function StatusPage({
       fetchTicket();
     }
   }, [ref]);
+
+  useEffect(() => {
+    if (!ticket) return;
+
+    let cancelled = false;
+    const fetchQueue = async () => {
+      try {
+        const snapshot = await dataProvider.getQueueSnapshot(
+          ticket.creatorSlug
+        );
+        const queueInfo =
+          snapshot?.[ticket.queueKind as "personal" | "priority"];
+
+        if (!cancelled) {
+          setQueueData({
+            etaDays: queueInfo?.etaDays ?? null,
+            avgDaysPerTicket: queueInfo?.avgDaysPerTicket,
+            activeCount: queueInfo?.activeCount,
+          });
+        }
+      } catch (queueErr) {
+        console.error("Error fetching queue data:", queueErr);
+        if (!cancelled) setQueueData(null);
+      }
+    };
+
+    fetchQueue();
+    return () => {
+      cancelled = true;
+    };
+  }, [ticket]);
 
   const formatEtaMins = (mins: number): string => {
     if (!mins || mins <= 0) return "—";
@@ -91,12 +152,12 @@ export default function StatusPage({
     return (
       <div className="max-w-3xl mx-auto p-6">
         <h1
-          className="text-2xl font-bold mb-4"
+          className="text-2xl font-bold mb-4 uppercase"
           style={{ fontFamily: "var(--font-heading)" }}
         >
           Ticket Status
         </h1>
-        <div className="bg-red-50 border border-red-200 rounded p-4">
+        <div className="bg-red-50 border border-red-200  p-4">
           <p className="text-red-800">{error || "Ticket not found"}</p>
           <p className="mt-2 text-sm text-red-600">
             Reference: <span className="font-mono">{ref}</span>
@@ -130,11 +191,14 @@ export default function StatusPage({
     referenceNumber: ticket.ref,
   };
 
+  const isPending = ticket.status === "open";
+  const pendingReviewerName = ticket.creatorSlug || "This creator";
+
   return (
     <div className="max-w-3xl mx-auto p-6">
       <div className="mb-6">
         <h1
-          className="text-2xl font-bold mb-2"
+          className="text-2xl font-bold mb-2 uppercase"
           style={{ fontFamily: "var(--font-heading)" }}
         >
           Ticket Status
@@ -145,19 +209,52 @@ export default function StatusPage({
             <span className="font-mono font-semibold">{ticket.ref}</span>
           </p>
           <div
-            className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+            className={`px-3 py-1  text-sm font-medium ${getStatusColor(
               ticket.status
             )} bg-opacity-10`}
           >
             {getStatusText(ticket.status)}
           </div>
         </div>
+        {isPending && (
+          <p className="mt-3  bg-text px-3 py-2 text-sm text-text-bright uppercase">
+            {pendingReviewerName} hasn't yet reviewed your request. We will
+            notify you via e-mail once this has been done.
+          </p>
+        )}
         <p className="text-sm text-gray-500 mt-1">
-          Submitted: {new Date(ticket.createdAt).toLocaleString()}
+          Submitted: {formatDottedDate(ticket.createdAt)}
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="p-6 flex flex-col items-center">
+        {ticket.status === "approved" && queueData && (
+          <div className="bg-text border border-gray-200  p-4 mb-6">
+            <h3 className="text-sm font-semibold text-text-bright mb-3 uppercase">
+              Estimated Delivery
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-text-bright">
+              <div>
+                <div className="font-medium text-text-bright ">
+                  Average Time / Favor
+                </div>
+                <div className="font-mono">
+                  {formatEtaDays(queueData.avgDaysPerTicket)}
+                </div>
+              </div>
+              <div>
+                <div className="font-medium">Estimated Delivery</div>
+                <div className="font-mono">
+                  {formatEtaDate(queueData.etaDays)}
+                </div>
+              </div>
+              <div>
+                <div className="font-medium">Queue Position</div>
+                <div className="font-mono">#{ticket.queueNumber || "—"}</div>
+              </div>
+            </div>
+          </div>
+        )}
         <TicketApprovalCard
           form={ticketData.form}
           isPriority={ticketData.isPriority}
@@ -166,7 +263,7 @@ export default function StatusPage({
           minPriorityTipCents={ticketData.minPriorityTipCents}
           queueMetrics={ticketData.queueMetrics}
           formatEtaMins={formatEtaMins}
-          onChange={() => { }}
+          onChange={() => {}}
           userName={ticketData.userName}
           referenceNumber={ticketData.referenceNumber}
           approvedContext={ticket.status === "approved"}

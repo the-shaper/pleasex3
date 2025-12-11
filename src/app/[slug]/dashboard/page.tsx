@@ -113,6 +113,7 @@ export default function DashboardPage() {
 
   const [personalEnabled, setPersonalEnabled] = useState(false);
   const [priorityEnabled, setPriorityEnabled] = useState(false);
+  const [personalTippingEnabled, setPersonalTippingEnabled] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskCardData | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -258,6 +259,7 @@ export default function DashboardPage() {
     if (queueSnapshot) {
       setPersonalEnabled(queueSnapshot.personal.enabled);
       setPriorityEnabled(queueSnapshot.priority.enabled);
+      setPersonalTippingEnabled(queueSnapshot.personal.tippingEnabled ?? false);
     }
   }, [queueSnapshot]);
 
@@ -830,10 +832,14 @@ export default function DashboardPage() {
                 setPersonalEnabled={setPersonalEnabled}
                 priorityEnabled={priorityEnabled}
                 setPriorityEnabled={setPriorityEnabled}
+                personalTippingEnabled={personalTippingEnabled}
+                setPersonalTippingEnabled={setPersonalTippingEnabled}
                 minPriorityTipCents={
                   dashboardOverview?.creator?.minPriorityTipCents
                 }
-                hasStripeAccount={!!creator?.stripeAccountId}
+                hasStripeAccount={
+                  !!creator?.stripeAccountId && !!creator?.payoutEnabled
+                }
                 onNavigateToEarnings={() => {
                   const url = new URL(window.location.href);
                   url.searchParams.set("tab", "earnings");

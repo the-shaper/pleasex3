@@ -88,6 +88,7 @@ export const toggleEnabled = mutation({
         etaDays: 0,
         activeCount: 0,
         enabled: args.kind === "personal",
+        tippingEnabled: args.kind === "personal" ? false : undefined,
       });
       queue = await ctx.db
         .query("queues")
@@ -124,7 +125,7 @@ export const updateQueueSettings = mutation({
       .unique();
 
     if (!queue) {
-      // Create if missing (similar to toggleEnabled logic, but maybe safer to just error if it should exist? 
+      // Create if missing (similar to toggleEnabled logic, but maybe safer to just error if it should exist?
       // For now, let's create it to be safe as settings might be accessed before toggle)
       const id = await ctx.db.insert("queues", {
         creatorSlug: args.creatorSlug,
@@ -135,6 +136,7 @@ export const updateQueueSettings = mutation({
         activeCount: 0,
         enabled: args.kind === "personal",
         avgDaysPerTicket: args.avgDaysPerTicket,
+        tippingEnabled: args.kind === "personal" ? false : undefined,
       });
       return { success: true };
     }
@@ -144,6 +146,63 @@ export const updateQueueSettings = mutation({
     });
 
     return { success: true };
+  },
+});
+
+export const setPersonalTippingEnabled = mutation({
+  args: {
+    creatorSlug: v.string(),
+    enabled: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await requireCreatorOwnership(ctx, args.creatorSlug);
+
+    // Require Stripe connection and completed onboarding to enable tipping.
+    const creator = await ctx.db
+      .query("creators")
+      .withIndex("by_slug", (q) => q.eq("slug", args.creatorSlug))
+      .unique();
+
+    if (!creator) {
+      throw new Error(`Creator not found: ${args.creatorSlug}`);
+    }
+
+    const hasStripe = !!creator.stripeAccountId;
+    const payoutsEnabled = !!creator.payoutEnabled;
+
+    if (args.enabled && (!hasStripe || !payoutsEnabled)) {
+      throw new Error(
+        "Stripe onboarding must be completed before enabling tipping."
+      );
+    }
+
+    let personalQueue = await ctx.db
+      .query("queues")
+      .withIndex("by_creator_kind", (q) =>
+        q.eq("creatorSlug", args.creatorSlug).eq("kind", "personal")
+      )
+      .unique();
+
+    if (!personalQueue) {
+      const id = await ctx.db.insert("queues", {
+        creatorSlug: args.creatorSlug,
+        kind: "personal",
+        activeTurn: 0,
+        nextTurn: 1,
+        etaDays: 0,
+        activeCount: 0,
+        enabled: true,
+        avgDaysPerTicket: 1,
+        tippingEnabled: args.enabled,
+      });
+      personalQueue = await ctx.db.get(id);
+    } else {
+      await ctx.db.patch(personalQueue._id, {
+        tippingEnabled: args.enabled,
+      });
+    }
+
+    return { success: true, tippingEnabled: args.enabled };
   },
 });
 
@@ -173,6 +232,7 @@ export const ensureQueueExists = mutation({
         activeCount: 0,
         enabled: args.kind === "personal",
         avgDaysPerTicket: 1, // Default 1 day
+        tippingEnabled: args.kind === "personal" ? false : undefined,
       });
     }
   },

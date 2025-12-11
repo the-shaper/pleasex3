@@ -35,6 +35,7 @@ export interface QueueMetrics {
   nextTicketNumber?: number;
   etaDays?: number | null;
   avgDaysPerTicket?: number;
+  tippingEnabled?: boolean;
 }
 
 export interface QueueSnapshot {
@@ -147,7 +148,10 @@ export function getGlobalScore(
 ): number {
   const isPriority = queueKind === "priority";
   const batchSize = pattern.priority + pattern.personal;
-  const batchIndex = Math.ceil(queueNumber / (isPriority ? pattern.priority : pattern.personal)) - 1;
+  const batchIndex =
+    Math.ceil(
+      queueNumber / (isPriority ? pattern.priority : pattern.personal)
+    ) - 1;
 
   // Base score for the batch
   const batchBaseScore = batchIndex * batchSize;
@@ -186,7 +190,10 @@ export function computeSchedule(
   // Sort remaining tickets by Global Score
   const sortedRemaining = remaining.sort((a, b) => {
     // If queueNumber is missing, fallback to creation time (shouldn't happen for approved)
-    if (typeof a.queueNumber !== 'number' || typeof b.queueNumber !== 'number') {
+    if (
+      typeof a.queueNumber !== "number" ||
+      typeof b.queueNumber !== "number"
+    ) {
       return a.createdAt - b.createdAt;
     }
 
@@ -278,7 +285,10 @@ export async function computeTagsForCreator(
     // Preserve awaiting-feedback state - don't overwrite if already set
     if (currentAwaitingFeedback && nextTag !== "awaiting-feedback") {
       // Skip updating this ticket - keep its awaiting-feedback tag
-      console.log("[computeTagsForCreator] preserving awaiting-feedback for", t.ref);
+      console.log(
+        "[computeTagsForCreator] preserving awaiting-feedback for",
+        t.ref
+      );
       continue;
     }
 
@@ -292,7 +302,7 @@ export async function computeTagsForCreator(
     console.log("[computeTagsForCreator] updating", t.ref, {
       currentTags: t.tags,
       nextTag,
-      finalTags: tags
+      finalTags: tags,
     });
 
     await ctx.db.patch(t._id as any, {
@@ -359,11 +369,13 @@ export async function getQueueSnapshot(
     // Determine settings based on kind
     let avgDays = 1; // Default 1 day
     let enabled = true;
+    let tippingEnabled = false;
 
     if (kind === "personal") {
       if (personalQueue) {
         avgDays = personalQueue.avgDaysPerTicket ?? 1;
         enabled = personalQueue.enabled;
+        tippingEnabled = personalQueue.tippingEnabled ?? false;
       } else {
         // Default for personal if missing
         enabled = true;
@@ -387,6 +399,7 @@ export async function getQueueSnapshot(
       nextTicketNumber,
       etaDays,
       avgDaysPerTicket: avgDays,
+      tippingEnabled,
     };
 
     console.log("[ticketEngine] getQueueSnapshot metrics", creatorSlug, {
@@ -444,8 +457,6 @@ export async function getActiveTicketPositions(
   const ordered = computeSchedule(tickets, pattern);
   return computeTagsForSchedule(ordered);
 }
-
-
 
 export async function getTicketPosition(
   ctx: QueryCtx,

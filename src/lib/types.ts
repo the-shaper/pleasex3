@@ -34,6 +34,7 @@ export interface QueueMetrics {
   nextTicketNumber?: number;
   etaDays?: number | null;
   avgDaysPerTicket?: number;
+  tippingEnabled?: boolean;
 }
 
 // Engine-aligned snapshot: per-queue and general

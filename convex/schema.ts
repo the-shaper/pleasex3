@@ -25,6 +25,7 @@ export default defineSchema({
     activeCount: v.number(),
     enabled: v.boolean(),
     avgDaysPerTicket: v.optional(v.number()),
+    tippingEnabled: v.optional(v.boolean()),
   }).index("by_creator_kind", ["creatorSlug", "kind"]),
 
   tickets: defineTable({

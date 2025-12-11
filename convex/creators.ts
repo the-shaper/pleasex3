@@ -37,6 +37,7 @@ async function initializeCreator(
     activeCount: 0,
     enabled: true,
     avgDaysPerTicket: 1,
+    tippingEnabled: false,
   });
 
   // Insert priority queue (enabled by default)

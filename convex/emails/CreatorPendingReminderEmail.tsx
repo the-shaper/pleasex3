@@ -25,7 +25,7 @@ export const CreatorPendingReminderEmail = ({
   pendingCount = 1,
   oldestTicketRef = "REF-123",
   daysOld = 3,
-  dashboardUrl = "https://example.com/dashboard",
+  dashboardUrl = "https://pleasepleaseplease.me/sign-in",
 }: CreatorPendingReminderEmailProps) => (
   <Html>
     <Head />

@@ -8,7 +8,9 @@ import { api } from "@convex/_generated/api";
 import { ConvexHttpClient } from "convex/browser";
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || "";
-const formattedUrl = convexUrl.startsWith("http") ? convexUrl : `https://${convexUrl}`;
+const formattedUrl = convexUrl.startsWith("http")
+  ? convexUrl
+  : `https://${convexUrl}`;
 const httpClient = new ConvexHttpClient(formattedUrl);
 
 type QueuePayload = {
@@ -35,11 +37,13 @@ export default function SubmitPage() {
         const [snapshot, creatorInfo, nextNumbers] = await Promise.all([
           dataProvider.getQueueSnapshot(slug),
           dataProvider.getCreatorInfo?.(slug) ||
-          Promise.resolve({
-            displayName: slug,
-            minPriorityTipCents: 1500,
+            Promise.resolve({
+              displayName: slug,
+              minPriorityTipCents: 1500,
+            }),
+          httpClient.query(api.dashboard.getNextTicketNumbers, {
+            creatorSlug: slug,
           }),
-          httpClient.query(api.dashboard.getNextTicketNumbers, { creatorSlug: slug }),
         ]);
 
         const creator = {
@@ -68,6 +72,7 @@ export default function SubmitPage() {
             etaMins: 0,
             activeCount: 0,
             enabled: true,
+            tippingEnabled: false,
           },
           priority: {
             activeTurn: 0,

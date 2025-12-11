@@ -7,7 +7,12 @@ import { defaultSettings } from "./config";
 import { HandsSettings } from "./types";
 import { ShaderPipeline } from "./shaders/ShaderPipeline";
 import { ShaderControls } from "./shaders/ShaderControls";
-import { ShaderSettings, defaultShaderSettings } from "./shaders/types";
+import {
+  AdjustmentsSettings,
+  ShaderSettings,
+  defaultShaderSettings,
+} from "./shaders/types";
+import { checkDeviceCapability, DeviceTier } from "./capability";
 
 interface HandsBackgroundProps {
   initialSettings?: HandsSettings;
@@ -31,10 +36,26 @@ export const HandsBackground: React.FC<HandsBackgroundProps> = ({
   const [sourceCanvas, setSourceCanvas] = useState<HTMLCanvasElement | null>(
     null
   );
+  const [tier, setTier] = useState<DeviceTier>("low");
 
   // Callback when HandsCanvas is ready
   const handleCanvasReady = useCallback((canvas: HTMLCanvasElement) => {
     setSourceCanvas(canvas);
+  }, []);
+
+  // Capability gate (default to low; upgrade to high when safe; mark unsupported to skip GL)
+  React.useEffect(() => {
+    let mounted = true;
+    checkDeviceCapability()
+      .then((result) => {
+        if (mounted) setTier(result);
+      })
+      .catch(() => {
+        if (mounted) setTier("low");
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Load hands settings from localStorage on mount
@@ -76,6 +97,35 @@ export const HandsBackground: React.FC<HandsBackgroundProps> = ({
     );
   }, [shaderSettings]);
 
+  // Derive gated shader settings for low-tier devices
+  const safeShaderSettings = React.useMemo(() => {
+    if (tier === "high") return shaderSettings;
+
+    const gatedLayers = shaderSettings.layers.map((layer) => {
+      if (layer.type === "halftone") {
+        return { ...layer, enabled: false };
+      }
+      if (layer.type === "adjustments") {
+        const s = layer.settings as AdjustmentsSettings;
+        return { ...layer, settings: { ...s, blur: 0 } };
+      }
+      return layer;
+    });
+
+    return { ...shaderSettings, layers: gatedLayers };
+  }, [shaderSettings, tier]);
+
+  // Render
+  if (tier === "unsupported") {
+    return (
+      <div
+        className={className}
+        aria-hidden
+        style={{ background: "#e8f6ee" }}
+      />
+    );
+  }
+
   return (
     <>
       {/* Source canvas - renders hands animation (hidden, used as texture) */}
@@ -88,7 +138,7 @@ export const HandsBackground: React.FC<HandsBackgroundProps> = ({
       {/* Shader output canvas - visible, applies post-processing effects */}
       <ShaderPipeline
         sourceCanvas={sourceCanvas}
-        settings={shaderSettings}
+        settings={safeShaderSettings}
         className={className}
       />
 

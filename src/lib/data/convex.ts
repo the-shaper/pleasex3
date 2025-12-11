@@ -5,7 +5,9 @@ import type { DataProvider } from "@/lib/data";
 import type { CellComponentData } from "@/components/dashboard/table/cellComponent";
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || "";
-const formattedUrl = convexUrl.startsWith("http") ? convexUrl : `https://${convexUrl}`;
+const formattedUrl = convexUrl.startsWith("http")
+  ? convexUrl
+  : `https://${convexUrl}`;
 const client = new ConvexHttpClient(formattedUrl);
 
 export class ConvexDataProvider implements DataProvider {
@@ -27,6 +29,7 @@ export class ConvexDataProvider implements DataProvider {
           etaMins: 0,
           activeCount: 0,
           enabled: false,
+          tippingEnabled: false,
         },
         priority: {
           activeTurn: 0,
@@ -62,6 +65,7 @@ export class ConvexDataProvider implements DataProvider {
           etaMins: 0,
           activeCount: 0,
           enabled: false,
+          tippingEnabled: false,
         },
         priority: {
           activeTurn: 0,
@@ -129,7 +133,10 @@ export class ConvexDataProvider implements DataProvider {
     // Filter out general queue tickets for table display
     const filteredInput = {
       ...input,
-      queueKind: input.queueKind === "general" ? "personal" : input.queueKind as "personal" | "priority"
+      queueKind:
+        input.queueKind === "general"
+          ? "personal"
+          : (input.queueKind as "personal" | "priority"),
     };
     const res = await client.mutation(api.tickets.create, filteredInput);
     return res as { ref: string };

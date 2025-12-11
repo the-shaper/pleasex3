@@ -15,6 +15,7 @@ type QueuePayload = {
     etaMins: number | null;
     activeCount: number;
     enabled: boolean;
+    tippingEnabled?: boolean;
   };
   priority: {
     activeTurn: number | null;
@@ -104,13 +105,17 @@ export default function SubmitClient({
   const [queueMetrics, setQueueMetrics] = useState<QueuePayload | null>(
     initialQueue
   );
+  const personalTippingEnabled =
+    queueMetrics?.personal?.tippingEnabled ?? false;
   const tipDollarsInt = useMemo(
     () => Math.round(form.priorityTipCents / 100),
     [form.priorityTipCents]
   );
+  const tippingVisible = queue === "priority" || personalTippingEnabled;
 
   // Auto-switch queue based on tip threshold in both directions
   useEffect(() => {
+    if (queue === "personal" && !personalTippingEnabled) return;
     if (minPriorityTipCents <= 0) return;
     if (
       form.priorityTipCents >= minPriorityTipCents &&
@@ -124,7 +129,13 @@ export default function SubmitClient({
     ) {
       setQueue("personal");
     }
-  }, [form.priorityTipCents, minPriorityTipCents, queue, priorityEnabled]);
+  }, [
+    form.priorityTipCents,
+    minPriorityTipCents,
+    queue,
+    priorityEnabled,
+    personalTippingEnabled,
+  ]);
 
   // Remember the last personal tip when on personal tab
   useEffect(() => {
@@ -132,6 +143,18 @@ export default function SubmitClient({
       setLastPersonalTipCents(form.priorityTipCents);
     }
   }, [queue, form.priorityTipCents]);
+
+  // Zero out tips when personal tipping is disabled
+  useEffect(() => {
+    if (
+      queue === "personal" &&
+      !personalTippingEnabled &&
+      form.priorityTipCents !== 0
+    ) {
+      setForm((f) => ({ ...f, priorityTipCents: 0 }));
+      setLastPersonalTipCents(0);
+    }
+  }, [queue, personalTippingEnabled, form.priorityTipCents]);
 
   function onChange<K extends keyof typeof form>(
     key: K,
@@ -432,13 +455,15 @@ export default function SubmitClient({
                 )}
               </div>
             </div>
-            <CheckoutDonation
-              isPriority={isPriority}
-              tipDollarsInt={tipDollarsInt}
-              minPriorityTipCents={minPriorityTipCents}
-              priorityTipCents={form.priorityTipCents}
-              onChangeTip={(cents) => onChange("priorityTipCents", cents)}
-            />
+            {tippingVisible && (
+              <CheckoutDonation
+                isPriority={isPriority}
+                tipDollarsInt={tipDollarsInt}
+                minPriorityTipCents={minPriorityTipCents}
+                priorityTipCents={form.priorityTipCents}
+                onChangeTip={(cents) => onChange("priorityTipCents", cents)}
+              />
+            )}
             <div className="flex flex-col gap-2 px-6 py-3 text-sm justify-center">
               <p className="text-xs text-center opacity-70">
                 By submitting, you agree to the PLEASE PLEASE PLEASE!{" "}

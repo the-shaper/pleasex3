@@ -5,12 +5,17 @@ import { useState, useEffect } from "react";
 
 interface QueueSettingsProps {
   queueSnapshot: QueueSnapshot | null;
-  toggleQueue: (args: { creatorSlug: string; kind: "personal" | "priority" }) => Promise<{ enabled: boolean }>;
+  toggleQueue: (args: {
+    creatorSlug: string;
+    kind: "personal" | "priority";
+  }) => Promise<{ enabled: boolean }>;
   slug: string;
   personalEnabled: boolean;
   setPersonalEnabled: (enabled: boolean) => void;
   priorityEnabled: boolean;
   setPriorityEnabled: (enabled: boolean) => void;
+  personalTippingEnabled: boolean;
+  setPersonalTippingEnabled: (enabled: boolean) => void;
   showAutoqueueCard?: boolean;
   onToggleAutoqueueCard?: (value: boolean) => void;
   minPriorityTipCents?: number;
@@ -26,6 +31,8 @@ export function QueueSettings({
   setPersonalEnabled,
   priorityEnabled,
   setPriorityEnabled,
+  personalTippingEnabled,
+  setPersonalTippingEnabled,
   showAutoqueueCard,
   onToggleAutoqueueCard,
   minPriorityTipCents = 0,
@@ -34,6 +41,7 @@ export function QueueSettings({
 }: QueueSettingsProps) {
   const updateSettings = useMutation(api.queues.updateQueueSettings);
   const updateMinPriorityFee = useMutation(api.creators.updateMinPriorityFee);
+  const setTipping = useMutation(api.queues.setPersonalTippingEnabled);
 
   const [personalDays, setPersonalDays] = useState(1);
   const [priorityDays, setPriorityDays] = useState(1);
@@ -54,7 +62,10 @@ export function QueueSettings({
     }
   }, [queueSnapshot]);
 
-  const handleDaysChange = async (kind: "personal" | "priority", val: number) => {
+  const handleDaysChange = async (
+    kind: "personal" | "priority",
+    val: number
+  ) => {
     if (kind === "personal") setPersonalDays(val);
     else setPriorityDays(val);
 
@@ -80,7 +91,7 @@ export function QueueSettings({
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
+      console.error("Failed to copy:", err);
     }
   };
 
@@ -112,8 +123,10 @@ export function QueueSettings({
               <h4 className="uppercase text-left font-bold group-hover:text-white transition-colors">
                 Your public queue url:
               </h4>
-              <p className={`text-left text-xs group-hover:text-white transition-colors ${isCopied ? 'text-coral' : ''}`}>
-                {isCopied ? 'LINK COPIED!' : 'CLICK/TAP TO COPY'}
+              <p
+                className={`text-left text-xs group-hover:text-white transition-colors ${isCopied ? "text-coral" : ""}`}
+              >
+                {isCopied ? "LINK COPIED!" : "CLICK/TAP TO COPY"}
               </p>
             </div>
             <div className="">
@@ -125,12 +138,33 @@ export function QueueSettings({
               </p>
             </div>
           </button>
-          <a className="md:bg-greenlite bg-blue md:text-center text-right md:p-0 p-2 content-center leading-none font-bold text-sm md:w-2/8 w-full hover:bg-blue"
-            href={`/${slug}`}>
+          <a
+            className="md:bg-greenlite bg-blue md:text-center text-right md:p-0 p-2 content-center leading-none font-bold text-sm md:w-2/8 w-full hover:bg-blue"
+            href={`/${slug}`}
+          >
             OPEN PAGE &gt;
           </a>
         </div>
 
+        {/* Stripe Connection Warning */}
+        {!hasStripeAccount && (
+          <div className="bg-gold border border-blue-2 p-4 mb-4">
+            <p className="text-sm font-bold mb-2 uppercase">
+              Monetize your queues, connect Stripe.
+            </p>
+            <p className="text-xs mb-3">
+              Please connect to Stripe to unlock tips and priority queueing.
+            </p>
+            {onNavigateToEarnings && (
+              <button
+                onClick={onNavigateToEarnings}
+                className="text-xs uppercase font-bold bg-text text-coral px-3 py-1 hover:bg-coral hover:text-text transition-colors"
+              >
+                Go to Earnings →
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-col md:flex-row gap-2">
           {/* Personal Queue Settings */}
@@ -140,7 +174,9 @@ export function QueueSettings({
               className="bg-greenlite  px-6 text-center"
               style={{ fontFamily: "var(--font-body)" }}
             >
-              <h3 className="text-[20px] font-bold uppercase tracking-wide">PERSONAL</h3>
+              <h3 className="text-[20px] font-bold uppercase tracking-wide">
+                PERSONAL
+              </h3>
             </div>
 
             {/* Content */}
@@ -164,10 +200,11 @@ export function QueueSettings({
                         setPersonalEnabled(result.enabled);
                       }
                     }}
-                    className={`px-4 py-2 text-[14px] font-bold uppercase  ${personalEnabled
-                      ? "bg-coral text-text"
-                      : "bg-gray-300 text-text-muted"
-                      }`}
+                    className={`px-4 py-2 text-[14px] font-bold uppercase  ${
+                      personalEnabled
+                        ? "bg-coral text-text"
+                        : "bg-gray-300 text-text-muted"
+                    }`}
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     ON
@@ -182,10 +219,11 @@ export function QueueSettings({
                         setPersonalEnabled(result.enabled);
                       }
                     }}
-                    className={`px-4 py-2 text-[14px] font-bold uppercase   ${!personalEnabled
-                      ? "bg-text text-coral"
-                      : "bg-gray-200 text-text-muted"
-                      }`}
+                    className={`px-4 py-2 text-[14px] font-bold uppercase   ${
+                      !personalEnabled
+                        ? "bg-text text-coral"
+                        : "bg-gray-200 text-text-muted"
+                    }`}
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     OFF
@@ -211,7 +249,12 @@ export function QueueSettings({
                 </div>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => handleDaysChange("personal", Math.max(1, personalDays - 1))}
+                    onClick={() =>
+                      handleDaysChange(
+                        "personal",
+                        Math.max(1, personalDays - 1)
+                      )
+                    }
                     className="w-8 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100"
                     style={{ fontFamily: "var(--font-body)" }}
                   >
@@ -221,15 +264,80 @@ export function QueueSettings({
                     type="number"
                     min="1"
                     value={personalDays}
-                    onChange={(e) => handleDaysChange("personal", parseInt(e.target.value) || 1)}
+                    onChange={(e) =>
+                      handleDaysChange(
+                        "personal",
+                        parseInt(e.target.value) || 1
+                      )
+                    }
                     className="w-20 h-10 px-3 text-center bg-white border border-gray-300 text-[16px] font-mono no-spinners focus:outline-blue-2"
                   />
                   <button
-                    onClick={() => handleDaysChange("personal", personalDays + 1)}
+                    onClick={() =>
+                      handleDaysChange("personal", personalDays + 1)
+                    }
                     className="w-8 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100"
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     &gt;
+                  </button>
+                </div>
+              </div>
+
+              {/* Enable Tipping */}
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span
+                    className="text-sm uppercase tracking-wide"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    ENABLE TIPPING
+                  </span>
+                  {!hasStripeAccount && (
+                    <span className="text-[12px] text-text-muted">
+                      Connect Stripe to enable tipping.
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!personalTippingEnabled && hasStripeAccount) {
+                        const result = await setTipping({
+                          creatorSlug: slug,
+                          enabled: true,
+                        });
+                        setPersonalTippingEnabled(result.tippingEnabled);
+                      }
+                    }}
+                    disabled={!hasStripeAccount}
+                    className={`px-4 py-2 text-[14px] font-bold uppercase ${
+                      personalTippingEnabled
+                        ? "bg-coral text-text"
+                        : "bg-gray-300 text-text-muted"
+                    } ${!hasStripeAccount ? "opacity-50 cursor-not-allowed" : ""}`}
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    ON
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (personalTippingEnabled) {
+                        const result = await setTipping({
+                          creatorSlug: slug,
+                          enabled: false,
+                        });
+                        setPersonalTippingEnabled(result.tippingEnabled);
+                      }
+                    }}
+                    className={`px-4 py-2 text-[14px] font-bold uppercase ${
+                      !personalTippingEnabled
+                        ? "bg-text text-coral"
+                        : "bg-gray-200 text-text-muted"
+                    }`}
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    OFF
                   </button>
                 </div>
               </div>
@@ -243,29 +351,13 @@ export function QueueSettings({
               className="bg-gold px-6 text-center "
               style={{ fontFamily: "var(--font-body)" }}
             >
-              <h3 className="text-[20px] font-bold uppercase tracking-wide">PRIORITY</h3>
+              <h3 className="text-[20px] font-bold uppercase tracking-wide">
+                PRIORITY
+              </h3>
             </div>
 
             {/* Content */}
             <div className=" space-y-4 p-6 ">
-              {/* Stripe Connection Warning */}
-              {!hasStripeAccount && (
-                <div className="bg-blue-2 border border-blue-2 p-4 mb-4">
-                  <p className="text-sm font-bold mb-2 uppercase">Connect Stripe Required</p>
-                  <p className="text-xs mb-3">
-                    Please connect to Stripe to enable priority queue and accept payments.
-                  </p>
-                  {onNavigateToEarnings && (
-                    <button
-                      onClick={onNavigateToEarnings}
-                      className="text-xs uppercase font-bold bg-text text-coral px-3 py-1 hover:bg-coral hover:text-text transition-colors"
-                    >
-                      Go to Earnings →
-                    </button>
-                  )}
-                </div>
-              )}
-
               {/* Queue Status */}
               <div className="flex items-center justify-between">
                 <label
@@ -286,10 +378,11 @@ export function QueueSettings({
                       }
                     }}
                     disabled={!hasStripeAccount}
-                    className={`px-6 py-2 text-[14px] font-bold uppercase ${priorityEnabled
-                      ? "bg-coral text-text"
-                      : "bg-gray-300 text-text-muted"
-                      } ${!hasStripeAccount ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`px-6 py-2 text-[14px] font-bold uppercase ${
+                      priorityEnabled
+                        ? "bg-coral text-text"
+                        : "bg-gray-300 text-text-muted"
+                    } ${!hasStripeAccount ? "opacity-50 cursor-not-allowed" : ""}`}
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     ON
@@ -305,10 +398,11 @@ export function QueueSettings({
                       }
                     }}
                     disabled={!hasStripeAccount}
-                    className={`px-6 py-2 text-[14px] font-bold uppercase ${!priorityEnabled
-                      ? "bg-text text-coral"
-                      : "bg-gray-200 text-text-muted"
-                      } ${!hasStripeAccount ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`px-6 py-2 text-[14px] font-bold uppercase ${
+                      !priorityEnabled
+                        ? "bg-text text-coral"
+                        : "bg-gray-200 text-text-muted"
+                    } ${!hasStripeAccount ? "opacity-50 cursor-not-allowed" : ""}`}
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     OFF
@@ -334,7 +428,12 @@ export function QueueSettings({
                 </div>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => handleDaysChange("priority", Math.max(1, priorityDays - 1))}
+                    onClick={() =>
+                      handleDaysChange(
+                        "priority",
+                        Math.max(1, priorityDays - 1)
+                      )
+                    }
                     className="w-10 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100 "
                     style={{ fontFamily: "var(--font-body)" }}
                   >
@@ -344,11 +443,18 @@ export function QueueSettings({
                     type="number"
                     min="1"
                     value={priorityDays}
-                    onChange={(e) => handleDaysChange("priority", parseInt(e.target.value) || 1)}
+                    onChange={(e) =>
+                      handleDaysChange(
+                        "priority",
+                        parseInt(e.target.value) || 1
+                      )
+                    }
                     className="w-20 h-10 px-3 text-center bg-white border border-gray-300 text-[16px] font-mono no-spinners focus:outline-blue-2"
                   />
                   <button
-                    onClick={() => handleDaysChange("priority", priorityDays + 1)}
+                    onClick={() =>
+                      handleDaysChange("priority", priorityDays + 1)
+                    }
                     className="w-10 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100 "
                     style={{ fontFamily: "var(--font-body)" }}
                   >
@@ -385,7 +491,9 @@ export function QueueSettings({
                     type="number"
                     min="1"
                     value={minFee}
-                    onChange={(e) => handleMinFeeChange(parseInt(e.target.value) || 1)}
+                    onChange={(e) =>
+                      handleMinFeeChange(parseInt(e.target.value) || 1)
+                    }
                     className="w-20 h-10 px-3 text-center bg-white border border-gray-300 text-[16px] font-mono no-spinners focus:outline-blue-2"
                   />
                   <button

@@ -30,6 +30,7 @@ export interface QueueCardProps {
     etaDays: number | null;
     avgDaysPerTicket?: number;
     enabled: boolean;
+    tippingEnabled?: boolean;
   };
   minPriorityTipCents: number;
   nextTicketNumber?: number;
@@ -55,12 +56,16 @@ export default function QueueCard({
     isPriority ? (minPriorityTipCents / 100).toFixed(2) : "0.00"
   );
 
+  const tippingAllowed = isPriority ? true : data.tippingEnabled === true;
+
   // Update local state if the prop changes (e.g. data loaded)
   useEffect(() => {
     if (isPriority) {
       setAmountDollars((minPriorityTipCents / 100).toFixed(2));
+    } else if (!tippingAllowed) {
+      setAmountDollars("0.00");
     }
-  }, [minPriorityTipCents, isPriority]);
+  }, [minPriorityTipCents, isPriority, tippingAllowed]);
 
   const tipCents = useMemo(() => {
     const dollars = parseFloat((amountDollars || "0").replace(/,/g, "."));
@@ -70,11 +75,11 @@ export default function QueueCard({
 
   const claimHref = useMemo(() => {
     const base = `/${slug}/submit?queue=${kind}`;
-    if (isPriority || tipCents > 0) {
+    if ((isPriority || tippingAllowed) && tipCents > 0) {
       return `${base}&tipCents=${tipCents}`;
     }
     return base;
-  }, [slug, kind, tipCents, isPriority]);
+  }, [slug, kind, tipCents, isPriority, tippingAllowed]);
 
   const claimDisabled =
     isPriority && data.enabled && tipCents < minPriorityTipCents;
@@ -165,88 +170,90 @@ export default function QueueCard({
             </div>
           </div>
         </div>
-        <div className="space-y-2">
-          <div
-            className="bg-[#412c2c] text-[16px] text-bg text-center uppercase py-2"
-            style={{ fontFamily: "var(--font-body)" }}
-          >
-            {tipBanner}
-          </div>
-          <div className="flex gap-2">
+        {tippingAllowed && (
+          <div className="space-y-2">
             <div
-              className={`${tipLeftBg} flex-1 py-5 text-center uppercase content-center`}
+              className="bg-[#412c2c] text-[16px] text-bg text-center uppercase py-2"
               style={{ fontFamily: "var(--font-body)" }}
             >
-              CHOOSE AMOUNT (USD)
+              {tipBanner}
             </div>
-            <div
-              className="flex-1 py-5 text-center content-center px-5"
-              style={{
-                backgroundColor: tipFieldBg,
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <div className="flex gap-2">
               <div
-                className={`inline-flex items-center gap-2 text-[16px] ${tipTextClass}`}
+                className={`${tipLeftBg} flex-1 py-5 text-center uppercase content-center`}
+                style={{ fontFamily: "var(--font-body)" }}
               >
-                <button
-                  type="button"
-                  className="px-2 py-1 border border-gray-subtle"
-                  onClick={() =>
-                    setAmountDollars((v) =>
-                      Math.max(0, parseFloat(v || "0") - 1).toFixed(2)
-                    )
-                  }
-                  aria-label="Decrease tip by one dollar"
+                CHOOSE AMOUNT (USD)
+              </div>
+              <div
+                className="flex-1 py-5 text-center content-center px-5"
+                style={{
+                  backgroundColor: tipFieldBg,
+                  fontFamily: "var(--font-body)",
+                }}
+              >
+                <div
+                  className={`inline-flex items-center gap-2 text-[16px] ${tipTextClass}`}
                 >
-                  −
-                </button>
-                <label className="inline-flex items-center gap-1">
-                  <span>$</span>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    step="1"
-                    min={0}
-                    className="w-24 bg-transparent outline-none text-inherit text-center no-spinners"
-                    value={amountDollars}
-                    onChange={(e) => setAmountDollars(e.target.value)}
-                    aria-label="Tip amount in dollars"
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="px-2 py-1 border border-gray-subtle"
-                  onClick={() =>
-                    setAmountDollars((v) =>
-                      (parseFloat(v || "0") + 1).toFixed(2)
-                    )
-                  }
-                  aria-label="Increase tip by one dollar"
-                >
-                  +
-                </button>
+                  <button
+                    type="button"
+                    className="px-2 py-1 border border-gray-subtle"
+                    onClick={() =>
+                      setAmountDollars((v) =>
+                        Math.max(0, parseFloat(v || "0") - 1).toFixed(2)
+                      )
+                    }
+                    aria-label="Decrease tip by one dollar"
+                  >
+                    −
+                  </button>
+                  <label className="inline-flex items-center gap-1">
+                    <span>$</span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="1"
+                      min={0}
+                      className="w-24 bg-transparent outline-none text-inherit text-center no-spinners"
+                      value={amountDollars}
+                      onChange={(e) => setAmountDollars(e.target.value)}
+                      aria-label="Tip amount in dollars"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="px-2 py-1 border border-gray-subtle"
+                    onClick={() =>
+                      setAmountDollars((v) =>
+                        (parseFloat(v || "0") + 1).toFixed(2)
+                      )
+                    }
+                    aria-label="Increase tip by one dollar"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-          {data.enabled ? (
-            <Link
-              href={claimHref}
-              className={`${isPriority ? "bg-coral hover:bg-coral/80" : "bg-blue hover:bg-blue/80"} cursor-pointer text-text uppercase text-[24px] px-6 py-3.5 w-full font-bold flex items-center justify-between ${claimDisabled ? "opacity-60 pointer-events-none" : ""}`}
-              aria-label={`Claim a ${kind} ticket`}
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              <span className=" text-center">
-                {isPriority ? "CLAIM PRIORITY TICKET" : "CLAIM PERSONAL TICKET"}
-              </span>
-              <span>&gt;</span>
-            </Link>
-          ) : (
-            <div className="text-sm text-center  uppercase bg-ielo py-2">
-              This queue is currently closed
-            </div>
-          )}
-        </div>
+        )}
+        {data.enabled ? (
+          <Link
+            href={claimHref}
+            className={`${isPriority ? "bg-coral hover:bg-coral/80" : "bg-blue hover:bg-blue/80"} cursor-pointer text-text uppercase text-[24px] px-6 py-3.5 w-full font-bold flex items-center justify-between ${claimDisabled ? "opacity-60 pointer-events-none" : ""}`}
+            aria-label={`Claim a ${kind} ticket`}
+            style={{ fontFamily: "var(--font-body)" }}
+          >
+            <span className=" text-center leading-none">
+              {isPriority ? "CLAIM PRIORITY TICKET" : "CLAIM PERSONAL TICKET"}
+            </span>
+            <span>&gt;</span>
+          </Link>
+        ) : (
+          <div className="text-sm text-center  uppercase bg-ielo py-2">
+            This queue is currently closed
+          </div>
+        )}
       </div>
     </section>
   );
