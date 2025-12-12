@@ -45,8 +45,12 @@ async function getGrossForCreator(
     )
     .collect();
   return payments.reduce(
-    (sum: number, payment: any) => sum + payment.amountGross,
-    0
+    (acc: { gross: number; stripeFee: number }, payment: any) => {
+      acc.gross += payment.amountGross;
+      acc.stripeFee += payment.stripeFeeCents ?? 0;
+      return acc;
+    },
+    { gross: 0, stripeFee: 0 }
   );
 }
 
@@ -60,12 +64,16 @@ export const recordStripePayment = mutation({
     status: v.string(),
     ticketRef: v.optional(v.string()),
     createdAt: v.optional(v.number()),
+    stripeFeeCents: v.optional(v.number()),
+    netCents: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     console.log("[Convex][recordStripePayment] incoming", {
       externalId: args.externalId,
       creatorSlug: args.creatorSlug,
       amount: args.amountGross,
+      stripeFeeCents: args.stripeFeeCents,
+      netCents: args.netCents,
     });
     const existing = await ctx.db
       .query("payments")
@@ -74,13 +82,29 @@ export const recordStripePayment = mutation({
 
     if (existing) {
       console.log(
-        "[Convex][recordStripePayment] already exists, skipping insert",
+        "[Convex][recordStripePayment] exists, patching fees if provided",
         args.externalId
       );
+
+      const stripeFeeCents =
+        args.stripeFeeCents ?? existing.stripeFeeCents ?? 0;
+      const netCents =
+        args.netCents ??
+        existing.netCents ??
+        Math.max(0, existing.amountGross - stripeFeeCents);
+
+      await ctx.db.patch(existing._id, {
+        stripeFeeCents,
+        netCents,
+      });
+
       return { ok: true, paymentId: existing._id as string };
     }
 
     const createdAt = args.createdAt ?? Date.now();
+    const stripeFeeCents = args.stripeFeeCents ?? 0;
+    const netCents =
+      args.netCents ?? Math.max(0, args.amountGross - stripeFeeCents);
     const insertedId = await ctx.db.insert("payments", {
       creatorSlug: args.creatorSlug,
       amountGross: args.amountGross,
@@ -90,6 +114,8 @@ export const recordStripePayment = mutation({
       externalId: args.externalId,
       createdAt,
       ticketRef: args.ticketRef,
+      stripeFeeCents,
+      netCents,
     });
 
     console.log("[Convex][recordStripePayment] inserted", insertedId);
@@ -106,7 +132,12 @@ export const getGrossForCreatorQuery = query({
     periodEnd: v.number(),
   },
   handler: async (ctx, args) => {
-    return getGrossForCreator(ctx, args.creatorSlug, args.periodStart, args.periodEnd);
+    return getGrossForCreator(
+      ctx,
+      args.creatorSlug,
+      args.periodStart,
+      args.periodEnd
+    );
   },
 });
 
@@ -125,6 +156,16 @@ export const getPayoutByCreatorPeriod = query({
           .eq("periodStart", args.periodStart)
           .eq("periodEnd", args.periodEnd)
       )
+      .unique();
+  },
+});
+
+export const getPaymentByExternalId = query({
+  args: { externalId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("payments")
+      .withIndex("by_externalId", (q) => q.eq("externalId", args.externalId))
       .unique();
   },
 });
@@ -182,6 +223,20 @@ export const upsertPayoutRecord = mutation({
   },
 });
 
+export const updatePaymentFees = mutation({
+  args: {
+    paymentId: v.id("payments"),
+    stripeFeeCents: v.number(),
+    netCents: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.paymentId, {
+      stripeFeeCents: args.stripeFeeCents,
+      netCents: args.netCents,
+    });
+  },
+});
+
 export const scheduleMonthlyPayouts = action({
   args: {
     year: v.number(),
@@ -202,23 +257,31 @@ export const scheduleMonthlyPayouts = action({
       // 2. Calculate Gross
       // We need a query to get gross for creator. We can't use ctx.db in action.
       // We'll use a helper query exposed via api.
-      const grossCents = await ctx.runQuery(api.payments.getGrossForCreatorQuery, {
-        creatorSlug: creator.slug,
-        periodStart,
-        periodEnd,
-      });
+      const { gross: grossCents, stripeFee: stripeFeeCents } =
+        await ctx.runQuery(api.payments.getGrossForCreatorQuery, {
+          creatorSlug: creator.slug,
+          periodStart,
+          periodEnd,
+        });
 
       if (grossCents === 0) continue;
 
       // 3. Calculate Fees
-      const { platformFeeCents, payoutCents } = computePlatformFee(grossCents);
+      const { platformFeeCents } = computePlatformFee(grossCents);
+      const payoutCents = Math.max(
+        0,
+        grossCents - platformFeeCents - stripeFeeCents
+      );
 
       // 4. Check if payout already exists
-      const existing = await ctx.runQuery(api.payments.getPayoutByCreatorPeriod, {
-        creatorSlug: creator.slug,
-        periodStart,
-        periodEnd,
-      });
+      const existing = await ctx.runQuery(
+        api.payments.getPayoutByCreatorPeriod,
+        {
+          creatorSlug: creator.slug,
+          periodStart,
+          periodEnd,
+        }
+      );
 
       if (existing && existing.status === "paid") {
         console.log(`Payout already paid for ${creator.slug}`);
@@ -230,18 +293,21 @@ export const scheduleMonthlyPayouts = action({
 
       if (!stripeTransferId && payoutCents > 0) {
         try {
-          const transfer = await stripe.transfers.create({
-            amount: payoutCents,
-            currency: "usd",
-            destination: creator.stripeAccountId,
-            metadata: {
-              creatorSlug: creator.slug,
-              period: `${year}-${month}`,
-              type: "monthly_payout",
+          const transfer = await stripe.transfers.create(
+            {
+              amount: payoutCents,
+              currency: "usd",
+              destination: creator.stripeAccountId,
+              metadata: {
+                creatorSlug: creator.slug,
+                period: `${year}-${month}`,
+                type: "monthly_payout",
+              },
             },
-          }, {
-            idempotencyKey: `payout-${creator.slug}-${year}-${month}`,
-          });
+            {
+              idempotencyKey: `payout-${creator.slug}-${year}-${month}`,
+            }
+          );
           stripeTransferId = transfer.id;
           transfers++;
         } catch (err) {
@@ -275,6 +341,93 @@ if (!stripeApiKey) {
 }
 
 const stripe = new Stripe(stripeApiKey, { apiVersion: "2022-11-15" });
+
+async function getStripeFeeInfoFromCharge(chargeRef: string | Stripe.Charge) {
+  const chargeId =
+    typeof chargeRef === "string" ? chargeRef : (chargeRef as Stripe.Charge).id;
+
+  const charge = (await stripe.charges.retrieve(chargeId, {
+    expand: ["balance_transaction"],
+  })) as Stripe.Charge;
+
+  let stripeFeeCents = 0;
+  let netCents = charge.amount ?? 0;
+
+  const balanceTx = charge.balance_transaction as
+    | string
+    | Stripe.BalanceTransaction
+    | undefined;
+
+  let bt: Stripe.BalanceTransaction | null = null;
+  if (balanceTx) {
+    if (typeof balanceTx === "string") {
+      bt = await stripe.balanceTransactions.retrieve(balanceTx);
+    } else {
+      bt = balanceTx;
+    }
+  }
+
+  if (bt) {
+    const feeRaw = bt.fee ?? 0;
+    const netRaw = bt.net ?? Math.max(0, (charge.amount ?? 0) - feeRaw);
+
+    if (
+      bt.currency &&
+      charge.currency &&
+      bt.currency !== charge.currency &&
+      bt.exchange_rate
+    ) {
+      // Normalize BT amounts to the charge currency using Stripe-provided rate
+      stripeFeeCents = Math.round(feeRaw / bt.exchange_rate);
+      netCents = Math.round(netRaw / bt.exchange_rate);
+    } else {
+      stripeFeeCents = feeRaw;
+      netCents = netRaw;
+      if (bt.currency && charge.currency && bt.currency !== charge.currency) {
+        console.warn(
+          "[Convex][Fees] Currency mismatch without exchange_rate",
+          chargeId,
+          { btCurrency: bt.currency, chargeCurrency: charge.currency }
+        );
+      }
+    }
+  }
+
+  return {
+    stripeFeeCents,
+    netCents,
+    currency: charge.currency,
+    amount: charge.amount,
+  };
+}
+
+async function getStripeFeeInfo(paymentIntentId: string) {
+  const pi = (await stripe.paymentIntents.retrieve(paymentIntentId, {
+    expand: ["latest_charge"],
+  })) as Stripe.PaymentIntent;
+
+  const rawCharge =
+    (pi as any).latest_charge ?? (pi as any).charges?.data?.[0] ?? null;
+  const chargeId =
+    typeof rawCharge === "string"
+      ? rawCharge
+      : ((rawCharge as Stripe.Charge | undefined)?.id ?? null);
+
+  if (!chargeId) {
+    console.warn(
+      "[Convex][Fees] No charge found on payment intent",
+      paymentIntentId
+    );
+    return {
+      stripeFeeCents: 0,
+      netCents: pi.amount ?? 0,
+      currency: pi.currency,
+      amount: pi.amount,
+    };
+  }
+
+  return getStripeFeeInfoFromCharge(chargeId);
+}
 
 // V3: Manual Payment Intent (Hold funds)
 export const createManualPaymentIntent = action({
@@ -378,9 +531,10 @@ export const createManualCheckoutSession = action({
     // Store the PaymentIntent ID on the ticket IMMEDIATELY (if available)
     // Note: For "payment" mode, session.payment_intent is populated on creation.
     if (session.payment_intent) {
-      const piId = typeof session.payment_intent === 'string'
-        ? session.payment_intent
-        : session.payment_intent.id;
+      const piId =
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : session.payment_intent.id;
 
       await ctx.runMutation(api.payments.setPaymentIntentForTicket, {
         ticketRef: args.ticketRef,
@@ -392,7 +546,10 @@ export const createManualCheckoutSession = action({
     return {
       url: session.url,
       id: session.id,
-      paymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id,
+      paymentIntentId:
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : session.payment_intent?.id,
     };
   },
 });
@@ -430,7 +587,9 @@ export const capturePaymentForTicket = action({
     ticketRef: v.string(),
   },
   handler: async (ctx, args): Promise<{ ok: boolean; status: string }> => {
-    const ticket = await ctx.runQuery(api.tickets.getByRef, { ref: args.ticketRef });
+    const ticket = await ctx.runQuery(api.tickets.getByRef, {
+      ref: args.ticketRef,
+    });
     if (!ticket) throw new Error("Ticket not found");
     if (!ticket.paymentIntentId) {
       // No payment attached (e.g. free ticket or legacy)
@@ -439,18 +598,26 @@ export const capturePaymentForTicket = action({
     }
 
     try {
-      const paymentIntent = await stripe.paymentIntents.capture(ticket.paymentIntentId);
+      const paymentIntent = await stripe.paymentIntents.capture(
+        ticket.paymentIntentId,
+        { expand: ["latest_charge"] }
+      );
 
       if (paymentIntent.status === "succeeded") {
+        const { stripeFeeCents, netCents, amount, currency } =
+          await getStripeFeeInfo(ticket.paymentIntentId);
+
         // Record in payments table
         await ctx.runMutation(api.payments.recordStripePayment, {
           creatorSlug: ticket.creatorSlug,
-          amountGross: paymentIntent.amount,
-          currency: paymentIntent.currency,
+          amountGross: amount ?? paymentIntent.amount,
+          currency: currency ?? paymentIntent.currency,
           externalId: paymentIntent.id,
           provider: "stripe",
           status: "succeeded",
           ticketRef: ticket.ref,
+          stripeFeeCents,
+          netCents,
         });
 
         // Update ticket status
@@ -472,19 +639,39 @@ export const capturePaymentForTicket = action({
 
       // Check for "already captured" error to make this idempotent
       const isAlreadyCaptured =
-        err.code === 'payment_intent_unexpected_state' ||
-        err.raw?.code === 'payment_intent_unexpected_state' ||
+        err.code === "payment_intent_unexpected_state" ||
+        err.raw?.code === "payment_intent_unexpected_state" ||
         err.message?.includes("already been captured");
 
       if (isAlreadyCaptured) {
         console.log("PaymentIntent was already captured. Verifying status...");
-        const pi = await stripe.paymentIntents.retrieve(ticket.paymentIntentId);
-        if (pi.status === 'succeeded') {
+        const pi = await stripe.paymentIntents.retrieve(
+          ticket.paymentIntentId,
+          {
+            expand: ["latest_charge"],
+          }
+        );
+        if (pi.status === "succeeded") {
+          const { stripeFeeCents, netCents, amount, currency } =
+            await getStripeFeeInfo(ticket.paymentIntentId);
+
           // Ensure DB is in sync
           await ctx.runMutation(api.payments.setPaymentIntentForTicket, {
             ticketRef: args.ticketRef,
             paymentIntentId: ticket.paymentIntentId,
             status: "succeeded",
+          });
+
+          await ctx.runMutation(api.payments.recordStripePayment, {
+            creatorSlug: ticket.creatorSlug,
+            amountGross: amount ?? pi.amount,
+            currency: currency ?? pi.currency,
+            externalId: pi.id,
+            provider: "stripe",
+            status: "succeeded",
+            ticketRef: ticket.ref,
+            stripeFeeCents,
+            netCents,
           });
 
           // Mark ticket as approved in the main table
@@ -503,8 +690,13 @@ export const cancelOrRefundPaymentForTicket = action({
   args: {
     ticketRef: v.string(),
   },
-  handler: async (ctx, args): Promise<{ ok: boolean; status?: string; action?: string }> => {
-    const ticket = await ctx.runQuery(api.tickets.getByRef, { ref: args.ticketRef });
+  handler: async (
+    ctx,
+    args
+  ): Promise<{ ok: boolean; status?: string; action?: string }> => {
+    const ticket = await ctx.runQuery(api.tickets.getByRef, {
+      ref: args.ticketRef,
+    });
     if (!ticket) throw new Error("Ticket not found");
     if (!ticket.paymentIntentId) {
       await ctx.runMutation(api.tickets.reject, { ref: args.ticketRef });
@@ -558,6 +750,49 @@ export const cancelOrRefundPaymentForTicket = action({
       console.error("Cancel/Refund failed:", err);
       throw err;
     }
+  },
+});
+
+// Utility: backfill stripe fees for a single PaymentIntent/externalId
+export const backfillStripeFees = action({
+  args: { externalId: v.string() },
+  handler: async (ctx, args) => {
+    const payment = await ctx.runQuery(api.payments.getPaymentByExternalId, {
+      externalId: args.externalId,
+    });
+    if (!payment) {
+      return { ok: false, reason: "not_found" as const };
+    }
+
+    const { stripeFeeCents, netCents, amount, currency } =
+      await getStripeFeeInfo(args.externalId);
+
+    await ctx.runMutation(api.payments.updatePaymentFees, {
+      paymentId: payment._id,
+      stripeFeeCents,
+      netCents,
+    });
+
+    // If amounts were missing, ensure they are patched too
+    if (
+      payment.amountGross !== (amount ?? payment.amountGross) ||
+      payment.currency !== (currency ?? payment.currency)
+    ) {
+      await ctx.runMutation(api.payments.recordStripePayment, {
+        creatorSlug: payment.creatorSlug,
+        amountGross: amount ?? payment.amountGross,
+        currency: currency ?? payment.currency,
+        externalId: payment.externalId,
+        provider: payment.provider,
+        status: payment.status,
+        ticketRef: payment.ticketRef,
+        createdAt: payment.createdAt,
+        stripeFeeCents,
+        netCents,
+      });
+    }
+
+    return { ok: true };
   },
 });
 
@@ -618,7 +853,9 @@ export const finalizeTicketSubmission = action({
   args: { ticketRef: v.string() },
   handler: async (ctx, args): Promise<{ ok: boolean; status?: string }> => {
     // 1. Get ticket
-    const ticket = await ctx.runQuery(api.tickets.getByRef, { ref: args.ticketRef });
+    const ticket = await ctx.runQuery(api.tickets.getByRef, {
+      ref: args.ticketRef,
+    });
     if (!ticket) throw new Error("Ticket not found");
     if (!ticket.paymentIntentId) throw new Error("No payment intent found");
 
@@ -628,7 +865,9 @@ export const finalizeTicketSubmission = action({
     // 3. Verify status
     if (pi.status === "requires_capture") {
       // 4. Confirm authorization in DB and send emails
-      await ctx.runMutation(api.tickets.confirmTicketAuthorized, { ref: args.ticketRef });
+      await ctx.runMutation(api.tickets.confirmTicketAuthorized, {
+        ref: args.ticketRef,
+      });
       return { ok: true };
     } else {
       console.error("PaymentIntent not authorized", pi.status);

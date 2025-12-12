@@ -27,3 +27,5 @@
 - Toggle is disabled: finish Stripe onboarding in Earnings (needs both account + payouts enabled).
 - Tip UI still visible after turning OFF: wait for Convex cache propagation or refresh; the UI reads `tippingEnabled` from the latest snapshot.
 
+
+

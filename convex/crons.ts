@@ -1,6 +1,7 @@
 import { cronJobs } from "convex/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
+import { v } from "convex/values";
 
 const crons = cronJobs();
 
@@ -13,6 +14,14 @@ crons.hourly(
   "check-pending-tickets",
   { minuteUTC: 0 },
   internal.crons.processPendingTickets
+);
+
+// Run on the 1st of each month (UTC) to pay out the previous month (all envs)
+crons.monthly(
+  "run-monthly-payouts",
+  { hourUTC: 1, minuteUTC: 0, day: 1 },
+  internal.crons.runMonthlyPayouts,
+  {}
 );
 
 export default crons;
@@ -171,7 +180,6 @@ export const getPendingTicketsForProcessing = internalQuery({
 
 // Action to cancel a PaymentIntent via Stripe
 import Stripe from "stripe";
-import { v } from "convex/values";
 
 const stripe = new Stripe(process.env.STRIPE_API_KEY!, {
   apiVersion: "2022-11-15",
@@ -203,5 +211,36 @@ export const cancelPaymentIntent = internalAction({
         throw err;
       }
     }
+  },
+});
+
+// --- Monthly payouts (dev only) ---
+
+function getPreviousMonthUtc(now: Date) {
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth() + 1; // 1-based
+  if (month === 1) {
+    return { year: year - 1, month: 12 };
+  }
+  return { year, month: month - 1 };
+}
+
+export const runMonthlyPayouts = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    if (process.env.CONVEX_PAYOUTS_DISABLED === "true") {
+      console.log("[Cron][Payouts] Skipping because payouts are disabled");
+      return;
+    }
+
+    const { year, month } = getPreviousMonthUtc(new Date());
+    console.log(
+      `[Cron][Payouts] Running scheduleMonthlyPayouts for ${year}-${month}`
+    );
+
+    await ctx.runAction(api.payments.scheduleMonthlyPayouts, {
+      year,
+      month,
+    });
   },
 });

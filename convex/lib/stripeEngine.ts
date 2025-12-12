@@ -66,13 +66,20 @@ async function getEarningsForPeriodInternal(
     .filter((q: any) => q.eq(q.field("status"), "succeeded"))
     .collect();
 
-  const grossCents = payments.reduce(
-    (sum: number, p: any) => sum + p.amountGross,
-    0
+  const aggregate = payments.reduce(
+    (acc: { gross: number; stripeFee: number; net: number }, p: any) => {
+      acc.gross += p.amountGross;
+      acc.stripeFee += p.stripeFeeCents ?? 0;
+      acc.net += p.netCents ?? p.amountGross - (p.stripeFeeCents ?? 0);
+      return acc;
+    },
+    { gross: 0, stripeFee: 0, net: 0 }
   );
 
   return {
-    grossCents,
+    grossCents: aggregate.gross,
+    stripeFeeCents: aggregate.stripeFee,
+    netCents: aggregate.net,
     currency: "usd" as const,
   };
 }
@@ -80,29 +87,35 @@ async function getEarningsForPeriodInternal(
 async function getCurrentPeriodSummaryInternal(ctx: any, creatorSlug: string) {
   const { periodStart, periodEnd } = getCurrentMonthRangeUtc();
 
-  const { grossCents } = await getEarningsForPeriodInternal(ctx, {
-    creatorSlug,
-    periodStart,
-    periodEnd,
-  });
+  const { grossCents, stripeFeeCents } = await getEarningsForPeriodInternal(
+    ctx,
+    {
+      creatorSlug,
+      periodStart,
+      periodEnd,
+    }
+  );
 
-  const {
-    platformFeeCents,
-    payoutCents,
-    thresholdReached,
-    platformFeeRateBps,
-  } = computePlatformFee(grossCents);
+  const { platformFeeCents, thresholdReached, platformFeeRateBps } =
+    computePlatformFee(grossCents);
+
+  const payoutCents = Math.max(
+    0,
+    grossCents - platformFeeCents - stripeFeeCents
+  );
 
   return {
     creatorSlug,
     periodStart,
     periodEnd,
     grossCents,
+    stripeFeeCents,
     thresholdCents: THRESHOLD_CENTS,
     platformFeeRateBps,
     platformFeeCents,
     payoutCents,
     thresholdReached,
+    netCents: Math.max(0, grossCents - stripeFeeCents),
   };
 }
 
@@ -127,29 +140,35 @@ async function getLastThreePeriodsSummariesInternal(
 
   const results: any[] = [];
   for (const range of ranges) {
-    const { grossCents } = await getEarningsForPeriodInternal(ctx, {
-      creatorSlug,
-      periodStart: range.periodStart,
-      periodEnd: range.periodEnd,
-    });
+    const { grossCents, stripeFeeCents } = await getEarningsForPeriodInternal(
+      ctx,
+      {
+        creatorSlug,
+        periodStart: range.periodStart,
+        periodEnd: range.periodEnd,
+      }
+    );
 
-    const {
-      platformFeeCents,
-      payoutCents,
-      thresholdReached,
-      platformFeeRateBps,
-    } = computePlatformFee(grossCents);
+    const { platformFeeCents, thresholdReached, platformFeeRateBps } =
+      computePlatformFee(grossCents);
+
+    const payoutCents = Math.max(
+      0,
+      grossCents - platformFeeCents - stripeFeeCents
+    );
 
     results.push({
       creatorSlug,
       periodStart: range.periodStart,
       periodEnd: range.periodEnd,
       grossCents,
+      stripeFeeCents,
       thresholdCents: THRESHOLD_CENTS,
       platformFeeRateBps,
       platformFeeCents,
       payoutCents,
       thresholdReached,
+      netCents: Math.max(0, grossCents - stripeFeeCents),
     });
   }
 
@@ -163,9 +182,13 @@ async function getAllTimeEarningsInternal(ctx: any, creatorSlug: string) {
     .filter((q: any) => q.eq(q.field("status"), "succeeded"))
     .collect();
 
-  const grossCents = payments.reduce(
-    (sum: number, p: any) => sum + p.amountGross,
-    0
+  const { grossCents, stripeFeeCents } = payments.reduce(
+    (acc: { grossCents: number; stripeFeeCents: number }, p: any) => {
+      acc.grossCents += p.amountGross;
+      acc.stripeFeeCents += p.stripeFeeCents ?? 0;
+      return acc;
+    },
+    { grossCents: 0, stripeFeeCents: 0 }
   );
 
   // For v1, we recompute all-time platform fees using the same rule per
@@ -193,8 +216,9 @@ async function getAllTimeEarningsInternal(ctx: any, creatorSlug: string) {
 
   return {
     allTimeGrossCents: grossCents,
+    allTimeStripeFeeCents: stripeFeeCents,
     allTimePlatformFeeCents: platformFeeCents,
-    allTimePayoutCents: payoutCents,
+    allTimePayoutCents: payoutCents - stripeFeeCents,
   };
 }
 
@@ -288,6 +312,7 @@ export const getEarningsDashboardData = query({
       currentPeriod,
       lastThreePeriods,
       allTimeGrossCents: allTime.allTimeGrossCents,
+      allTimeStripeFeeCents: allTime.allTimeStripeFeeCents,
       allTimePlatformFeeCents: allTime.allTimePlatformFeeCents,
       allTimePayoutCents: allTime.allTimePayoutCents,
       upcomingPayout,

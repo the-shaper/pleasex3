@@ -6,6 +6,7 @@ interface EarningsSummaryCardProps {
   currentPeriod: CreatorEarningsSummary;
   lastThreePeriods: CreatorEarningsSummary[];
   allTimeGrossCents: number;
+  allTimeStripeFeeCents: number;
   allTimePlatformFeeCents: number;
   allTimePayoutCents: number;
 }
@@ -16,15 +17,19 @@ export function EarningsSummaryCard({
   currentPeriod,
   lastThreePeriods,
   allTimeGrossCents,
+  allTimeStripeFeeCents,
   allTimePlatformFeeCents,
   allTimePayoutCents,
 }: EarningsSummaryCardProps) {
   const thresholdLabel = formatMoney(currentPeriod.thresholdCents);
+  const stripeFeeThisMonth = formatMoney(currentPeriod.stripeFeeCents ?? 0);
 
   return (
     <section className="border border-text/20 bg-bg px-6 py-4 flex flex-col gap-4">
       <div>
-        <div className="text-xs uppercase text-text-muted">This month</div>
+        <div className="text-sm uppercase text-text-muted font-bold">
+          This month
+        </div>
         <div className="flex flex-wrap gap-8 mt-1 text-sm">
           <div>
             <div className="text-text-muted text-xs uppercase">Gross</div>
@@ -33,7 +38,9 @@ export function EarningsSummaryCard({
             </div>
           </div>
           <div>
-            <div className="text-text-muted text-xs uppercase">Platform fee</div>
+            <div className="text-text-muted text-xs uppercase">
+              Platform fee
+            </div>
             <div className="text-text font-semibold">
               {currentPeriod.platformFeeCents === 0
                 ? "0 (below $50)"
@@ -43,7 +50,13 @@ export function EarningsSummaryCard({
             </div>
           </div>
           <div>
-            <div className="text-text-muted text-xs uppercase">Projected payout</div>
+            <div className="text-text-muted text-xs uppercase">Stripe fee</div>
+            <div className="text-text font-semibold">{stripeFeeThisMonth}</div>
+          </div>
+          <div>
+            <div className="text-text-muted text-xs uppercase">
+              Projected payout (after Stripe fees and platform fees)
+            </div>
             <div className="text-text font-semibold">
               {formatMoney(currentPeriod.payoutCents)}
             </div>
@@ -56,7 +69,9 @@ export function EarningsSummaryCard({
       </div>
 
       <div>
-        <div className="text-xs uppercase text-text-muted">Last three months</div>
+        <div className="text-xs uppercase text-text-muted">
+          Last three months
+        </div>
         <div className="mt-1 flex flex-col gap-1 text-xs">
           {lastThreePeriods.length === 0 && (
             <div className="text-text-muted">No previous months yet.</div>
@@ -64,7 +79,7 @@ export function EarningsSummaryCard({
           {lastThreePeriods.map((p) => {
             const start = new Date(p.periodStart);
             const label = `${start.getUTCFullYear()}-${String(
-              start.getUTCMonth() + 1,
+              start.getUTCMonth() + 1
             ).padStart(2, "0")}`;
             return (
               <div
@@ -77,6 +92,7 @@ export function EarningsSummaryCard({
                 </div>
                 <div className="flex gap-4">
                   <span>Fee {formatMoney(p.platformFeeCents)}</span>
+                  <span>Stripe {formatMoney(p.stripeFeeCents ?? 0)}</span>
                   <span>Payout {formatMoney(p.payoutCents)}</span>
                 </div>
               </div>
@@ -86,7 +102,9 @@ export function EarningsSummaryCard({
       </div>
 
       <div>
-        <div className="text-xs uppercase text-text-muted">All time</div>
+        <div className="text-sm uppercase text-text-muted font-bold">
+          All time
+        </div>
         <div className="mt-1 flex flex-wrap gap-8 text-sm">
           <div>
             <div className="text-text-muted text-xs uppercase">Gross</div>
@@ -95,7 +113,15 @@ export function EarningsSummaryCard({
             </div>
           </div>
           <div>
-            <div className="text-text-muted text-xs uppercase">Platform fees</div>
+            <div className="text-text-muted text-xs uppercase">Stripe fees</div>
+            <div className="text-text font-semibold">
+              {formatMoney(allTimeStripeFeeCents)}
+            </div>
+          </div>
+          <div>
+            <div className="text-text-muted text-xs uppercase">
+              Platform fees
+            </div>
             <div className="text-text font-semibold">
               {formatMoney(allTimePlatformFeeCents)}
             </div>
@@ -109,10 +135,10 @@ export function EarningsSummaryCard({
         </div>
       </div>
       <p className="text-[11px] text-text-muted">
-        Platform fees follow the $3.33-per-$50 rule above. Stripe’s payment
-        processing fee (fixed 2.9%) is charged separately.
+        Platform fees follow the $3.33-per-$50 rule above. Stripe processing
+        fees are shown separately; projected payouts reflect both Stripe fees
+        and platform fees.
       </p>
     </section>
   );
 }
-

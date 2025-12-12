@@ -95,6 +95,9 @@ export default defineSchema({
     externalId: v.string(), // e.g. Stripe payment_intent id
     ticketRef: v.optional(v.string()),
     createdAt: v.number(),
+    // Stripe fee and net amounts (optional for legacy rows)
+    stripeFeeCents: v.optional(v.number()), // processing fee charged by Stripe
+    netCents: v.optional(v.number()), // amount after Stripe fees (platform fee applied separately)
   })
     .index("by_creator", ["creatorSlug"])
     .index("by_creator_createdAt", ["creatorSlug", "createdAt"])

@@ -39,6 +39,7 @@ export function EarningsPanel({ data, onConnectStripe }: EarningsPanelProps) {
         currentPeriod={data.currentPeriod}
         lastThreePeriods={data.lastThreePeriods}
         allTimeGrossCents={data.allTimeGrossCents}
+        allTimeStripeFeeCents={data.allTimeStripeFeeCents}
         allTimePlatformFeeCents={data.allTimePlatformFeeCents}
         allTimePayoutCents={data.allTimePayoutCents}
       />

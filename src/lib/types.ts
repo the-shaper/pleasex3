@@ -132,11 +132,13 @@ export interface CreatorEarningsSummary {
   periodStart: number; // timestamp (inclusive)
   periodEnd: number; // timestamp (exclusive)
   grossCents: number;
+  stripeFeeCents: number;
   thresholdCents: number; // e.g. 5000 for $50
   platformFeeRateBps: number; // effective rate for the period (derived from $3.33 per $50 blocks)
   platformFeeCents: number;
   payoutCents: number;
   thresholdReached: boolean;
+  netCents?: number;
 }
 
 export type PayoutStatus = "pending" | "processing" | "paid" | "failed";
@@ -168,6 +170,7 @@ export interface EarningsDashboardData {
   currentPeriod: CreatorEarningsSummary;
   lastThreePeriods: CreatorEarningsSummary[];
   allTimeGrossCents: number;
+  allTimeStripeFeeCents: number;
   allTimePlatformFeeCents: number;
   allTimePayoutCents: number;
   upcomingPayout?: PayoutRecord | null;

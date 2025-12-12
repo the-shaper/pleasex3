@@ -43,9 +43,14 @@ export function ConnectStripeCard({
           Connect Stripe to enable tipping
         </div>
         <p className="text-sm text-text-muted max-w-xl">
-          Earnings are calculated in USD. We keep $3.33 for every $50 you make
-          (nothing below $50). Stripe charges a fixed 2.9% processing fee
-          separately.
+          Earnings are calculated in USD.
+        </p>
+        <p className="text-sm text-text-muted max-w-xl">
+          We keep $3.33 for every $50 THRESHOLD you make (nothing below
+          $50).{" "}
+        </p>
+        <p className="text-sm text-text-muted max-w-xl">
+          Stripe charges a fixed 2.9% processing fee separately.
         </p>
         <button
           type="button"
@@ -79,10 +84,13 @@ export function ConnectStripeCard({
       <div className="text-xs text-text">
         Earnings are calculated in USD.{" "}
         <span className="font-bold text-text">
-          We keep $3.33 per $50 you make—if you earn less than $50 for the
-          period, we keep nothing.{" "}
+          We keep $3.33 per $50 THRESHOLD you make—if you earn less than $50 for
+          the period, we keep nothing.{" "}
         </span>{" "}
-        Stripe's fixed 2.9% processing fee remains separate.
+        <p className="text-xs text-text max-w-xl">
+          Stripe's fixed 2.9% + $0.30 per card transaction (varies by
+          country/payment method) processing fee remains separate.
+        </p>
       </div>
     </section>
   );
