@@ -99,13 +99,15 @@ This is a proof of concept and we are looking for feedback. Please please please
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex border-b-1 border-text-muted bg-gold">
-          <div className="flex flex-row py-4 px-6 justify-between w-full">
-            <h2 className="text-lg font-bold uppercase text-text">{title}</h2>
+        <div className="flex border-b-1 border-text bg-gold max-h-16 items-center">
+          <div className="flex flex-row justify-between items-center w-full">
+            <h2 className="flex-1 py-4 px-6 text-lg font-bold uppercase leading-none">
+              {title}
+            </h2>
             {/* Close button */}
             <button
               onClick={onClose}
-              className="top-4 right-4 w-8 h-8 flex items-center justify-center bg-gray-subtle hover:bg-text hover:text-bg transition-colors text-2xl leading-none"
+              className="flex-1 py-4 px-3 text-lg font-bold uppercase max-w-16 transition-colors border-l-1 border-text-muted bg-gray-subtle text-text hover:bg-text hover:text-bg max-h-16"
               aria-label="Close modal"
             >
               ×

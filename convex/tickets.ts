@@ -14,7 +14,7 @@ async function scheduleTicketEmails(ctx: any, ticket: any) {
       email: ticket.email,
       userName: ticket.name || "User",
       ticketRef: ticket.ref,
-      trackingUrl: "", // allow template fallback to /status/:ref
+      trackingUrl: "", // allow template fallback to /tracking?ref=:ref
       creatorName: ticket.creatorSlug, // Ideally fetch display name, but slug works for now
       ticketType: ticket.queueKind,
     });
@@ -197,7 +197,7 @@ export const approve = mutation({
         userName: ticket.name || "User",
         ticketRef: ticket.ref,
         queueNumber: updatedTicket?.queueNumber || 0,
-        trackingUrl: "", // allow template fallback to /status/:ref
+        trackingUrl: "", // allow template fallback to /tracking?ref=:ref
         ticketType: ticket.queueKind,
       });
     }

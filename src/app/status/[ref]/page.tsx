@@ -170,16 +170,17 @@ export default function StatusPage({
   // Map ticket data to the format expected by TicketApprovalCard
   const ticketData = {
     form: {
-      name: "Anonymous", // Not stored in ticket yet
-      email: "user@example.com", // Not stored in ticket yet
+      name: ticket.name || "Anonymous",
+      email: ticket.email || "—",
+      taskTitle: ticket.taskTitle,
       needText: ticket.message || "No description provided",
-      attachments: "", // Not implemented yet
+      attachments: ticket.attachments ? ticket.attachments.join(", ") : "",
       priorityTipCents: ticket.tipCents,
     },
     isPriority: ticket.queueKind === "priority",
     activeQueue: {
-      nextTurn: 1, // Mock for now
-      activeCount: 1, // Mock for now
+      nextTurn: queueData?.activeCount || 1,
+      activeCount: queueData?.activeCount || 1,
     },
     tipDollarsInt: Math.floor(ticket.tipCents / 100),
     minPriorityTipCents: 1500, // Mock for now
@@ -187,7 +188,7 @@ export default function StatusPage({
       personal: { etaMins: 240 },
       priority: { etaMins: 60 },
     },
-    userName: "Demo Creator", // Mock for now
+    userName: ticket.name || "User",
     referenceNumber: ticket.ref,
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ConvexDataProvider } from "@/lib/data/convex";
 import TicketApprovalCreatorCard from "@/components/checkout/ticketApprovalCreatorCard";
 import { ButtonBase } from "./general/buttonBase";
@@ -30,6 +30,7 @@ export interface TrackingModalProps {
   isOpen: boolean;
   onClose: () => void;
   className?: string;
+  initialRef?: string;
 }
 
 interface QueueData {
@@ -42,12 +43,55 @@ export function TrackingModal({
   isOpen,
   onClose,
   className = "",
+  initialRef = "",
 }: TrackingModalProps) {
-  const [trackingNumber, setTrackingNumber] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState(initialRef);
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [queueData, setQueueData] = useState<QueueData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Auto-search when initialRef is provided and modal opens
+  useEffect(() => {
+    if (isOpen && initialRef && !ticket && !loading) {
+      setTrackingNumber(initialRef);
+      // Trigger search automatically
+      const searchTicket = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const result = await dataProvider.getTicketByRef(initialRef.trim());
+          if (result) {
+            setTicket(result);
+            // Fetch queue snapshot
+            try {
+              const snapshot = await dataProvider.getQueueSnapshot(
+                result.creatorSlug
+              );
+              const queueKind = result.queueKind as "personal" | "priority";
+              const queueInfo = snapshot[queueKind];
+              setQueueData({
+                etaDays: queueInfo.etaDays ?? null,
+                avgDaysPerTicket: queueInfo.avgDaysPerTicket,
+                activeCount: queueInfo.activeCount || 0,
+              });
+            } catch (queueErr) {
+              console.error("Error fetching queue data:", queueErr);
+            }
+          } else {
+            setError("Ticket not found. Please check your tracking number.");
+          }
+        } catch (err) {
+          console.error("Error fetching ticket:", err);
+          setError("An error occurred while searching. Please try again.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      searchTicket();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialRef]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +154,13 @@ export function TrackingModal({
     onClose();
   };
 
+  // Reset tracking number when initialRef changes
+  useEffect(() => {
+    if (initialRef) {
+      setTrackingNumber(initialRef);
+    }
+  }, [initialRef]);
+
   if (!isOpen) return null;
 
   return (
@@ -122,23 +173,22 @@ export function TrackingModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex border-b-2 border-text bg-coral">
-          <div className="flex-1 py-4 px-6 text-lg font-bold uppercase">
+        <div className="flex border-b-1 border-text bg-coral max-h-16 items-center">
+          <div className="flex-1 py-4 px-6 text-lg font-bold uppercase leading-none">
             TRACK YOUR FAVOR
           </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-8 md:p-12 relative custom-scrollbar">
           {/* Close button */}
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-gray-subtle hover:bg-text hover:text-bg transition-colors text-2xl leading-none"
+            className="flex-1 py-4 px-3 text-lg font-bold uppercase max-w-16 transition-colors border-l-1 border-text-muted bg-gray-subtle text-text hover:bg-text hover:text-bg max-h-16"
             aria-label="Close modal"
           >
             ×
           </button>
+        </div>
 
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-8 md:p-12 relative custom-scrollbar">
           <div className="space-y-6">
             <div className="space-y-2">
               <h2 className="text-xl md:text-4xl font-bold text-text tracking-tighter">

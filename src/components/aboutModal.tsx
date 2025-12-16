@@ -174,11 +174,11 @@ Thank you for participating!
       onClick={onClose}
     >
       <div
-        className={`bg-bg border-1 border-text-muted max-w-3xl w-full max-h-[90vh] flex flex-col ${className}`}
+        className={`bg-bg border-2 border-text max-w-3xl w-full max-h-[90vh] flex flex-col ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Tab Headers */}
-        <div className="flex border-b-1 border-text-muted">
+        <div className="flex border-b-1 border-text-muted max-h-16 items-center">
           <button
             className={`w-3/10 py-4 px-6 text-lg font-bold uppercase transition-colors border-text-muted ${
               activeTab === "what"
@@ -210,7 +210,7 @@ Thank you for participating!
             WHY?
           </button>
           <button
-            className="flex-1 py-4 px-3 text-lg font-bold uppercase transition-colors border-l-1 border-text-muted bg-gray-subtle text-text hover:bg-text hover:text-bg"
+            className="flex-1 py-4 px-3 text-lg font-bold uppercase transition-colors border-l-1 border-text-muted bg-gray-subtle text-text hover:bg-text hover:text-bg max-h-16"
             onClick={onClose}
             aria-label="Close modal"
           >

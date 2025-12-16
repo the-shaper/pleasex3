@@ -50,7 +50,7 @@ export const TicketReceiptEmail = ({
             style={button}
             href={
               trackingUrl ||
-              `${process.env.NEXT_PUBLIC_APP_URL || "https://pleasepleaseplease.me"}/status/${ticketRef}`
+              `${process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://pleasepleaseplease.me"}/tracking?ref=${ticketRef}`
             }
           >
             Track Request

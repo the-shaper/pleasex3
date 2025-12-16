@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import { useUser, useClerk } from "@clerk/nextjs";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { AboutModal } from "@/components/aboutModal";
 import { TrackingModal } from "@/components/trackingModal";
 import { useQuery } from "convex/react";
@@ -11,6 +11,22 @@ import { api } from "@convex/_generated/api";
 
 import { HandsBackground } from "@/components/HandsBackground";
 import { StatusBar } from "@/components/dashboard/statusBar";
+
+function TrackingModalWithRef() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const trackingRef = searchParams.get("ref") || "";
+  const isTrackingModalOpen = pathname === "/tracking";
+
+  return (
+    <TrackingModal
+      isOpen={isTrackingModalOpen}
+      onClose={() => router.push("/")}
+      initialRef={trackingRef}
+    />
+  );
+}
 
 export default function Home() {
   const { user, isLoaded } = useUser();
@@ -148,10 +164,9 @@ export default function Home() {
 
       {/* Modals - Outside the blurred container */}
       <AboutModal isOpen={isAboutModalOpen} onClose={() => router.push("/")} />
-      <TrackingModal
-        isOpen={isTrackingModalOpen}
-        onClose={() => router.push("/")}
-      />
+      <Suspense fallback={null}>
+        <TrackingModalWithRef />
+      </Suspense>
     </>
   );
 }
