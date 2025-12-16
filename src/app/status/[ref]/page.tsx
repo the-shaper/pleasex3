@@ -107,13 +107,13 @@ export default function StatusPage({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "open":
-        return "text-yellow-600";
+        return "text-coral";
       case "approved":
-        return "text-green-600";
+        return "text-coral";
       case "rejected":
-        return "text-red-600";
+        return "text-coral";
       case "closed":
-        return "text-gray-600";
+        return "text-text-muted";
       default:
         return "text-gray-600";
     }
@@ -209,7 +209,7 @@ export default function StatusPage({
             <span className="font-mono font-semibold">{ticket.ref}</span>
           </p>
           <div
-            className={`px-3 py-1  text-sm font-medium ${getStatusColor(
+            className={`px-3 py-1 text-sm font-medium ${getStatusColor(
               ticket.status
             )} bg-opacity-10`}
           >
