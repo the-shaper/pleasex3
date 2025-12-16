@@ -52,9 +52,18 @@ export default function CreatorQueuesPage() {
 
   // Ensure etaDays is number | null, not undefined
   const safeQueueSnapshot = {
-    personal: { ...queueSnapshot.personal, etaDays: queueSnapshot.personal.etaDays ?? null },
-    priority: { ...queueSnapshot.priority, etaDays: queueSnapshot.priority.etaDays ?? null },
-    general: { ...queueSnapshot.general, etaDays: queueSnapshot.general.etaDays ?? null },
+    personal: {
+      ...queueSnapshot.personal,
+      etaDays: queueSnapshot.personal.etaDays ?? null,
+    },
+    priority: {
+      ...queueSnapshot.priority,
+      etaDays: queueSnapshot.priority.etaDays ?? null,
+    },
+    general: {
+      ...queueSnapshot.general,
+      etaDays: queueSnapshot.general.etaDays ?? null,
+    },
   };
 
   return (
@@ -76,12 +85,12 @@ export default function CreatorQueuesPage() {
             >
               PLEASE PLEASE PLEASE!
             </h1>
-            <p
-              className="uppercase text-coral"
+            <h3
+              className=" text-lg uppercase text-coral"
               style={{ fontFamily: "var(--font-body)" }}
             >
               JOIN THE QUEUE
-            </p>
+            </h3>
           </div>
           <div className="flex flex-col items-end gap-2 md:w-1/3 w-full">
             <button
@@ -138,7 +147,8 @@ export default function CreatorQueuesPage() {
               target="_blank"
               style={{ fontFamily: "var(--font-body)" }}
             >
-              please please please! is a proof of concept by <span className="font-bold">twilight fringe</span>
+              please please please! is a proof of concept by{" "}
+              <span className="font-bold">twilight fringe</span>
             </a>
           </div>
         </footer>

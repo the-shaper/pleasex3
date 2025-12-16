@@ -6,6 +6,7 @@ import { useAction } from "convex/react";
 import { api } from "@convex/_generated/api";
 import PaymentWrapper from "@/components/checkout/PaymentWrapper";
 import { TosModal } from "@/components/general/tosModal";
+import { normalizeUrl } from "@/lib/urlUtils";
 
 type QueuePayload = {
   creator: { slug: string; displayName: string; minPriorityTipCents: number };
@@ -174,7 +175,8 @@ export default function SubmitClient({
     const attachments = form.attachments
       .split(/\s+/)
       .map((s) => s.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .map((url) => normalizeUrl(url));
 
     // 1. Create Ticket First
     console.log("[Submit] Creating ticket...");
@@ -282,12 +284,21 @@ export default function SubmitClient({
     <div className="max-w-5xl mx-auto p-6 min-h-screen flex items-center">
       <div className="flex flex-col md:flex-row gap-6 w-full items-center">
         <div className="w-full md:w-1/2 md:sticky md:top-6 space-y-4">
-          <h1
-            className="text-[32px] font-bold leading-none uppercase tracking-tighter"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Claim a ticket
-          </h1>
+          <div>
+            <h3 className="text-md text-text-muted font-bold uppercase">
+              PLEASE PLEASE PLEASE!
+            </h3>
+            <h1
+              className="text-[32px] font-bold leading-none uppercase tracking-tighter"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Claim a ticket
+            </h1>
+            <h3 className="text-md text-text-muted uppercase">
+              {" "}
+              from <span className="text-coral">{slug}</span>{" "}
+            </h3>
+          </div>
           <div className="flex gap-2">
             <button
               className={`px-3 py-1 uppercase ${

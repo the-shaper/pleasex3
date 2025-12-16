@@ -54,6 +54,12 @@ export default function NextUpSection({
     [approvedTaskCards]
   );
 
+  // Create unique signature to trigger GSAP refresh when list order changes
+  const tasksSignature = useMemo(
+    () => approvedTaskCards.map((t) => t.ref).join(","),
+    [approvedTaskCards]
+  );
+
   // Note: scrollContainerRef is managed via ref; no debug side effects here.
 
   // Detect desktop breakpoint for conditional rendering
@@ -116,7 +122,7 @@ export default function NextUpSection({
       clearTimeout(timer);
       triggers.forEach((trigger) => trigger.kill());
     };
-  }, [isDesktop, isCollapsed, hasPendingApprovals]); // Re-run when layout changes, not when callbacks change
+  }, [isDesktop, isCollapsed, hasPendingApprovals, tasksSignature]); // Re-run when layout changes or list order changes
 
   return (
     <div

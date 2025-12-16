@@ -13,8 +13,8 @@
 | **Vercel**              | ✅ Deployed             | Custom domain linked                  |
 | **Convex (Production)** | ✅ Environment vars set | See verified vars below               |
 | **Clerk**               | ✅ Deployed             | OAuth google provider set – test mode |
-| **Stripe**              | ⚠️ Needs verification   | Webhook endpoint needs updating       |
-| **Resend**              | ⚠️ Needs verification   | Domain verification status unknown    |
+| **Stripe**              | ✅ Deployed             | Webhook endpoint needs updating       |
+| **Resend**              | ✅ Deployed             | Domain verification status unknown    |
 
 ---
 

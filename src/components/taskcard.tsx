@@ -4,6 +4,7 @@ import { useState, forwardRef, useEffect } from "react";
 import { ButtonBase } from "./general/buttonBase";
 import { TagBase } from "./general/tagBase";
 import { TaskTag } from "@/lib/types";
+import { normalizeUrl } from "@/lib/urlUtils";
 
 export type TaskCardVariant = "autoqueue" | "priority" | "personal";
 
@@ -122,9 +123,8 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
     return (
       <section
         ref={ref}
-        className={`space-y-1 ${className} bg-bg pb-4 min-w-[269px] md:w-full outline-1 transition-all ${
-          isActive ? "outline-2 outline-coral" : "outline-gray-subtle"
-        }`}
+        className={`space-y-1 ${className} bg-bg pb-4 min-w-[269px] md:w-full outline-1 transition-all ${isActive ? "outline-2 outline-coral" : "outline-gray-subtle"
+          }`}
       >
         {/* Queue Type Badge */}
         <div className={`flex justify-center ${queueBadgeBg}`}>
@@ -197,9 +197,9 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
                             (highestPriorityTag === "closed"
                               ? "finished"
                               : highestPriorityTag) as Exclude<
-                              TaskTag,
-                              "closed"
-                            >
+                                TaskTag,
+                                "closed"
+                              >
                           }
                         >
                           {highestPriorityTag.replace("-", " ").toUpperCase()}
@@ -240,16 +240,16 @@ const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
                 <div className="text-xs space-y-1 min-w-0 break-words mb-2">
                   {data.attachments.length > 0
                     ? data.attachments.map((url, i) => (
-                        <a
-                          href={url}
-                          target="_blank"
-                          key={i}
-                          className="text-wrap underline"
-                          title={url}
-                        >
-                          {url}
-                        </a>
-                      ))
+                      <a
+                        href={normalizeUrl(url)}
+                        target="_blank"
+                        key={i}
+                        className="text-wrap underline"
+                        title={url}
+                      >
+                        {url}
+                      </a>
+                    ))
                     : "—"}
                 </div>
                 <div className="text-coral text-sm">REFERENCE</div>

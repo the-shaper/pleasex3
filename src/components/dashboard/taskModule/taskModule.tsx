@@ -10,6 +10,7 @@ import { useState } from "react"; // Ensure useState is imported
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import ConfirmDone from "./confirmDone";
+import { normalizeUrl } from "@/lib/urlUtils";
 
 export interface TaskModuleProps {
   data: TaskCardData;
@@ -44,7 +45,8 @@ export default function TaskModule({
 }: TaskModuleProps) {
   // Live ticket subscription for reactive status
   const liveTicket = useQuery(api.tickets.getByRef, { ref: data.ref });
-  const isClosed = liveTicket?.status === "closed" || data.status === "finished";
+  const isClosed =
+    liveTicket?.status === "closed" || data.status === "finished";
 
   // Calculate statusTag before early return to follow React Rules of Hooks
   const statusTag = useMemo(() => {
@@ -63,7 +65,7 @@ export default function TaskModule({
 
     const tagsSource = (liveTicket?.tags as TaskTag[] | undefined) ?? data.tags;
     const chosen = tagsSource?.find((t) =>
-      priorityOrder.includes(t as typeof priorityOrder[number])
+      priorityOrder.includes(t as (typeof priorityOrder)[number])
     );
 
     const result = chosen ?? (data.status as TaskTag) ?? "pending";
@@ -73,7 +75,7 @@ export default function TaskModule({
       dataTags: data.tags,
       tagsSource,
       chosen,
-      result
+      result,
     });
 
     return result;
@@ -172,8 +174,7 @@ export default function TaskModule({
       </div>
 
       {/* Content wrapper: always expanded in dashboard */}
-      <div className="overflow-hidden flex-1 min-h-0"
-      >
+      <div className="overflow-hidden flex-1 min-h-0">
         {/* Main Content Wrapper */}
         <div className="flex md:flex-row md:gap-0 flex-col gap-4 h-full">
           {/* Left Content Wrapper */}
@@ -217,7 +218,13 @@ export default function TaskModule({
                 <h3 className="text-2xl font-mono break-words min-w-0">
                   {data.needText || "—"}
                 </h3>
-                <TagBase variant={(statusTag === "closed" ? "finished" : statusTag) as Exclude<TaskTag, "closed">}>
+                <TagBase
+                  variant={
+                    (statusTag === "closed"
+                      ? "finished"
+                      : statusTag) as Exclude<TaskTag, "closed">
+                  }
+                >
                   {String(statusTag).replace("-", " ").toUpperCase()}
                 </TagBase>
               </div>
@@ -263,7 +270,7 @@ export default function TaskModule({
                 <div className="text-coral">CONTENT LINK</div>
                 {firstLink ? (
                   <a
-                    href={firstLink}
+                    href={normalizeUrl(firstLink)}
                     target="_blank"
                     rel="noreferrer"
                     className="underline break-all"
@@ -304,9 +311,7 @@ export default function TaskModule({
                   <ButtonBase
                     variant="primary"
                     size="sm"
-                    className={`flex-1 ${isAwaiting
-                      ? "bg-purple text-text hover:bg-purple"
-                      : ""
+                    className={`flex-1 ${isAwaiting ? "bg-purple text-text hover:bg-purple" : ""
                       }`}
                     onClick={handleStatusButtonClick}
                     disabled={!canToggle || isToggling}

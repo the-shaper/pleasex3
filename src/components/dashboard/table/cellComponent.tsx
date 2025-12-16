@@ -80,7 +80,7 @@ export function CellComponent({
   return (
     // UPDATED: Make entire row clickable; remove button column
     <div
-      className={`grid gap-4 items-start px-4 py-2 border-b border-gray-subtle cursor-pointer hover:bg-blue-2 transition-colors whitespace-nowrap ${className} ${
+      className={`grid gap-4 items-center px-4 py-2 border-b border-gray-subtle cursor-pointer hover:bg-blue-2 transition-colors whitespace-nowrap ${className} ${
         isClickable ? "focus:bg-gray-subtle" : ""
       } ${
         isActive ? "bg-gray-subtle" : "" // NEW: Highlight when active from ScrollTrigger
@@ -153,7 +153,9 @@ export function CellComponent({
 
       {/* CONDITIONAL: Status - Only for past/all variants */}
       {(variant === "past" || variant === "all") && (
-        <div className="text-sm text-text-muted">{data.status || "—"}</div>
+        <div className="text-sm text-text-muted truncate">
+          {data.status || "—"}
+        </div>
       )}
 
       {/* CONDITIONAL: Tip - Only for past/all variants */}

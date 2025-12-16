@@ -89,7 +89,7 @@ export default function QueueCard({
       <div className="space-y-2">
         <div className="flex flex-col md:flex-row gap-2 items-stretch">
           <div
-            className="md:w-32 w-full grid gap-1 items-stretch"
+            className="md:w-32 w-full grid gap-2 items-stretch"
             style={{ gridTemplateRows: "auto auto 1fr", minHeight: 167 }}
           >
             <div
@@ -104,7 +104,7 @@ export default function QueueCard({
               className="bg-[#412c2c] box-border content-stretch flex flex-row gap-2.5 items-center justify-center px-[30px] py-2.5 w-full text-center"
               style={{ fontFamily: "var(--font-body)" }}
             >
-              <span className="text-[14.386px] tracking-[-0.2877px] text-coral leading-4  ">
+              <span className="text-[14.386px] tracking-[-0.2877px] text-coral leading-none  ">
                 Current Turn
               </span>
             </div>
@@ -127,18 +127,24 @@ export default function QueueCard({
                   : "GRATIS"}
               </span>
               <span
-                className="text-[22px]"
+                className="text-[22px] leading-none"
                 style={{ fontFamily: "var(--font-body)" }}
               >
                 Next Available
               </span>
             </div>
             <div className="flex items-center justify-between mt-1">
+              <span
+                className="text-[22px]"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                &gt;
+              </span>
               <span className="text-[111px] leading-none text-coral font-mono">
                 {nextTicketNumber ?? data.nextTicketNumber ?? "—"}
               </span>
               <div
-                className="flex-1 ml-[-6px] mr-2 text-[12px] uppercase text-text text-left max-w-[44%]"
+                className="flex-1 ml-[9px] mr-2 text-[12px] uppercase text-text text-left max-w-[44%]"
                 style={{ fontFamily: "var(--font-body)" }}
               >
                 <p>
@@ -148,24 +154,22 @@ export default function QueueCard({
                 </p>
                 <p className="text-coral underline hidden">"READ WHY"</p>
               </div>
-              <span
-                className="text-[22px]"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                &gt;
-              </span>
             </div>
             <div
               className="flex gap-6 mt-2 text-[10px] text-text"
               style={{ fontFamily: "var(--font-body)" }}
             >
               <div>
-                <div className="font-bold">Average Time / Favor</div>
-                <div>{formatEtaDays(data.avgDaysPerTicket)}</div>
+                <div className="font-bold tracking-tighter ">
+                  Average Time / Ticket
+                </div>
+                <div className="text-xs">
+                  {formatEtaDays(data.avgDaysPerTicket)}
+                </div>
               </div>
               <div>
                 <div className="font-bold">Estimated Delivery</div>
-                <div>{formatEtaDate(data.etaDays)}</div>
+                <div className="text-xs">{formatEtaDate(data.etaDays)}</div>
               </div>
             </div>
           </div>

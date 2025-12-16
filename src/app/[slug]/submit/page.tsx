@@ -37,10 +37,10 @@ export default function SubmitPage() {
         const [snapshot, creatorInfo, nextNumbers] = await Promise.all([
           dataProvider.getQueueSnapshot(slug),
           dataProvider.getCreatorInfo?.(slug) ||
-            Promise.resolve({
-              displayName: slug,
-              minPriorityTipCents: 1500,
-            }),
+          Promise.resolve({
+            displayName: slug,
+            minPriorityTipCents: 1500,
+          }),
           httpClient.query(api.dashboard.getNextTicketNumbers, {
             creatorSlug: slug,
           }),
