@@ -125,7 +125,7 @@ export const processPendingTickets = internalAction({
         pendingCount: data.tickets.length,
         oldestTicketRef: oldestTicket.ref,
         daysOld,
-        dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/${creatorSlug}/dashboard?tab=active`,
+        dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://pleasepleaseplease.me"}/${creatorSlug}/dashboard?tab=active`,
       });
 
       // Mark reminders as sent for all tickets

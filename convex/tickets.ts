@@ -37,7 +37,7 @@ async function scheduleTicketEmails(ctx: any, ticket: any) {
         userName: ticket.name || "User",
         ticketType: ticket.queueKind,
         tipAmount: ticket.tipCents ? ticket.tipCents / 100 : 0,
-        dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
+        dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://pleasepleaseplease.me"}/${ticket.creatorSlug}/dashboard`,
       });
     } else {
       console.warn("[email] creator alert skipped: missing creator or email", {
