@@ -8,17 +8,17 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 import { useState, useEffect, useMemo } from "react";
-import { CellComponent, type CellComponentData } from "./cellComponent";
+import { RowComponent, type RowComponentData } from "./rowComponent";
 
 // Helper function to sort tickets with 3:1 priority-to-personal ratio (moved from page.tsx)
 
 // Re-export for convenience
-export type { CellComponentData };
+export type { RowComponentData };
 
 import { getGridColumns, TableVariant } from "./tableLayout";
 
 export interface TableComponentProps {
-  data: CellComponentData[];
+  data: RowComponentData[];
   onOpen?: (ref: string) => void;
   className?: string;
   activeTaskRef?: string; // Track active task from ScrollTrigger
@@ -30,7 +30,7 @@ export interface TableComponentProps {
 }
 
 // Helper function to filter data based on variant (moved outside component)
-const getFilteredData = (data: CellComponentData[], variant: TableVariant) => {
+const getFilteredData = (data: RowComponentData[], variant: TableVariant) => {
   if (!Array.isArray(data)) {
     return [];
   }
@@ -109,7 +109,7 @@ export function TableComponent({
   }, [filteredData, sorting]);
 
   // Define columns for TanStack Table with sorting
-  const columns: ColumnDef<CellComponentData>[] = [
+  const columns: ColumnDef<RowComponentData>[] = [
     {
       id: "general",
       accessorKey: "generalNumber",
@@ -352,14 +352,13 @@ export function TableComponent({
                   return (
                     <div
                       key={rowData.ref}
-                      className={`${isMobile ? "hover:bg-gray-subtle/20 cursor-pointer" : ""} ${
-                        shouldEnableClickToScroll
-                          ? "cursor-pointer hover:bg-gray-subtle/20"
-                          : ""
-                      }`}
+                      className={`${isMobile ? "hover:bg-gray-subtle/20 cursor-pointer" : ""} ${shouldEnableClickToScroll
+                        ? "cursor-pointer hover:bg-gray-subtle/20"
+                        : ""
+                        }`}
                       onClick={() => handleRowClick(rowData.ref)}
                     >
-                      <CellComponent
+                      <RowComponent
                         data={rowData}
                         // Keep existing mobile-specific behavior inside the cell if needed
                         onOpen={isMobile ? onOpen : undefined}

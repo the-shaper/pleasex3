@@ -4,7 +4,7 @@ import { AboutModal } from "./aboutModal";
 import { ButtonBase } from "./general/buttonBase";
 
 const meta: Meta<typeof AboutModal> = {
-    title: "Components/AboutModal",
+    title: "Components/General/AboutModal",
     component: AboutModal,
     parameters: {
         layout: "fullscreen",

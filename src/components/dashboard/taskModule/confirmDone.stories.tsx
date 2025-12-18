@@ -6,8 +6,21 @@ const meta: Meta<typeof ConfirmDone> = {
   title: "Components/Dashboard/TaskModule/ConfirmDone",
   component: ConfirmDone,
   parameters: {
-    layout: "centered",
+    layout: "fullscreen",
+    docs: {
+      story: {
+        inline: true,
+        height: "600px",
+      },
+    },
   },
+  decorators: [
+    (Story) => (
+      <div className="relative min-h-[600px] w-full transform scale-100">
+        <Story />
+      </div>
+    ),
+  ],
   tags: ["autodocs"],
   argTypes: {
     isOpen: {
@@ -73,7 +86,7 @@ const InteractiveConfirmDone = () => {
       >
         Open Confirm Dialog
       </button>
-      
+
       <ConfirmDone
         isOpen={isOpen}
         onCancel={handleCancel}
@@ -96,7 +109,7 @@ const StatesGrid = () => {
     const newStates = [...submittingStates];
     newStates[index] = true;
     setSubmittingStates(newStates);
-    
+
     setTimeout(() => {
       const resetStates = [...submittingStates];
       resetStates[index] = false;
@@ -110,27 +123,27 @@ const StatesGrid = () => {
         <h3 className="text-sm font-medium mb-4">Default State</h3>
         <ConfirmDone
           isOpen={true}
-          onCancel={() => {}}
+          onCancel={() => { }}
           onConfirm={() => handleConfirm(0)}
           isSubmitting={submittingStates[0]}
         />
       </div>
-      
+
       <div>
         <h3 className="text-sm font-medium mb-4">Submitting State</h3>
         <ConfirmDone
           isOpen={true}
-          onCancel={() => {}}
-          onConfirm={() => {}}
+          onCancel={() => { }}
+          onConfirm={() => { }}
           isSubmitting={true}
         />
       </div>
-      
+
       <div>
         <h3 className="text-sm font-medium mb-4">With Error State</h3>
         <ConfirmDone
           isOpen={true}
-          onCancel={() => {}}
+          onCancel={() => { }}
           onConfirm={() => handleConfirm(2)}
           isSubmitting={submittingStates[2]}
         />

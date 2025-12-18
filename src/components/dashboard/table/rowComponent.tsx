@@ -5,7 +5,7 @@ import { TagBase } from "../../general/tagBase";
 
 import { getGridColumns } from "./tableLayout";
 
-export interface CellComponentData {
+export interface RowComponentData {
   // General number - combined position across all queues
   generalNumber: number | null;
   // Ticket number - position in specific queue (priority or personal)
@@ -30,8 +30,8 @@ export interface CellComponentData {
   resolvedAt?: number;
 }
 
-export interface CellComponentProps {
-  data: CellComponentData;
+export interface RowComponentProps {
+  data: RowComponentData;
   onOpen?: (ref: string) => void;
   className?: string;
   isActive?: boolean; // NEW: Highlight when active from ScrollTrigger
@@ -48,14 +48,14 @@ const formatDate = (timestamp: number): string => {
   });
 };
 
-export function CellComponent({
+export function RowComponent({
   data,
   onOpen,
   className = "",
   isActive,
   disableFocusStyling = false,
   variant = "active",
-}: CellComponentProps) {
+}: RowComponentProps) {
   const handleOpen = () => {
     onOpen?.(data.ref);
   };
@@ -80,11 +80,9 @@ export function CellComponent({
   return (
     // UPDATED: Make entire row clickable; remove button column
     <div
-      className={`grid gap-4 items-center px-4 py-2 border-b border-gray-subtle cursor-pointer hover:bg-blue-2 transition-colors whitespace-nowrap ${className} ${
-        isClickable ? "focus:bg-gray-subtle" : ""
-      } ${
-        isActive ? "bg-gray-subtle" : "" // NEW: Highlight when active from ScrollTrigger
-      }`}
+      className={`grid gap-4 items-center px-4 py-2 border-b border-gray-subtle cursor-pointer hover:bg-blue-2 transition-colors whitespace-nowrap ${className} ${isClickable ? "focus:bg-gray-subtle" : ""
+        } ${isActive ? "bg-gray-subtle" : "" // NEW: Highlight when active from ScrollTrigger
+        }`}
       style={{
         gridTemplateColumns: getGridColumns(variant),
       }}

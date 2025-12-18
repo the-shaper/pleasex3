@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { QueueSettings } from "./QueueSettings";
+import { QueueSettingsContent } from "./QueueSettings";
 import type { QueueSnapshot } from "@/lib/types";
 
 // Sample queue snapshot data
@@ -59,7 +59,7 @@ const disabledQueueSnapshot: QueueSnapshot = {
 
 const meta = {
   title: "Components/Dashboard/QueueSettings",
-  component: QueueSettings,
+  component: QueueSettingsContent,
   parameters: {
     layout: "centered",
   },
@@ -114,8 +114,15 @@ const meta = {
       control: "number",
       description: "Minimum priority tip amount in cents",
     },
+    // New props for View component
+    personalDays: { control: "number" },
+    priorityDays: { control: "number" },
+    minFee: { control: "number" },
+    onDaysChange: { action: "onDaysChange" },
+    onMinFeeChange: { action: "onMinFeeChange" },
+    onTogglePersonalTipping: { action: "onTogglePersonalTipping" },
   },
-} satisfies Meta<typeof QueueSettings>;
+} satisfies Meta<typeof QueueSettingsContent>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -129,56 +136,48 @@ const mockToggleQueue = async (args: {
   return { enabled: true };
 };
 
-export const Loading: Story = {
-  args: {
-    queueSnapshot: null,
-    toggleQueue: mockToggleQueue,
-    slug: "creator-demo",
-    personalEnabled: false,
-    setPersonalEnabled: () => {},
-    priorityEnabled: false,
-    setPriorityEnabled: () => {},
-    personalTippingEnabled: false,
-    setPersonalTippingEnabled: () => {},
-    minPriorityTipCents: 5000,
-    hasStripeAccount: true,
-  },
+const defaultArgs = {
+  toggleQueue: mockToggleQueue,
+  slug: "creator-demo",
+  personalEnabled: true,
+  setPersonalEnabled: () => { },
+  priorityEnabled: true,
+  setPriorityEnabled: () => { },
+  personalTippingEnabled: true,
+  setPersonalTippingEnabled: () => { },
+  minPriorityTipCents: 5000,
+  hasStripeAccount: true,
+  personalDays: 3,
+  priorityDays: 1,
+  minFee: 50,
+  onDaysChange: () => { },
+  onMinFeeChange: () => { },
+  onTogglePersonalTipping: async () => { },
 };
+
+
 
 export const BothQueuesEnabled: Story = {
   args: {
+    ...defaultArgs,
     queueSnapshot: sampleQueueSnapshot,
-    toggleQueue: mockToggleQueue,
-    slug: "creator-demo",
-    personalEnabled: true,
-    setPersonalEnabled: () => {},
-    priorityEnabled: true,
-    setPriorityEnabled: () => {},
-    personalTippingEnabled: true,
-    setPersonalTippingEnabled: () => {},
-    minPriorityTipCents: 5000,
-    hasStripeAccount: true,
   },
 };
 
 export const BothQueuesDisabled: Story = {
   args: {
+    ...defaultArgs,
     queueSnapshot: disabledQueueSnapshot,
-    toggleQueue: mockToggleQueue,
-    slug: "creator-demo",
     personalEnabled: false,
-    setPersonalEnabled: () => {},
     priorityEnabled: false,
-    setPriorityEnabled: () => {},
     personalTippingEnabled: false,
-    setPersonalTippingEnabled: () => {},
-    minPriorityTipCents: 5000,
     hasStripeAccount: false,
   },
 };
 
 export const PersonalOnlyEnabled: Story = {
   args: {
+    ...defaultArgs,
     queueSnapshot: {
       ...sampleQueueSnapshot,
       priority: {
@@ -186,18 +185,14 @@ export const PersonalOnlyEnabled: Story = {
         enabled: false,
       },
     },
-    toggleQueue: mockToggleQueue,
-    slug: "creator-demo",
     personalEnabled: true,
-    setPersonalEnabled: () => {},
     priorityEnabled: false,
-    setPriorityEnabled: () => {},
-    minPriorityTipCents: 5000,
   },
 };
 
 export const PriorityOnlyEnabled: Story = {
   args: {
+    ...defaultArgs,
     queueSnapshot: {
       ...sampleQueueSnapshot,
       personal: {
@@ -205,66 +200,53 @@ export const PriorityOnlyEnabled: Story = {
         enabled: false,
       },
     },
-    toggleQueue: mockToggleQueue,
-    slug: "creator-demo",
     personalEnabled: false,
-    setPersonalEnabled: () => {},
     priorityEnabled: true,
-    setPriorityEnabled: () => {},
-    minPriorityTipCents: 5000,
   },
 };
 
 export const WithAutoqueueCardToggle: Story = {
   args: {
+    ...defaultArgs,
     queueSnapshot: sampleQueueSnapshot,
-    toggleQueue: mockToggleQueue,
-    slug: "creator-demo",
-    personalEnabled: true,
-    setPersonalEnabled: () => {},
-    priorityEnabled: true,
-    setPriorityEnabled: () => {},
     showAutoqueueCard: true,
-    onToggleAutoqueueCard: () => {},
-    minPriorityTipCents: 5000,
+    onToggleAutoqueueCard: () => { },
   },
 };
 
 export const HighMinimumFee: Story = {
   args: {
+    ...defaultArgs,
     queueSnapshot: sampleQueueSnapshot,
-    toggleQueue: mockToggleQueue,
-    slug: "creator-demo",
-    personalEnabled: true,
-    setPersonalEnabled: () => {},
-    priorityEnabled: true,
-    setPriorityEnabled: () => {},
     minPriorityTipCents: 25000, // $250
+    minFee: 250,
   },
 };
 
 export const LowMinimumFee: Story = {
   args: {
+    ...defaultArgs,
     queueSnapshot: sampleQueueSnapshot,
-    toggleQueue: mockToggleQueue,
-    slug: "creator-demo",
-    personalEnabled: true,
-    setPersonalEnabled: () => {},
-    priorityEnabled: true,
-    setPriorityEnabled: () => {},
     minPriorityTipCents: 100, // $1
+    minFee: 1,
   },
 };
 
 export const DefaultMinimumFee: Story = {
   args: {
+    ...defaultArgs,
     queueSnapshot: sampleQueueSnapshot,
-    toggleQueue: mockToggleQueue,
-    slug: "creator-demo",
-    personalEnabled: true,
-    setPersonalEnabled: () => {},
-    priorityEnabled: true,
-    setPriorityEnabled: () => {},
     minPriorityTipCents: 0, // Will default to $50
+    minFee: 50,
+  },
+};
+
+export const Loading: Story = {
+  args: {
+    ...defaultArgs,
+    queueSnapshot: null,
+    personalEnabled: false,
+    priorityEnabled: false,
+    personalTippingEnabled: false,
   },
 };

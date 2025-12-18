@@ -1,6 +1,7 @@
 import type { Preview } from "@storybook/nextjs-vite";
 import "../src/app/globals.css";
 import "./preview.css";
+import theme from "./theme";
 
 const preview: Preview = {
   parameters: {
@@ -16,6 +17,10 @@ const preview: Preview = {
       // 'error' - fail CI on a11y violations
       // 'off' - skip a11y checks entirely
       test: "todo",
+    },
+
+    docs: {
+      theme,
     },
   },
 };

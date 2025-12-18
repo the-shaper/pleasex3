@@ -4,8 +4,6 @@ import { ButtonBase } from "../general/buttonBase";
 import {
   useUser,
   useClerk,
-  SignedIn,
-  SignedOut,
   SignInButton,
 } from "@clerk/nextjs"; // Updated: Added useClerk, removed useSignOut
 import { useRouter } from "next/navigation";
@@ -23,28 +21,33 @@ export interface DashboardHeaderProps {
   // Removed unused onMenuClick - simplify unless needed
 }
 
-export default function DashboardHeader({
+// View Component
+export function DashHeaderContent({
   title = "PLEASE PLEASE PLEASE!",
   className = "",
-  onMenuClick, // NEW: Destructure
-  isOpen, // NEW: Destructure
-  onFaqClick, // NEW: Destructure for FAQ modal
+  onMenuClick,
+  isOpen,
+  onFaqClick,
   statusMetrics,
-  userSlug: userSlugProp = null,
-}: DashboardHeaderProps) {
-  const { user, isLoaded, isSignedIn } = useUser();
-  const { signOut } = useClerk(); // Fixed: Use useClerk for signOut
-  const router = useRouter();
-
-  // Derive the user's slug (matches dashboard logic)
-  const userSlug =
-    userSlugProp ||
-    user?.username ||
-    user?.primaryEmailAddress?.emailAddress ||
-    null;
-
+  userSlug,
+  username,
+  isAuthenticated,
+  isLoading,
+  onPublicPageClick,
+  onSignOutClick,
+  onSignInClick,
+  SignInWrapper = ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}: DashboardHeaderProps & {
+  username?: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  onPublicPageClick: () => void;
+  onSignOutClick: () => void;
+  onSignInClick?: () => void;
+  SignInWrapper?: React.ComponentType<{ children: React.ReactNode }>;
+}) {
   // Early return for loading (prevents unauth flash)
-  if (!isLoaded) {
+  if (isLoading) {
     return (
       <div data-element="HEADER" className={`col-span-2 ${className}`}>
         <div className="flex justify-between items-start h-20 bg-bg animate-pulse" />
@@ -52,15 +55,10 @@ export default function DashboardHeader({
     );
   }
 
-  const handleSignOut = async () => {
-    await signOut(); // Fixed: Direct signOut from clerk
-    router.push("/"); // Redirect to home post-sign-out
-  };
-
   return (
     <div
       data-element="HEADER"
-      className={`col-span-2 ${className} md:pb-0 pb-2`}
+      className={`col-span-2 ${className} md:pb-0 pb-2 bg-bg`}
     >
       <div className="flex md:flex-col flex-col-reverse gap-2">
         {/* Top row: DASHBOARD tag + MenuButton and Auth buttons */}
@@ -78,7 +76,7 @@ export default function DashboardHeader({
                 DASHBOARD
               </p>
             </div>
-            {isLoaded && user && userSlug && statusMetrics && (
+            {isAuthenticated && userSlug && statusMetrics && (
               <div className="hidden md:flex">
                 <StatusBar
                   queuedTasks={statusMetrics.queuedTasks}
@@ -105,53 +103,91 @@ export default function DashboardHeader({
               Cheatsheet
             </ButtonBase>
 
-            <SignedIn>
-              <ButtonBase
-                variant="default"
-                size="sm"
-                onClick={() => router.push("/" + userSlug)}
-                className="text-xs hover:bg-blue cursor-pointer "
-              >
-                Public Page
-              </ButtonBase>
+            {isAuthenticated ? (
+              <>
+                <ButtonBase
+                  variant="default"
+                  size="sm"
+                  onClick={onPublicPageClick}
+                  className="text-xs hover:bg-blue cursor-pointer "
+                >
+                  Public Page
+                </ButtonBase>
 
-              <ButtonBase
-                variant="default"
-                size="sm"
-                onClick={handleSignOut}
-                className="text-xs hover:bg-coral cursor-pointer"
-              >
-                SIGN OUT
-              </ButtonBase>
-            </SignedIn>
-            <SignedOut>
-              <SignInButton mode="modal">
-                <ButtonBase variant="default" size="sm" className="text-xs">
+                <ButtonBase
+                  variant="default"
+                  size="sm"
+                  onClick={onSignOutClick}
+                  className="text-xs hover:bg-coral cursor-pointer"
+                >
+                  SIGN OUT
+                </ButtonBase>
+              </>
+            ) : (
+              <SignInWrapper>
+                <ButtonBase
+                  variant="default"
+                  size="sm"
+                  className="text-xs"
+                  onClick={onSignInClick}
+                >
                   SIGN IN
                 </ButtonBase>
-              </SignInButton>
-            </SignedOut>
+              </SignInWrapper>
+            )}
           </div>
         </div>
 
         {/* Bottom section: Username greeting and title */}
         <div data-element="HEADER-TITLES-WRAPPER" className="flex flex-col">
-          <SignedIn>
+          {isAuthenticated ? (
             <p className="uppercase text-text-muted text-m">
               Hello,{" "}
-              <span className="text-coral">{user?.username || "User"}!</span>
+              <span className="text-coral">{username || "User"}!</span>
             </p>
-          </SignedIn>
-          <SignedOut>
+          ) : (
             <p className="uppercase text-text-muted text-sm">
               Sign in to continue
             </p>
-          </SignedOut>
+          )}
           <h1 className="md:text-3xl text-2xl text-2xl text-nowrap font-bold tracking-tighter">
             {title}
           </h1>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DashboardHeader(props: DashboardHeaderProps) {
+  const { user, isLoaded, isSignedIn } = useUser();
+  const { signOut } = useClerk();
+  const router = useRouter();
+
+  // Derive the user's slug
+  const userSlug =
+    props.userSlug ||
+    user?.username ||
+    user?.primaryEmailAddress?.emailAddress ||
+    null;
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/");
+  };
+
+  const username = user?.username || user?.primaryEmailAddress?.emailAddress;
+
+  return (
+    <DashHeaderContent
+      {...props}
+      isAuthenticated={!!isSignedIn}
+      isLoading={!isLoaded}
+      username={username || null}
+      userSlug={userSlug}
+      onPublicPageClick={() => router.push("/" + userSlug)}
+      onSignOutClick={handleSignOut}
+      SignInWrapper={SignInButton}
+    />
   );
 }

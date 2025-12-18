@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SideBar } from "@/components/sidebar/sideBar";
 
-import { TableComponent } from "@/components/dashboard/table/tableComponent";
+import { TableComponent } from "@/components/Dashboard/table/tableComponent";
 
 import {
   TaskTag,
@@ -15,11 +15,11 @@ import {
 } from "@/lib/types";
 import type { TicketPosition } from "../../../../convex/lib/ticketEngine";
 import { useSearchParams } from "next/navigation";
-import { QueueSettings } from "@/components/dashboard/QueueSettings";
-import DashHeaderOG from "@/components/dashboard/DashHeaderOG";
+import { QueueSettings } from "@/components/Dashboard/QueueSettings";
+import DashHeaderOG from "@/components/Dashboard/DashHeaderOG";
 import { ConvexDataProvider } from "@/lib/data/convex";
-import { CellComponentData } from "@/components/dashboard/table/cellComponent";
-import TaskModule from "@/components/dashboard/taskModule/taskModule";
+import { RowComponentData } from "@/components/Dashboard/table/rowComponent";
+import TaskModule from "@/components/Dashboard/taskModule/taskModule";
 import {
   SignedIn,
   SignedOut,
@@ -31,14 +31,14 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@convex/_generated/api"; // Generated Convex API via path alias
 import { TaskCardData } from "@/components/taskcard";
-import NextUpSection from "@/components/dashboard/NextUpSection";
-import { EarningsPanel } from "@/components/dashboard/earnings/EarningsPanel";
-import { StripeOnboardingBanner } from "@/components/dashboard/StripeOnboardingBanner";
-import { ResizableDivider } from "@/components/dashboard/ResizableDivider";
-import { MyAccount } from "@/components/dashboard/MyAccount";
+import NextUpSection from "@/components/Dashboard/NextUpSection";
+import { EarningsPanel } from "@/components/Dashboard/earnings/EarningsPanel";
+import { StripeOnboardingBanner } from "@/components/Dashboard/StripeOnboardingBanner";
+import { ResizableDivider } from "@/components/Dashboard/ResizableDivider";
+import { MyAccount } from "@/components/Dashboard/MyAccount";
 import { ReadMeModal } from "@/components/readMeModal";
 import { ButtonBase } from "@/components/general/buttonBase";
-import { StatusBar } from "@/components/dashboard/statusBar";
+import { StatusBar } from "@/components/Dashboard/statusBar";
 
 const dataProvider = new ConvexDataProvider();
 
@@ -486,16 +486,16 @@ export default function DashboardPage() {
     });
   }
 
-  // Helper to map engine positions + ticket docs into CellComponentData
+  // Helper to map engine positions + ticket docs into RowComponentData
   const mapPositionsToCellData = (
     posList: TicketPosition[] | null | undefined
-  ): CellComponentData[] => {
+  ): RowComponentData[] => {
     if (!posList || !overview) return [];
 
     return posList.map((p) => {
       const t = ticketByRef[p.ref];
       const status =
-        (t?.status as CellComponentData["status"]) ?? p.status ?? "open";
+        (t?.status as RowComponentData["status"]) ?? p.status ?? "open";
       const isNumbered = status === "approved" || status === "closed";
 
       const generalNumber = isNumbered ? (p.ticketNumber ?? null) : null;
@@ -529,9 +529,9 @@ export default function DashboardPage() {
   };
 
   // Unified table data for all tabs - TableComponent will handle visual filtering
-  const tableRows: CellComponentData[] = mapPositionsToCellData(positions);
+  const tableRows: RowComponentData[] = mapPositionsToCellData(positions);
   // Active table rows from engine-sorted active positions
-  const activeTableRows: CellComponentData[] =
+  const activeTableRows: RowComponentData[] =
     mapPositionsToCellData(activePositions);
 
   // Show error state
@@ -894,8 +894,8 @@ export default function DashboardPage() {
           ) : (
             <div
               className={`flex flex-col w-full no-scrollbar md:grid md:gap-4 h-full md:h-[86svh] min-h-0 md:min-h-0 ${hasPendingApprovals
-                  ? "w-full md:grid-cols-[400px_1fr]"
-                  : "w-full md:grid-cols-[400px_1fr]"
+                ? "w-full md:grid-cols-[400px_1fr]"
+                : "w-full md:grid-cols-[400px_1fr]"
                 }`}
             >
               <NextUpSection

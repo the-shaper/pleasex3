@@ -23,66 +23,37 @@ interface QueueSettingsProps {
   onNavigateToEarnings?: () => void;
 }
 
-export function QueueSettings({
+interface QueueSettingsContentProps extends QueueSettingsProps {
+  personalDays: number;
+  priorityDays: number;
+  minFee: number;
+  onDaysChange: (kind: "personal" | "priority", val: number) => void;
+  onMinFeeChange: (val: number) => void;
+  onTogglePersonalTipping: () => Promise<void>;
+}
+
+export function QueueSettingsContent({
   queueSnapshot,
-  toggleQueue,
   slug,
   personalEnabled,
-  setPersonalEnabled,
   priorityEnabled,
-  setPriorityEnabled,
   personalTippingEnabled,
-  setPersonalTippingEnabled,
-  showAutoqueueCard,
-  onToggleAutoqueueCard,
-  minPriorityTipCents = 0,
   hasStripeAccount = false,
+  showAutoqueueCard,
   onNavigateToEarnings,
-}: QueueSettingsProps) {
-  const updateSettings = useMutation(api.queues.updateQueueSettings);
-  const updateMinPriorityFee = useMutation(api.creators.updateMinPriorityFee);
-  const setTipping = useMutation(api.queues.setPersonalTippingEnabled);
-
-  const [personalDays, setPersonalDays] = useState(1);
-  const [priorityDays, setPriorityDays] = useState(1);
-  const [minFee, setMinFee] = useState(50);
+  personalDays,
+  priorityDays,
+  minFee,
+  onDaysChange,
+  onMinFeeChange,
+  // These are passed down but wrapped by container handlers usually, 
+  // but we keep them accessible if needed or used directly
+  toggleQueue,
+  setPersonalEnabled,
+  setPriorityEnabled,
+  onTogglePersonalTipping,
+}: QueueSettingsContentProps) {
   const [isCopied, setIsCopied] = useState(false);
-
-  useEffect(() => {
-    if (minPriorityTipCents !== undefined) {
-      // Convert cents to dollars for display, default to 50 if 0
-      setMinFee(minPriorityTipCents > 0 ? minPriorityTipCents / 100 : 50);
-    }
-  }, [minPriorityTipCents]);
-
-  useEffect(() => {
-    if (queueSnapshot) {
-      setPersonalDays(queueSnapshot.personal.avgDaysPerTicket ?? 1);
-      setPriorityDays(queueSnapshot.priority.avgDaysPerTicket ?? 1);
-    }
-  }, [queueSnapshot]);
-
-  const handleDaysChange = async (
-    kind: "personal" | "priority",
-    val: number
-  ) => {
-    if (kind === "personal") setPersonalDays(val);
-    else setPriorityDays(val);
-
-    await updateSettings({
-      creatorSlug: slug,
-      kind,
-      avgDaysPerTicket: val,
-    });
-  };
-
-  const handleMinFeeChange = async (val: number) => {
-    setMinFee(val);
-    await updateMinPriorityFee({
-      slug,
-      minPriorityTipCents: val * 100,
-    });
-  };
 
   const handleCopyUrl = async () => {
     const url = `https://pleasepleaseplease.me/${slug}`;
@@ -200,11 +171,10 @@ export function QueueSettings({
                         setPersonalEnabled(result.enabled);
                       }
                     }}
-                    className={`px-4 py-2 text-[14px] font-bold uppercase  ${
-                      personalEnabled
-                        ? "bg-coral text-text"
-                        : "bg-gray-300 text-text-muted"
-                    }`}
+                    className={`px-4 py-2 text-[14px] font-bold uppercase  ${personalEnabled
+                      ? "bg-coral text-text"
+                      : "bg-gray-300 text-text-muted"
+                      }`}
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     ON
@@ -219,11 +189,10 @@ export function QueueSettings({
                         setPersonalEnabled(result.enabled);
                       }
                     }}
-                    className={`px-4 py-2 text-[14px] font-bold uppercase   ${
-                      !personalEnabled
-                        ? "bg-text text-coral"
-                        : "bg-gray-200 text-text-muted"
-                    }`}
+                    className={`px-4 py-2 text-[14px] font-bold uppercase   ${!personalEnabled
+                      ? "bg-text text-coral"
+                      : "bg-gray-200 text-text-muted"
+                      }`}
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     OFF
@@ -250,7 +219,7 @@ export function QueueSettings({
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() =>
-                      handleDaysChange(
+                      onDaysChange(
                         "personal",
                         Math.max(1, personalDays - 1)
                       )
@@ -265,7 +234,7 @@ export function QueueSettings({
                     min="1"
                     value={personalDays}
                     onChange={(e) =>
-                      handleDaysChange(
+                      onDaysChange(
                         "personal",
                         parseInt(e.target.value) || 1
                       )
@@ -274,7 +243,7 @@ export function QueueSettings({
                   />
                   <button
                     onClick={() =>
-                      handleDaysChange("personal", personalDays + 1)
+                      onDaysChange("personal", personalDays + 1)
                     }
                     className="w-8 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100"
                     style={{ fontFamily: "var(--font-body)" }}
@@ -301,40 +270,30 @@ export function QueueSettings({
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={async () => {
+                    onClick={() => {
                       if (!personalTippingEnabled && hasStripeAccount) {
-                        const result = await setTipping({
-                          creatorSlug: slug,
-                          enabled: true,
-                        });
-                        setPersonalTippingEnabled(result.tippingEnabled);
+                        onTogglePersonalTipping();
                       }
                     }}
                     disabled={!hasStripeAccount}
-                    className={`px-4 py-2 text-[14px] font-bold uppercase ${
-                      personalTippingEnabled
-                        ? "bg-coral text-text"
-                        : "bg-gray-300 text-text-muted"
-                    } ${!hasStripeAccount ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`px-4 py-2 text-[14px] font-bold uppercase ${personalTippingEnabled
+                      ? "bg-coral text-text"
+                      : "bg-gray-300 text-text-muted"
+                      } ${!hasStripeAccount ? "opacity-50 cursor-not-allowed" : ""}`}
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     ON
                   </button>
                   <button
-                    onClick={async () => {
+                    onClick={() => {
                       if (personalTippingEnabled) {
-                        const result = await setTipping({
-                          creatorSlug: slug,
-                          enabled: false,
-                        });
-                        setPersonalTippingEnabled(result.tippingEnabled);
+                        onTogglePersonalTipping();
                       }
                     }}
-                    className={`px-4 py-2 text-[14px] font-bold uppercase ${
-                      !personalTippingEnabled
-                        ? "bg-text text-coral"
-                        : "bg-gray-200 text-text-muted"
-                    }`}
+                    className={`px-4 py-2 text-[14px] font-bold uppercase ${!personalTippingEnabled
+                      ? "bg-text text-coral"
+                      : "bg-gray-200 text-text-muted"
+                      }`}
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     OFF
@@ -378,11 +337,10 @@ export function QueueSettings({
                       }
                     }}
                     disabled={!hasStripeAccount}
-                    className={`px-4 py-2 text-[14px] font-bold uppercase ${
-                      priorityEnabled
-                        ? "bg-coral text-text"
-                        : "bg-gray-300 text-text-muted"
-                    } ${!hasStripeAccount ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`px-4 py-2 text-[14px] font-bold uppercase ${priorityEnabled
+                      ? "bg-coral text-text"
+                      : "bg-gray-300 text-text-muted"
+                      } ${!hasStripeAccount ? "opacity-50 cursor-not-allowed" : ""}`}
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     ON
@@ -398,11 +356,10 @@ export function QueueSettings({
                       }
                     }}
                     disabled={!hasStripeAccount}
-                    className={`px-4 py-2 text-[14px] font-bold uppercase ${
-                      !priorityEnabled
-                        ? "bg-text text-coral"
-                        : "bg-gray-200 text-text-muted"
-                    } ${!hasStripeAccount ? "" : ""}`}
+                    className={`px-4 py-2 text-[14px] font-bold uppercase ${!priorityEnabled
+                      ? "bg-text text-coral"
+                      : "bg-gray-200 text-text-muted"
+                      } ${!hasStripeAccount ? "" : ""}`}
                     style={{ fontFamily: "var(--font-body)" }}
                   >
                     OFF
@@ -429,7 +386,7 @@ export function QueueSettings({
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() =>
-                      handleDaysChange(
+                      onDaysChange(
                         "priority",
                         Math.max(1, priorityDays - 1)
                       )
@@ -444,7 +401,7 @@ export function QueueSettings({
                     min="1"
                     value={priorityDays}
                     onChange={(e) =>
-                      handleDaysChange(
+                      onDaysChange(
                         "priority",
                         parseInt(e.target.value) || 1
                       )
@@ -453,7 +410,7 @@ export function QueueSettings({
                   />
                   <button
                     onClick={() =>
-                      handleDaysChange("priority", priorityDays + 1)
+                      onDaysChange("priority", priorityDays + 1)
                     }
                     className="w-10 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100 "
                     style={{ fontFamily: "var(--font-body)" }}
@@ -481,7 +438,7 @@ export function QueueSettings({
                 </div>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => handleMinFeeChange(Math.max(1, minFee - 1))}
+                    onClick={() => onMinFeeChange(Math.max(1, minFee - 1))}
                     className="w-10 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100 "
                     style={{ fontFamily: "var(--font-body)" }}
                   >
@@ -492,12 +449,12 @@ export function QueueSettings({
                     min="1"
                     value={minFee}
                     onChange={(e) =>
-                      handleMinFeeChange(parseInt(e.target.value) || 1)
+                      onMinFeeChange(parseInt(e.target.value) || 1)
                     }
                     className="w-20 h-10 px-3 text-center bg-white border border-gray-300 text-[16px] font-mono no-spinners focus:outline-blue-2"
                   />
                   <button
-                    onClick={() => handleMinFeeChange(minFee + 1)}
+                    onClick={() => onMinFeeChange(minFee + 1)}
                     className="w-10 h-10 flex items-center justify-center bg-white border border-gray-300 text-[20px] hover:bg-gray-100 "
                     style={{ fontFamily: "var(--font-body)" }}
                   >
@@ -510,5 +467,72 @@ export function QueueSettings({
         </div>
       </div>
     </div>
+  );
+}
+
+export function QueueSettings(props: QueueSettingsProps) {
+  const updateSettings = useMutation(api.queues.updateQueueSettings);
+  const updateMinPriorityFee = useMutation(api.creators.updateMinPriorityFee);
+  const setTipping = useMutation(api.queues.setPersonalTippingEnabled);
+
+  const [personalDays, setPersonalDays] = useState(1);
+  const [priorityDays, setPriorityDays] = useState(1);
+  const [minFee, setMinFee] = useState(50);
+
+  useEffect(() => {
+    if (props.minPriorityTipCents !== undefined) {
+      // Convert cents to dollars for display, default to 50 if 0
+      setMinFee(props.minPriorityTipCents > 0 ? props.minPriorityTipCents / 100 : 50);
+    }
+  }, [props.minPriorityTipCents]);
+
+  useEffect(() => {
+    if (props.queueSnapshot) {
+      setPersonalDays(props.queueSnapshot.personal.avgDaysPerTicket ?? 1);
+      setPriorityDays(props.queueSnapshot.priority.avgDaysPerTicket ?? 1);
+    }
+  }, [props.queueSnapshot]);
+
+  const handleDaysChange = async (
+    kind: "personal" | "priority",
+    val: number
+  ) => {
+    if (kind === "personal") setPersonalDays(val);
+    else setPriorityDays(val);
+
+    await updateSettings({
+      creatorSlug: props.slug,
+      kind,
+      avgDaysPerTicket: val,
+    });
+  };
+
+  const handleMinFeeChange = async (val: number) => {
+    setMinFee(val);
+    await updateMinPriorityFee({
+      slug: props.slug,
+      minPriorityTipCents: val * 100,
+    });
+  };
+
+  const handleTogglePersonalTipping = async () => {
+    const newVal = !props.personalTippingEnabled;
+    const result = await setTipping({
+      creatorSlug: props.slug,
+      enabled: newVal,
+    });
+    props.setPersonalTippingEnabled(result.tippingEnabled);
+  };
+
+  return (
+    <QueueSettingsContent
+      {...props}
+      personalDays={personalDays}
+      priorityDays={priorityDays}
+      minFee={minFee}
+      onDaysChange={handleDaysChange}
+      onMinFeeChange={handleMinFeeChange}
+      onTogglePersonalTipping={handleTogglePersonalTipping}
+    />
   );
 }

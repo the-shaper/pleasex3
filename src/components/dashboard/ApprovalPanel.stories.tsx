@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
-import ApprovalPanel from "./approvalPanel";
+import { ApprovalPanelContent } from "./approvalPanel";
 import type { Ticket } from "@/lib/types";
 
 // Sample data for stories
@@ -29,47 +29,83 @@ const sampleTicket2: Ticket = {
   createdAt: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
 };
 
+// Queue snapshot mock
+const mockQueueSnapshot = {
+  priority: { activeCount: 5, etaDays: 1, etaMins: 60 },
+  personal: { activeCount: 10, etaDays: 2, etaMins: 120 },
+};
+
+// Mock async actions
+const mockProcessApprove = async (ticket: Ticket) => {
+  console.log("Mock processing approve for", ticket.ref);
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  console.log("Approved");
+};
+
+const mockProcessReject = async (ticket: Ticket) => {
+  console.log("Mock processing reject for", ticket.ref);
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  console.log("Rejected");
+};
+
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
   title: "Components/Dashboard/ApprovalPanel",
-  component: ApprovalPanel,
+  component: ApprovalPanelContent,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
     layout: "centered",
   },
   // This component will have an automatically generated Autodocs entry: https://storybook.js.org/docs/writing-docs/autodocs
   tags: ["autodocs"],
+  // No decorators needed now!
+
   // More on argTypes: https://storybook.js.org/docs/api/argtypes
   argTypes: {
     tickets: {
       control: "object",
       description: "Array of tickets to display in the approval panel",
     },
-    onTicketUpdate: {
-      action: "onTicketUpdate",
-      description: "Callback function when a ticket is updated",
+    onProcessApprove: {
+      action: "onProcessApprove",
+      description: "Async handler for approving a ticket",
+    },
+    onProcessReject: {
+      action: "onProcessReject",
+      description: "Async handler for rejecting a ticket",
     },
   },
-} satisfies Meta<typeof ApprovalPanel>;
+} satisfies Meta<typeof ApprovalPanelContent>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 // More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
-export const Empty: Story = {
-  args: {
-    tickets: [],
-  },
-};
+
 
 export const SinglePending: Story = {
   args: {
     tickets: [sampleTicket],
+    queueSnapshot: mockQueueSnapshot,
+    onProcessApprove: mockProcessApprove,
+    onProcessReject: mockProcessReject,
   },
 };
 
 export const MultiplePending: Story = {
   args: {
     tickets: [sampleTicket, sampleTicket2],
+    queueSnapshot: mockQueueSnapshot,
+    onProcessApprove: mockProcessApprove,
+    onProcessReject: mockProcessReject,
+  },
+};
+
+export const Empty: Story = {
+  args: {
+    tickets: [],
+    queueSnapshot: mockQueueSnapshot,
+    onProcessApprove: mockProcessApprove,
+    onProcessReject: mockProcessReject,
   },
 };

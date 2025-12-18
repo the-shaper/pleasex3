@@ -152,6 +152,25 @@ export default function TicketApprovalCreatorCard({
             <div className="font-mono text-sm min-w-0 break-words mb-2">
               ${tipDollarsInt || 0}
             </div>
+            <div className="text-coral">LINKS</div>
+            <div className="font-mono text-sm min-w-0 break-words mb-2">
+              {form.attachments && form.attachments.trim()
+                ? form.attachments
+                    .split(/\s+/)
+                    .map((url: string, idx: number) => (
+                      <div key={idx}>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-text underline break-all"
+                        >
+                          {url}
+                        </a>
+                      </div>
+                    ))
+                : "—"}
+            </div>
             <div className="text-coral">REFERENCE</div>
             <div className="font-mono text-sm min-w-0 break-words mb-2">
               {referenceNumber || "—"}

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { SidebarLink } from "./sidebarLink";
 
 const meta: Meta<typeof SidebarLink> = {
+  title: "Components/Dashboard/Sidebar/SidebarLink",
   component: SidebarLink,
   tags: ["autodocs"],
 };

@@ -4,6 +4,7 @@ import { SidebarLink } from "./sidebarLink";
 import { useState } from "react";
 
 const meta: Meta<typeof SidebarSection> = {
+  title: "Components/Dashboard/Sidebar/SidebarSection",
   component: SidebarSection,
   tags: ["autodocs"],
 };

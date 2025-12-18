@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import TaskCard, { type TaskCardData } from "@/components/taskcard";
-import ApprovalPanel from "@/components/dashboard/approvalPanel"; // Import for Pending
+import ApprovalPanel from "@/components/Dashboard/approvalPanel"; // Import for Pending
 import { type Ticket, type QueueSnapshot } from "@/lib/types"; // For tickets prop
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ResizableDivider } from "@/components/dashboard/ResizableDivider";
+import { ResizableDivider } from "@/components/Dashboard/ResizableDivider";
 
 // Register GSAP plugin
 if (typeof window !== "undefined") {

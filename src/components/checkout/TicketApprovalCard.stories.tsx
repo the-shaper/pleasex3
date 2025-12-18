@@ -29,7 +29,7 @@ const sampleQueueMetrics = {
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-  title: "Components/Checkout/TicketApprovalCard",
+  title: "Components/Unused/TicketApprovalCard",
   component: TicketApprovalCard,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout

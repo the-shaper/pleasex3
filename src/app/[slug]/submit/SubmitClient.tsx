@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import CheckoutDonation from "@/components/checkout/checkoutDonation";
 import { useAction } from "convex/react";
@@ -280,9 +280,17 @@ export default function SubmitClient({
     ? nextPriorityNumber
     : nextPersonalNumber;
 
+  const asideRef = useRef<HTMLElement>(null);
+
+  const handleTicketHeadingClick = () => {
+    if (asideRef.current) {
+      asideRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto p-6 min-h-screen flex items-center">
-      <div className="flex flex-col md:flex-row gap-6 w-full items-center">
+      <div className="flex flex-col md:flex-row md:gap-6 gap-3 w-full items-center">
         <div className="w-full md:w-1/2 md:sticky md:top-6 space-y-4">
           <div>
             <h3 className="text-md text-text-muted font-bold uppercase">
@@ -402,11 +410,12 @@ export default function SubmitClient({
           </form>
         </div>
 
-        <aside className="w-full md:w-1/2 space-y-2 pt-3 ">
+        <aside ref={asideRef} className="w-full md:w-1/2 space-y-2 pt-3 ">
           <div
+            onClick={handleTicketHeadingClick}
             className={`${
               isPriority ? "bg-gold" : "bg-greenlite"
-            } box-border content-stretch flex flex-row items-center justify-center px-[13px] py-2 w-full text-center uppercase`}
+            } box-border content-stretch flex flex-row items-center justify-center px-[13px] py-2 w-full text-center uppercase md:cursor-default cursor-pointer`}
             style={{ fontFamily: "var(--font-body)" }}
           >
             <span className="text-[15.98px] tracking-[-0.3196px] text-text font-bold">

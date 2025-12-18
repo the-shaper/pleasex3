@@ -2,7 +2,7 @@ import { api } from "@/../convex/_generated/api";
 import { ConvexHttpClient } from "convex/browser";
 import type { CreateTicketInput, DashboardOverview, Ticket } from "@/lib/types";
 import type { DataProvider } from "@/lib/data";
-import type { CellComponentData } from "@/components/dashboard/table/cellComponent";
+import type { RowComponentData } from "@/components/Dashboard/table/rowComponent";
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || "";
 const formattedUrl = convexUrl.startsWith("http")
@@ -167,7 +167,7 @@ export class ConvexDataProvider implements DataProvider {
 
   async getAllTicketsForTable(
     creatorSlug: string
-  ): Promise<CellComponentData[]> {
+  ): Promise<RowComponentData[]> {
     // Deprecated: TableComponent now uses engine positions directly via api.dashboard.getAllTicketsWithPositions
     // Keeping this as a thin passthrough for any remaining callers until fully removed.
     const tickets = await client.query(
@@ -175,6 +175,6 @@ export class ConvexDataProvider implements DataProvider {
       { creatorSlug }
     );
 
-    return (tickets || []) as unknown as CellComponentData[];
+    return (tickets || []) as unknown as RowComponentData[];
   }
 }

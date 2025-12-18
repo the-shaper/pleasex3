@@ -1,0 +1,16 @@
+<style>
+  /* Storybook Sidebar Button Border Radius - 0 */
+  .sidebar-item,
+  .sidebar-item button,
+  [class*="sidebar"] button,
+  [class*="Sidebar"] button,
+  button[class*="sidebar"],
+  a[class*="sidebar"] {
+    border-radius: 0 !important;
+  }
+
+  /* Also target any nested elements */
+  .sidebar-item * {
+    border-radius: 0 !important;
+  }
+</style>

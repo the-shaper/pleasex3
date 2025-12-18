@@ -1,11 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import DashboardHeader from "./DashHeaderOG";
+import { DashHeaderContent } from "./DashHeaderOG";
 
-const meta: Meta<typeof DashboardHeader> = {
-  component: DashboardHeader,
+const meta: Meta<typeof DashHeaderContent> = {
+  component: DashHeaderContent,
   tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component: "Basic dashboard header component",
+      },
+    },
   },
   argTypes: {
     title: {
@@ -16,7 +21,14 @@ const meta: Meta<typeof DashboardHeader> = {
       control: { type: "text" },
       description: "The username displayed below the title",
     },
+    isAuthenticated: {
+      control: { type: "boolean" },
+      description: "Whether the user is signed in",
+    },
     onMenuClick: { action: "menu-clicked" },
+    onPublicPageClick: { action: "public-page-clicked" },
+    onSignOutClick: { action: "sign-out-clicked" },
+    onSignInClick: { action: "sign-in-clicked" },
     className: {
       control: { type: "text" },
       description: "Additional CSS classes",
@@ -26,35 +38,44 @@ const meta: Meta<typeof DashboardHeader> = {
 
 export default meta;
 
-type Story = StoryObj<typeof DashboardHeader>;
+type Story = StoryObj<typeof DashHeaderContent>;
 
-export const Default: Story = {
-  args: {},
+export const DefaultSignedOut: Story = {
+  args: {
+    isAuthenticated: false,
+    isLoading: false,
+  },
+};
+
+export const SignedIn: Story = {
+  args: {
+    isAuthenticated: true,
+    username: "demo_user",
+    userSlug: "demo_user",
+    isLoading: false,
+    statusMetrics: { queuedTasks: 5, newRequests: 2 },
+  },
 };
 
 export const CustomTitle: Story = {
   args: {
+    ...SignedIn.args,
     title: "Custom Dashboard Title",
   },
 };
 
-export const CustomUsername: Story = {
+export const Loading: Story = {
   args: {
-    username: "john.doe@example.com",
+    isAuthenticated: false,
+    isLoading: true,
   },
 };
 
-export const WithCustomContent: Story = {
-  args: {
-    title: "My Awesome Dashboard",
-    username: "admin@company.com",
-  },
-};
 
 export const WithMenuClick: Story = {
   args: {
+    ...SignedIn.args,
     title: "Interactive Dashboard",
-    username: "user@pleasex3.com",
     onMenuClick: () => {
       console.log("Menu clicked!");
       alert("Menu button clicked!");
@@ -65,9 +86,16 @@ export const WithMenuClick: Story = {
 // Story showing the component in a typical dashboard layout context
 const DashboardLayoutExample = () => (
   <div className="bg-bg p-8 min-h-screen">
-    <DashboardHeader
+    <DashHeaderContent
       title="PLEASE PLEASE PLEASE"
-      username="demo.user@convex.dev"
+      username="user"
+      userSlug="user"
+      isAuthenticated={true}
+      isLoading={false}
+      statusMetrics={{ queuedTasks: 12, newRequests: 3 }}
+      onPublicPageClick={() => console.log('public page')}
+      onSignOutClick={() => console.log('sign out')}
+      onFaqClick={() => console.log('faq')}
     />
     <div className="mt-8">
       <p className="text-text-muted">Dashboard content would go here...</p>

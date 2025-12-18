@@ -2,31 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import TaskCard, { TaskCardData } from "./taskcard";
 
-// Sample data for stories
-const autoqueueData: TaskCardData = {
-  currentTurn: 1,
-  nextTurn: 2,
-  etaDays: 45,
-  activeCount: 1,
-  enabled: true,
-  name: "Alex Johnson",
-  email: "alex.johnson@example.com",
-  phone: "+1 (555) 123-4567",
-  location: "San Francisco, CA",
-  social: "@alexj",
-  needText:
-    "Help me set up my home office workspace with proper ergonomics. I need recommendations for a desk chair, monitor stand, and keyboard that would be good for long coding sessions.",
-  message:
-    "Help me set up my home office workspace with proper ergonomics. I need recommendations for a desk chair, monitor stand, and keyboard that would be good for long coding sessions.",
-  attachments: [
-    "https://example.com/current-setup.jpg",
-    "https://example.com/room-dimensions.pdf",
-  ],
-  tipCents: 0,
-  status: "current",
-  createdAt: Date.now() - 3600000, // 1 hour ago
-  ref: "AUTO-001",
-};
+
 
 const priorityData: TaskCardData = {
   currentTurn: 5,
@@ -91,7 +67,7 @@ const finishedData: TaskCardData = {
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-  title: "Components/TaskCard",
+  title: "Components/Dashboard/TaskCard",
   component: TaskCard,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
@@ -103,7 +79,7 @@ const meta = {
   argTypes: {
     variant: {
       control: "select",
-      options: ["autoqueue", "priority", "personal"],
+      options: ["priority", "personal"],
       description: "The variant of the TaskCard component",
     },
     data: {
@@ -117,12 +93,6 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
-export const Autoqueue: Story = {
-  args: {
-    variant: "autoqueue",
-    data: autoqueueData,
-  },
-};
 
 export const Priority: Story = {
   args: {

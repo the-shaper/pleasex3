@@ -30,11 +30,16 @@ const sampleQueueMetrics = {
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-  title: "Components/Checkout/ticketApprovalCreatorCard",
+  title: "Components/Dashboard/ticketApprovalCreatorCard",
   component: TicketApprovalCreatorCard,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
     layout: "centered",
+    docs: {
+      description: {
+        component: "This is the ticket the creator sees when a new submission appears on their dashboard.",
+      },
+    },
   },
   // This component will have an automatically generated Autodocs entry: https://storybook.js.org/docs/writing-docs/autodocs
   tags: ["autodocs"],
@@ -159,22 +164,7 @@ export const Approved: Story = {
   },
 };
 
-// Add a new story for attachments demo
-export const WithAttachments: Story = {
-  args: {
-    ...Default.args,
-    form: {
-      ...sampleForm,
-      name: "Sample User",
-      taskTitle: "Multi-File Task",  // Short
-      needText: "Ticket with multiple attachments.",  // Long
-      attachments: "doc1.pdf, image.jpg, link-to-video.mp4", // Multi-attachment string
-    },
-    referenceNumber: "TICKET-004",
-    // Omit handlers and onChange for auto-binding
-    isLoading: false,
-  },
-};
+
 
 // Add new Loading story
 export const Loading: Story = {

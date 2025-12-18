@@ -100,7 +100,7 @@ const sampleData: EarningsDashboardData = {
 };
 
 const meta: Meta<typeof EarningsPanel> = {
-  title: "Components/Dashboard/Earnings Panel",
+  title: "Components/Dashboard/Earnings/Earnings Panel",
   component: EarningsPanel,
   parameters: {
     layout: "fullscreen",
@@ -110,7 +110,21 @@ const meta: Meta<typeof EarningsPanel> = {
 
 type Story = StoryObj<typeof EarningsPanel>;
 
-export const Default: Story = {
+export const ConnectStripe: Story = {
+  args: {
+    data: {
+      ...sampleData,
+      connection: {
+        connected: false,
+        stripeAccountId: null,
+        detailsSubmitted: false,
+      },
+    },
+  },
+};
+
+
+export const Connected: Story = {
   args: {
     data: sampleData,
   },
@@ -121,6 +135,7 @@ export const Empty: Story = {
     data: null,
   },
 };
+
 
 export default meta;
 

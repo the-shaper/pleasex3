@@ -10,7 +10,7 @@ import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 
 import { HandsBackground } from "@/components/HandsBackground";
-import { StatusBar } from "@/components/dashboard/statusBar";
+import { StatusBar } from "@/components/Dashboard/statusBar";
 
 function TrackingModalWithRef() {
   const searchParams = useSearchParams();

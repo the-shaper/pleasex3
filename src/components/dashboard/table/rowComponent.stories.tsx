@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { CellComponent, type CellComponentData } from "./cellComponent";
+import { RowComponent, type RowComponentData } from "./rowComponent";
 
-const meta: Meta<typeof CellComponent> = {
-  component: CellComponent,
+const meta: Meta<typeof RowComponent> = {
+  component: RowComponent,
   tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
@@ -17,10 +17,10 @@ const meta: Meta<typeof CellComponent> = {
 
 export default meta;
 
-type Story = StoryObj<typeof CellComponent>;
+type Story = StoryObj<typeof RowComponent>;
 
 // Mock data for different scenarios
-const mockData: Record<string, CellComponentData> = {
+const mockData: Record<string, RowComponentData> = {
   openPersonal: {
     generalNumber: 5,
     ticketNumber: 3,

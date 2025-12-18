@@ -29,7 +29,7 @@ const meta = {
   title: "Components/Dashboard/TaskModule",
   component: TaskModule,
   parameters: {
-    layout: "centered",
+    layout: "fullscreen",
   },
   tags: ["autodocs"],
   decorators: [

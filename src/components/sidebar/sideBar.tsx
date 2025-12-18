@@ -23,11 +23,11 @@ export function SideBar({
   const [activeLink, setActiveLink] = useState<string>(initialActiveLink);
 
   // Base classes for desktop/normal use
-  const baseClasses = "flex flex-col w-full gap-2";
+  const baseClasses = "flex flex-col w-full gap-2 bg-bg max-w-69";
 
   // Mobile overlay classes: apply fixed/slide only on mobile, static on desktop
   const mobileClasses = mobileOverlay
-    ? `fixed md:static left-0 top-0 h-screen md:h-auto w-64 md:w-full overflow-y-auto bg-bg/90 backdrop-blur-xs md:bg-transparent shadow-lg md:shadow-none z-50 md:z-auto transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full hidden"} md:block flex flex-col gap-2`
+    ? `fixed md:static left-0 top-0 h-screen md:h-auto  overflow-y-auto bg-bg/90 backdrop-blur-xs md:bg-transparent shadow-lg md:shadow-none z-50 md:z-auto  transition-transform duration-300 ease-in-out md:translate-x-0 border-r-1  ${isOpen ? "translate-x-0" : "-translate-x-full hidden"} md:block flex flex-col gap-2`
     : "hidden md:flex flex-col w-full gap-2";
 
   const classes = mobileOverlay

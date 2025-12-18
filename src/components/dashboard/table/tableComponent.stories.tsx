@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { TableComponent, type CellComponentData, type TableVariant } from "./tableComponent";
+import { TableComponent, type RowComponentData } from "./tableComponent";
+import { type TableVariant } from "./tableLayout";
 
 const meta: Meta<typeof TableComponent> = {
+  title: "Components/Dashboard/Table/TableComponent",
   component: TableComponent,
   tags: ["autodocs"],
   parameters: {
@@ -24,7 +26,7 @@ export default meta;
 type Story = StoryObj<typeof TableComponent>;
 
 // Mock data for different scenarios
-const mockData: CellComponentData[] = [
+const mockData: RowComponentData[] = [
   {
     generalNumber: 5,
     ticketNumber: 3,
