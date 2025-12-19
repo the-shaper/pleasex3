@@ -71,18 +71,6 @@ export const Loading: Story = {
   },
 };
 
-
-export const WithMenuClick: Story = {
-  args: {
-    ...SignedIn.args,
-    title: "Interactive Dashboard",
-    onMenuClick: () => {
-      console.log("Menu clicked!");
-      alert("Menu button clicked!");
-    },
-  },
-};
-
 // Story showing the component in a typical dashboard layout context
 const DashboardLayoutExample = () => (
   <div className="bg-bg p-8 min-h-screen">
@@ -93,9 +81,9 @@ const DashboardLayoutExample = () => (
       isAuthenticated={true}
       isLoading={false}
       statusMetrics={{ queuedTasks: 12, newRequests: 3 }}
-      onPublicPageClick={() => console.log('public page')}
-      onSignOutClick={() => console.log('sign out')}
-      onFaqClick={() => console.log('faq')}
+      onPublicPageClick={() => console.log("public page")}
+      onSignOutClick={() => console.log("sign out")}
+      onFaqClick={() => console.log("faq")}
     />
     <div className="mt-8">
       <p className="text-text-muted">Dashboard content would go here...</p>

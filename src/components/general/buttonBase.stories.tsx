@@ -3,12 +3,21 @@ import React from "react";
 import { ButtonBase } from "./buttonBase";
 
 const meta: Meta<typeof ButtonBase> = {
+  title: "Tokens/ButtonBase",
   component: ButtonBase,
   tags: ["autodocs"],
   argTypes: {
     variant: {
       control: { type: "select" },
-      options: ["default", "primary", "secondary", "ghost", "outline"],
+      options: [
+        "default",
+        "primary",
+        "secondary",
+        "ghost",
+        "outline",
+        "hover-custom",
+        "tertiary",
+      ],
     },
     size: {
       control: { type: "select" },
@@ -44,6 +53,13 @@ export const Secondary: Story = {
   args: {
     variant: "secondary",
     children: "Secondary Button",
+  },
+};
+
+export const Tertiary: Story = {
+  args: {
+    variant: "tertiary",
+    children: "Tertiary Button",
   },
 };
 
@@ -112,6 +128,22 @@ export const WithIcon: Story = {
   },
 };
 
+export const HoverCustom: Story = {
+  render: () => (
+    <div className="flex gap-2 flex-wrap">
+      <ButtonBase variant="hover-custom" className="hover:bg-gold" size="sm">
+        Cheatsheet
+      </ButtonBase>
+      <ButtonBase variant="hover-custom" className="hover:bg-blue" size="sm">
+        Public Page
+      </ButtonBase>
+      <ButtonBase variant="hover-custom" className="hover:bg-coral" size="sm">
+        Sign Out
+      </ButtonBase>
+    </div>
+  ),
+};
+
 // Interactive story demonstrating loading state toggle
 const LoadingToggleButton = () => {
   const [isLoading, setIsLoading] = React.useState(false);
@@ -143,6 +175,16 @@ const AllVariantsGrid = () => (
         <ButtonBase variant="secondary">Secondary</ButtonBase>
         <ButtonBase variant="ghost">Ghost</ButtonBase>
         <ButtonBase variant="outline">Outline</ButtonBase>
+        <ButtonBase variant="tertiary">Tertiary</ButtonBase>
+        <ButtonBase variant="hover-custom" className="hover:bg-gold">
+          Hover Gold
+        </ButtonBase>
+        <ButtonBase variant="hover-custom" className="hover:bg-blue">
+          Hover Blue
+        </ButtonBase>
+        <ButtonBase variant="hover-custom" className="hover:bg-coral">
+          Hover Coral
+        </ButtonBase>
       </div>
     </div>
 

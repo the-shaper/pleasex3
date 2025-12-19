@@ -17,7 +17,7 @@ interface FormSubmitCardProps {
 
 export default function FormSubmitCard({
   form,
-  isPriority,
+  isPriority, s
   referenceNumber,
 }: FormSubmitCardProps) {
   const queueType = isPriority ? "PRIORITY" : "PERSONAL";

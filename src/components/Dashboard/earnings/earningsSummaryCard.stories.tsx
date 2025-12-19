@@ -7,6 +7,11 @@ const meta: Meta<typeof EarningsSummaryCard> = {
   component: EarningsSummaryCard,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: "Collects and displays earnings data for a creator.",
+      },
+    },
   },
   tags: ["autodocs"],
 };

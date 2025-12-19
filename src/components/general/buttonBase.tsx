@@ -2,7 +2,7 @@
 
 import { ButtonHTMLAttributes, AnchorHTMLAttributes, ReactNode } from "react";
 
-type ButtonVariant = "default" | "primary" | "secondary" | "ghost" | "outline" | "neutral";
+type ButtonVariant = "default" | "primary" | "secondary" | "ghost" | "outline" | "neutral" | "hover-custom" | "tertiary";
 type ButtonSize = "sm" | "default" | "lg";
 
 // Base props shared by both button and link variants
@@ -39,6 +39,10 @@ const getVariantClasses = (variant: ButtonVariant): string => {
       return "border border-gray-subtle bg-transparent hover:bg-gray-subtle text-text";
     case "neutral":
       return "bg-gray-subtle hover:bg-gray-200";
+    case "hover-custom":
+      return "bg-gray-subtle text-text";
+    case "tertiary":
+      return "bg-blue-2 text-text hover:opacity-90";
     default:
       return "bg-gray-subtle ";
   }
@@ -70,8 +74,9 @@ export function ButtonBase({
   const variantClasses = getVariantClasses(variant);
   const sizeClasses = getSizeClasses(size);
 
+  const tertiaryClasses = variant === "tertiary" ? "rounded-none focus-visible:ring-0" : "";
   const combinedClasses =
-    `${baseClasses} ${variantClasses} ${sizeClasses} ${className}`.trim();
+    `${baseClasses} ${variantClasses} ${sizeClasses} ${tertiaryClasses} ${className}`.trim();
 
   const loadingSpinner = loading && (
     <svg

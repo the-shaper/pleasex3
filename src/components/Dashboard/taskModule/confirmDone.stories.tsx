@@ -12,6 +12,9 @@ const meta: Meta<typeof ConfirmDone> = {
         inline: true,
         height: "600px",
       },
+      description: {
+        component: "ConfirmDone component used in taskModule. Displays a modal to confirm the completion of a task.",
+      },
     },
   },
   decorators: [

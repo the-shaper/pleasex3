@@ -6,6 +6,11 @@ const meta: Meta<typeof RowComponent> = {
   tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component: "Row component for the table. Displays a single row with ticket information.",
+      },
+    },
   },
   argTypes: {
     data: {

@@ -8,6 +8,12 @@ const meta: Meta<typeof TableComponent> = {
   tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "Table component for the dashboard. Displays a table of tickets.",
+      },
+    },
   },
   argTypes: {
     data: {
@@ -143,26 +149,12 @@ export const SortByGeneralNumber: Story = {
   },
   play: async ({ canvasElement }) => {
     // Click the GENERAL header to sort
-    const generalButton = canvasElement.querySelector(
-      'button:has-text("GENERAL")'
-    ) as HTMLButtonElement;
+    const buttons = canvasElement.querySelectorAll("button");
+    const generalButton = Array.from(buttons).find((btn) =>
+      btn.textContent?.trim().startsWith("GENERAL")
+    ) as HTMLButtonElement | undefined;
     if (generalButton) {
       generalButton.click();
-    }
-  },
-};
-
-export const SortByTicketNumber: Story = {
-  args: {
-    data: mockData,
-  },
-  play: async ({ canvasElement }) => {
-    // Click the TICKET header to sort
-    const ticketButton = canvasElement.querySelector(
-      'button:has-text("TICKET")'
-    ) as HTMLButtonElement;
-    if (ticketButton) {
-      ticketButton.click();
     }
   },
 };
@@ -173,9 +165,10 @@ export const SortByDate: Story = {
   },
   play: async ({ canvasElement }) => {
     // Click the REQUESTED ON header to sort
-    const dateButton = canvasElement.querySelector(
-      'button:has-text("REQUESTED ON")'
-    ) as HTMLButtonElement;
+    const buttons = canvasElement.querySelectorAll("button");
+    const dateButton = Array.from(buttons).find((btn) =>
+      btn.textContent?.trim().startsWith("REQUESTED ON")
+    ) as HTMLButtonElement | undefined;
     if (dateButton) {
       dateButton.click();
     }

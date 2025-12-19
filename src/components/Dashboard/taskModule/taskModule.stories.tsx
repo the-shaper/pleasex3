@@ -30,6 +30,11 @@ const meta = {
   component: TaskModule,
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component: "Expanded task module used on dashboard. Displays a task card with all the details and actions. Mobile version is a modal.",
+      },
+    },
   },
   tags: ["autodocs"],
   decorators: [

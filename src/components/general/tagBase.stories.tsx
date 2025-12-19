@@ -3,6 +3,7 @@ import React from "react";
 import { TagBase } from "./tagBase";
 
 const meta: Meta<typeof TagBase> = {
+  title: "Tokens/TagBase",
   component: TagBase,
   tags: ["autodocs"],
   argTypes: {
@@ -27,10 +28,28 @@ export default meta;
 
 type Story = StoryObj<typeof TagBase>;
 
+// Story showing all variants in a grid
+const AllVariantsGrid = () => (
+  <div className="space-y-4">
+    <div className="space-y-2">
+      <h3 className="text-sm font-medium text-text">All Tag Variants</h3>
+      <div className="flex gap-2 flex-wrap">
+        <TagBase variant="attn">Attention</TagBase>
+        <TagBase variant="neutral">Neutral</TagBase>
+        <TagBase variant="priority">Priority</TagBase>
+        <TagBase variant="personal">Personal</TagBase>
+        <TagBase variant="pending">Pending</TagBase>
+        <TagBase variant="next-up">Next Up</TagBase>
+        <TagBase variant="awaiting-feedback">Awaiting Feedback</TagBase>
+        <TagBase variant="finished">Finished</TagBase>
+        <TagBase variant="current">Current</TagBase>
+      </div>
+    </div>
+  </div>
+);
+
 export const Default: Story = {
-  args: {
-    children: "Default Tag",
-  },
+  render: () => <AllVariantsGrid />,
 };
 
 export const Attn: Story = {
@@ -118,26 +137,6 @@ export const WithIcon: Story = {
     ),
   },
 };
-
-// Story showing all variants in a grid
-const AllVariantsGrid = () => (
-  <div className="space-y-4">
-    <div className="space-y-2">
-      <h3 className="text-sm font-medium text-text">All Tag Variants</h3>
-      <div className="flex gap-2 flex-wrap">
-        <TagBase variant="attn">Attention</TagBase>
-        <TagBase variant="neutral">Neutral</TagBase>
-        <TagBase variant="priority">Priority</TagBase>
-        <TagBase variant="personal">Personal</TagBase>
-        <TagBase variant="pending">Pending</TagBase>
-        <TagBase variant="next-up">Next Up</TagBase>
-        <TagBase variant="awaiting-feedback">Awaiting Feedback</TagBase>
-        <TagBase variant="finished">Finished</TagBase>
-        <TagBase variant="current">Current</TagBase>
-      </div>
-    </div>
-  </div>
-);
 
 export const AllVariants: Story = {
   render: () => <AllVariantsGrid />,

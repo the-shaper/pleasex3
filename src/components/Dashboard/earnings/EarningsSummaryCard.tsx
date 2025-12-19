@@ -27,7 +27,7 @@ export function EarningsSummaryCard({
   return (
     <section className="border border-text/20 bg-bg px-6 py-4 flex flex-col gap-4">
       <div>
-        <div className="text-sm uppercase text-text-muted font-bold">
+        <div className="text-md uppercase text-text-muted font-bold">
           This month
         </div>
         <div className="flex flex-wrap gap-8 mt-1 text-sm">
@@ -45,8 +45,8 @@ export function EarningsSummaryCard({
               {currentPeriod.platformFeeCents === 0
                 ? "0 (below $50)"
                 : `${formatMoney(
-                    currentPeriod.platformFeeCents
-                  )} ($3.33 per $50 block)`}
+                  currentPeriod.platformFeeCents
+                )} ($3.33 per $50 block)`}
             </div>
           </div>
           <div>

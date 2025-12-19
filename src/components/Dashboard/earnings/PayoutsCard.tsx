@@ -67,7 +67,7 @@ export function PayoutsCard({
   return (
     <section className="border border-text/20 bg-bg px-6 py-4 flex flex-col gap-4">
       <div>
-        <div className="text-xs uppercase text-text-muted tracking-wide">
+        <div className="text-md uppercase text-text-muted tracking-wide font-bold">
           Next payout
         </div>
         {displayPayout ? (

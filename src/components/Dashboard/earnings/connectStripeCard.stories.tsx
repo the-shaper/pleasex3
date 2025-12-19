@@ -7,6 +7,11 @@ const meta: Meta<typeof ConnectStripeCard> = {
   component: ConnectStripeCard,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: "Interface for connecting a Stripe account to enable payouts.",
+      },
+    },
   },
   tags: ["autodocs"],
 };

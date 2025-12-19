@@ -132,13 +132,13 @@ const ApprovalPanelContent = ({
               key={ticket.ref}
               className="p-4 bg-coral flex flex-col items-center"
             >
-              <div className="mb-4 p-3 bg-text ">
+              <div className="mb-4 ">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="px-4">
                     <h3 className="font-semibold text-sm text-text-bright uppercase">
-                      Ticket Status
+                      New Request
                     </h3>
-                    <p className="text-xs text-text-bright">
+                    <p className="text-xs text-text-bright text-wrap">
                       Reference: {ticket.ref} • Submitted:{" "}
                       {new Date(ticket.createdAt).toLocaleString()}
                     </p>
@@ -154,7 +154,7 @@ const ApprovalPanelContent = ({
                 minPriorityTipCents={ticketData.minPriorityTipCents}
                 queueMetrics={ticketData.queueMetrics}
                 formatEtaMins={formatEtaMins}
-                onChange={() => {}}
+                onChange={() => { }}
                 userName={ticketData.userName}
                 referenceNumber={ticketData.referenceNumber}
                 approvedContext={isApprovedOrRejected}

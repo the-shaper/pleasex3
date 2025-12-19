@@ -104,6 +104,11 @@ const meta: Meta<typeof EarningsPanel> = {
   component: EarningsPanel,
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component: "A pattern of components for displaying earnings data. MVP.",
+      },
+    },
   },
   tags: ["autodocs"],
 };

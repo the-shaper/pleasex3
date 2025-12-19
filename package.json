@@ -19,7 +19,8 @@
     "lint": "eslint",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "email": "email dev --dir convex/emails"
+    "email": "email dev --dir convex/emails",
+    "chromatic": "npx chromatic --project-token=chpt_c7fb61615c27181"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.33.7",
@@ -56,6 +57,7 @@
     "@types/react-dom": "^19",
     "@vitest/browser": "^3.2.4",
     "@vitest/coverage-v8": "^3.2.4",
+    "chromatic": "^13.3.4",
     "eslint": "^9",
     "eslint-config-next": "15.2.6",
     "eslint-plugin-storybook": "^9.1.10",

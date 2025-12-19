@@ -6,6 +6,11 @@ const meta: Meta<typeof StatusBar> = {
     tags: ["autodocs"],
     parameters: {
         layout: "centered",
+        docs: {
+            description: {
+                component: "Status bar used on homepage and dashboard. Displays queued tasks and new requests.",
+            },
+        },
     },
     argTypes: {
         queuedTasks: {

@@ -37,7 +37,7 @@ const meta = {
     layout: "centered",
     docs: {
       description: {
-        component: "This is the ticket the creator sees when a new submission appears on their dashboard.",
+        component: "This is the ticket the creator sees when a new submission appears on their dashboard. Lives inside the approval panel.",
       },
     },
   },

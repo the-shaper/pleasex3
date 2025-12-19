@@ -15,7 +15,7 @@ export function ConnectStripeCard({
   if (connection.onboardingStarted) {
     return (
       <section className="border border-text/20 bg-bg px-6 py-4 flex flex-col gap-2">
-        <div className="text-xs uppercase text-text-muted">Payouts</div>
+        <div className="text-md font-bold uppercase text-text-muted">Payouts</div>
         <div className="text-lg font-bold text-text">
           Stripe onboarding in progress
         </div>
@@ -38,7 +38,7 @@ export function ConnectStripeCard({
   if (!connection.connected) {
     return (
       <section className="border border-text/20 bg-bg px-6 py-4 flex flex-col gap-2">
-        <div className="text-xs uppercase text-text-muted">Payouts</div>
+        <div className="text-md font-bold uppercase text-text-muted">Payouts</div>
         <div className="text-lg font-bold text-text">
           Connect Stripe to enable tipping
         </div>

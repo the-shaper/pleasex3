@@ -45,10 +45,12 @@ body {
   -webkit-appearance: none;
   margin: 0;
 }
+
 .no-spinners[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
 /* Some WebKit versions need this on the input itself */
 .no-spinners {
   -webkit-appearance: none;
@@ -64,33 +66,33 @@ body {
 }
 
 /* Typography for MDX docs */
-.sbdocs h1,
-.sbdocs-wrapper h1 {
+.sbdocs h1:not(.sb-story *),
+.sbdocs-wrapper h1:not(.sb-story *) {
   font-size: 1.875rem;
   font-weight: 700;
   color: var(--color-text);
   margin-bottom: 2rem;
   margin-top: 0;
   letter-spacing: -0.055em;
-  text-transform: uppercase;
   font-family: "Space Mono", monospace;
 }
 
-.sbdocs h3,
-.sbdocs-wrapper h3 {
+.sbdocs h3:not(.sb-story *),
+.sbdocs-wrapper h3:not(.sb-story *) {
   letter-spacing: -0.035em;
   font-family: "Space Mono", monospace;
 }
 
 @media (min-width: 768px) {
-  .sbdocs h1,
-  .sbdocs-wrapper h1 {
+
+  .sbdocs h1:not(.sb-story *),
+  .sbdocs-wrapper h1:not(.sb-story *) {
     font-size: 2.25rem;
   }
 }
 
-.sbdocs h2,
-.sbdocs-wrapper h2 {
+.sbdocs h2:not(.sb-story *),
+.sbdocs-wrapper h2:not(.sb-story *) {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--color-text);
@@ -101,14 +103,15 @@ body {
 }
 
 @media (min-width: 768px) {
-  .sbdocs h2,
-  .sbdocs-wrapper h2 {
+
+  .sbdocs h2:not(.sb-story *),
+  .sbdocs-wrapper h2:not(.sb-story *) {
     font-size: 1.875rem;
   }
 }
 
-.sbdocs h3,
-.sbdocs-wrapper h3 {
+.sbdocs h3:not(.sb-story *),
+.sbdocs-wrapper h3:not(.sb-story *) {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--color-text);
@@ -118,14 +121,15 @@ body {
 }
 
 @media (min-width: 768px) {
-  .sbdocs h3,
-  .sbdocs-wrapper h3 {
+
+  .sbdocs h3:not(.sb-story *),
+  .sbdocs-wrapper h3:not(.sb-story *) {
     font-size: 1.5rem;
   }
 }
 
-.sbdocs h4,
-.sbdocs-wrapper h4 {
+.sbdocs h4:not(.sb-story *),
+.sbdocs-wrapper h4:not(.sb-story *) {
   font-size: 1.125rem;
   font-weight: 700;
   color: var(--color-text);
@@ -135,14 +139,15 @@ body {
 }
 
 @media (min-width: 768px) {
-  .sbdocs h4,
-  .sbdocs-wrapper h4 {
+
+  .sbdocs h4:not(.sb-story *),
+  .sbdocs-wrapper h4:not(.sb-story *) {
     font-size: 1.25rem;
   }
 }
 
-.sbdocs h5,
-.sbdocs-wrapper h5 {
+.sbdocs h5:not(.sb-story *),
+.sbdocs-wrapper h5:not(.sb-story *) {
   font-size: 1rem;
   font-weight: 700;
   color: var(--color-text);
@@ -152,68 +157,69 @@ body {
 }
 
 @media (min-width: 768px) {
-  .sbdocs h5,
-  .sbdocs-wrapper h5 {
+
+  .sbdocs h5:not(.sb-story *),
+  .sbdocs-wrapper h5:not(.sb-story *) {
     font-size: 1.125rem;
   }
 }
 
-.sbdocs p,
-.sbdocs-wrapper p {
+.sbdocs p:not(.sb-story *),
+.sbdocs-wrapper p:not(.sb-story *) {
   margin-bottom: 1rem;
   line-height: 1.625;
   font-family: "Space Mono", monospace;
 }
 
-.sbdocs strong,
-.sbdocs-wrapper strong {
+.sbdocs strong:not(.sb-story *),
+.sbdocs-wrapper strong:not(.sb-story *) {
   font-weight: 700;
   color: var(--color-coral);
   font-family: "Space Mono", monospace;
 }
 
-.sbdocs a,
-.sbdocs-wrapper a {
+.sbdocs a:not(.sb-story *),
+.sbdocs-wrapper a:not(.sb-story *) {
   color: var(--color-blue);
   text-decoration: underline;
   font-family: "Space Mono", monospace;
 }
 
-.sbdocs a:hover,
-.sbdocs-wrapper a:hover {
+.sbdocs a:hover:not(.sb-story *),
+.sbdocs-wrapper a:hover:not(.sb-story *) {
   color: var(--color-blue-2);
 }
 
-.sbdocs ul,
-.sbdocs ol,
-.sbdocs-wrapper ul,
-.sbdocs-wrapper ol {
+.sbdocs ul:not(.sb-story *),
+.sbdocs ol:not(.sb-story *),
+.sbdocs-wrapper ul:not(.sb-story *),
+.sbdocs-wrapper ol:not(.sb-story *) {
   margin-left: 1.25rem;
   padding-left: 0.5rem;
   margin-bottom: 1rem;
   font-family: "Space Mono", monospace;
 }
 
-.sbdocs ul,
-.sbdocs-wrapper ul {
+.sbdocs ul:not(.sb-story *),
+.sbdocs-wrapper ul:not(.sb-story *) {
   list-style-type: disc;
 }
 
-.sbdocs ol,
-.sbdocs-wrapper ol {
+.sbdocs ol:not(.sb-story *),
+.sbdocs-wrapper ol:not(.sb-story *) {
   list-style-type: decimal;
 }
 
-.sbdocs li,
-.sbdocs-wrapper li {
+.sbdocs li:not(.sb-story *),
+.sbdocs-wrapper li:not(.sb-story *) {
   display: list-item;
   margin-bottom: 0.5rem;
   line-height: 1.625;
   font-family: "Space Mono", monospace;
 }
 
-.sbdocs code,
-.sbdocs-wrapper code {
+.sbdocs code:not(.sb-story *),
+.sbdocs-wrapper code:not(.sb-story *) {
   font-family: "Space Mono", monospace;
   font-size: 0.875em;
   background-color: var(--color-gray-subtle);
