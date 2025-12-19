@@ -4,15 +4,28 @@ import type { CreateTicketInput, DashboardOverview, Ticket } from "@/lib/types";
 import type { DataProvider } from "@/lib/data";
 import type { RowComponentData } from "@/components/Dashboard/table/rowComponent";
 
-const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || "";
-const formattedUrl = convexUrl.startsWith("http")
-  ? convexUrl
-  : `https://${convexUrl}`;
-const client = new ConvexHttpClient(formattedUrl);
+// Lazy initialization to avoid errors in environments without CONVEX_URL (e.g., Storybook)
+let _client: ConvexHttpClient | null = null;
+
+function getClient(): ConvexHttpClient {
+  if (!_client) {
+    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || "";
+    if (!convexUrl) {
+      throw new Error(
+        "NEXT_PUBLIC_CONVEX_URL is not set. This is required for Convex operations."
+      );
+    }
+    const formattedUrl = convexUrl.startsWith("http")
+      ? convexUrl
+      : `https://${convexUrl}`;
+    _client = new ConvexHttpClient(formattedUrl);
+  }
+  return _client;
+}
 
 export class ConvexDataProvider implements DataProvider {
   async getDashboardOverview(creatorSlug: string): Promise<DashboardOverview> {
-    const res = await client.query(api.dashboard.getOverview, { creatorSlug });
+    const res = await getClient().query(api.dashboard.getOverview, { creatorSlug });
     return res as unknown as DashboardOverview;
   }
 
@@ -49,7 +62,7 @@ export class ConvexDataProvider implements DataProvider {
     }
 
     try {
-      const res = await client.query(api.queues.getSnapshot, { creatorSlug });
+      const res = await getClient().query(api.queues.getSnapshot, { creatorSlug });
       return res as any;
     } catch (error) {
       console.error(
@@ -100,7 +113,7 @@ export class ConvexDataProvider implements DataProvider {
     }
 
     try {
-      const res = await client.query(api.dashboard.getCreator, { creatorSlug });
+      const res = await getClient().query(api.dashboard.getCreator, { creatorSlug });
       if (!res) {
         // Return default values for creators that don't exist yet
         return {
@@ -125,7 +138,7 @@ export class ConvexDataProvider implements DataProvider {
   }
 
   async getTicketByRef(ref: string): Promise<Ticket | null> {
-    const res = await client.query(api.tickets.getByRef, { ref });
+    const res = await getClient().query(api.tickets.getByRef, { ref });
     return (res as unknown as Ticket | null) ?? null;
   }
 
@@ -138,18 +151,18 @@ export class ConvexDataProvider implements DataProvider {
           ? "personal"
           : (input.queueKind as "personal" | "priority"),
     };
-    const res = await client.mutation(api.tickets.create, filteredInput);
+    const res = await getClient().mutation(api.tickets.create, filteredInput);
     return res as { ref: string };
   }
 
   async approveTicket(ref: string): Promise<{ ok: true }> {
-    const res = await client.mutation(api.tickets.approve, { ref });
+    const res = await getClient().mutation(api.tickets.approve, { ref });
 
     // After approval, recompute workflow tags so current/next-up are persisted.
     try {
-      const ticket = await client.query(api.tickets.getByRef, { ref });
+      const ticket = await getClient().query(api.tickets.getByRef, { ref });
       if (ticket && ticket.creatorSlug) {
-        await client.mutation(api.tickets.recomputeWorkflowTagsForCreator, {
+        await getClient().mutation(api.tickets.recomputeWorkflowTagsForCreator, {
           creatorSlug: ticket.creatorSlug,
         });
       }
@@ -161,7 +174,7 @@ export class ConvexDataProvider implements DataProvider {
   }
 
   async rejectTicket(ref: string): Promise<{ ok: true }> {
-    const res = await client.mutation(api.tickets.reject, { ref });
+    const res = await getClient().mutation(api.tickets.reject, { ref });
     return res as { ok: true };
   }
 
@@ -170,7 +183,7 @@ export class ConvexDataProvider implements DataProvider {
   ): Promise<RowComponentData[]> {
     // Deprecated: TableComponent now uses engine positions directly via api.dashboard.getAllTicketsWithPositions
     // Keeping this as a thin passthrough for any remaining callers until fully removed.
-    const tickets = await client.query(
+    const tickets = await getClient().query(
       api.dashboard.getAllTicketsWithPositions,
       { creatorSlug }
     );
