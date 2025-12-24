@@ -1,0 +1,5 @@
+{"location":"SubmitClient.tsx:currencyDetection","message":"Detected user currency","data":{"detectedCurrency":"mxn","timezone":"America/Tijuana"},"timestamp":1766620149284,"sessionId":"debug-session","hypothesisId":"B-multicurrency"}
+{"location":"SubmitClient.tsx:currencyDetection","message":"Detected user currency","data":{"detectedCurrency":"mxn","timezone":"America/Tijuana"},"timestamp":1766620149285,"sessionId":"debug-session","hypothesisId":"B-multicurrency"}
+{"location":"SubmitClient.tsx:createPaymentIntent","message":"Creating payment intent with currency","data":{"usdCents":400,"detectedCurrency":"mxn","ticketRef":"ROMAN-PPP-3525"},"timestamp":1766620206636,"sessionId":"debug-session","hypothesisId":"B-multicurrency"}
+{"location":"CheckoutForm.tsx:confirmPayment","message":"Confirming payment","data":{"amountCents":7000,"currency":"mxn"},"timestamp":1766620227811,"sessionId":"debug-session","hypothesisId":"B-multicurrency"}
+{"location":"CheckoutForm.tsx:result","message":"Payment result","data":{"error":null,"status":"requires_capture","currency":"mxn"},"timestamp":1766620230326,"sessionId":"debug-session","hypothesisId":"B-multicurrency"}

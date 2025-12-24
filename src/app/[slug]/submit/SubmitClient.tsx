@@ -7,6 +7,7 @@ import { api } from "@convex/_generated/api";
 import PaymentWrapper from "@/components/checkout/PaymentWrapper";
 import { TosModal } from "@/components/general/tosModal";
 import { normalizeUrl } from "@/lib/urlUtils";
+import { detectUserCurrency, formatCurrency, convertUsdToLocalCents, type SupportedCurrency } from "@/lib/currency";
 
 type QueuePayload = {
   creator: { slug: string; displayName: string; minPriorityTipCents: number };
@@ -54,6 +55,21 @@ export default function SubmitClient({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [pendingTicketRef, setPendingTicketRef] = useState<string | null>(null);
+  
+  // Multi-currency support
+  const [detectedCurrency, setDetectedCurrency] = useState<SupportedCurrency>("usd");
+  const [chargeAmountCents, setChargeAmountCents] = useState<number>(0);
+  const [chargeCurrency, setChargeCurrency] = useState<SupportedCurrency>("usd");
+
+  // Detect user's currency on mount
+  useEffect(() => {
+    const currency = detectUserCurrency();
+    setDetectedCurrency(currency);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SubmitClient.tsx:currencyDetection',message:'Detected user currency',data:{detectedCurrency: currency, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B-multicurrency'})}).catch(()=>{});
+    // #endregion
+    console.log("[Currency] Detected user currency:", currency);
+  }, []);
 
   // TOS Modal State
   const [isTosModalOpen, setIsTosModalOpen] = useState(false);
@@ -225,13 +241,25 @@ export default function SubmitClient({
         );
       }
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SubmitClient.tsx:createPaymentIntent',message:'Creating payment intent with currency',data:{usdCents: form.priorityTipCents, detectedCurrency, ticketRef: json.ref},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B-multicurrency'})}).catch(()=>{});
+      // #endregion
+      
       const result = await createManualPaymentIntent({
         creatorSlug: slug,
         ticketRef: json.ref,
-        amountCents: form.priorityTipCents,
+        amountCents: form.priorityTipCents, // USD cents (display currency)
+        currency: detectedCurrency, // User's local currency for charging
       });
 
-      console.log("[Submit] Payment intent created successfully");
+      console.log("[Submit] Payment intent created successfully", {
+        chargeAmountCents: result.chargeAmountCents,
+        chargeCurrency: result.chargeCurrency,
+      });
+      
+      // Store the actual charge amount/currency for display in modal
+      setChargeAmountCents(result.chargeAmountCents ?? form.priorityTipCents);
+      setChargeCurrency((result.chargeCurrency as SupportedCurrency) ?? "usd");
       setClientSecret(result.clientSecret);
       setShowPaymentModal(true);
     } catch (err: any) {
@@ -524,6 +552,9 @@ export default function SubmitClient({
           clientSecret={clientSecret}
           onSuccess={handlePaymentSuccess}
           onCancel={() => setShowPaymentModal(false)}
+          amountCents={chargeAmountCents}
+          currency={chargeCurrency}
+          originalUsdCents={form.priorityTipCents}
         />
       )}
 

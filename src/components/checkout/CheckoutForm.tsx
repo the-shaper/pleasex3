@@ -6,8 +6,15 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { useState } from "react";
+import { formatCurrency, type SupportedCurrency } from "@/lib/currency";
 
-export default function CheckoutForm({ onSuccess }: { onSuccess: () => void }) {
+interface CheckoutFormProps {
+  onSuccess: () => void;
+  amountCents?: number;
+  currency?: SupportedCurrency;
+}
+
+export default function CheckoutForm({ onSuccess, amountCents, currency = "usd" }: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
 
@@ -25,10 +32,18 @@ export default function CheckoutForm({ onSuccess }: { onSuccess: () => void }) {
     setIsProcessing(true);
     setErrorMessage(null);
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckoutForm.tsx:confirmPayment',message:'Confirming payment',data:{amountCents, currency},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B-multicurrency'})}).catch(()=>{});
+    // #endregion
+
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       redirect: "if_required", // Important: Avoid redirect if not needed (e.g. card)
     });
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckoutForm.tsx:result',message:'Payment result',data:{error: error ? { type: error.type, code: error.code, message: error.message } : null, status: paymentIntent?.status, currency: paymentIntent?.currency},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B-multicurrency'})}).catch(()=>{});
+    // #endregion
 
     if (error) {
       setErrorMessage(error.message ?? "An unknown error occurred");
@@ -45,6 +60,13 @@ export default function CheckoutForm({ onSuccess }: { onSuccess: () => void }) {
     }
   };
 
+  // Format the button text with the charge amount
+  const buttonText = isProcessing 
+    ? "Processing..." 
+    : amountCents 
+      ? `Confirm Hold (${formatCurrency(amountCents, currency)})`
+      : "Confirm Hold";
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <PaymentElement />
@@ -56,7 +78,7 @@ export default function CheckoutForm({ onSuccess }: { onSuccess: () => void }) {
         type="submit"
         className="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50"
       >
-        {isProcessing ? "Processing..." : "Confirm Hold ($)"}
+        {buttonText}
       </button>
     </form>
   );

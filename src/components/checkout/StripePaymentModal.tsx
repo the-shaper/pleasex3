@@ -32,7 +32,7 @@ const PaymentForm = ({ onSuccess, onCancel, amountCents }: PaymentFormProps) => 
 
     setProcessing(true);
 
-    const { error } = await stripe.confirmPayment({
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
         // We don't redirect, we handle success inline if possible,
@@ -44,10 +44,20 @@ const PaymentForm = ({ onSuccess, onCancel, amountCents }: PaymentFormProps) => 
       redirect: "if_required",
     });
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StripePaymentModal.tsx:confirmPayment',message:'Payment confirmation result',data:{error: error ? { type: error.type, code: error.code, message: error.message, decline_code: (error as any).decline_code } : null, paymentIntentStatus: paymentIntent?.status, paymentIntentId: paymentIntent?.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+
     if (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StripePaymentModal.tsx:error',message:'Payment FAILED',data:{errorType: error.type, errorCode: error.code, errorMessage: error.message, declineCode: (error as any).decline_code},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       setErrorMessage(error.message ?? "An unknown error occurred");
       setProcessing(false);
     } else {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StripePaymentModal.tsx:success',message:'Payment SUCCESS',data:{status: paymentIntent?.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       // Payment authorized!
       onSuccess();
     }
