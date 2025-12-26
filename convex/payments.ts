@@ -429,12 +429,15 @@ async function getStripeFeeInfo(paymentIntentId: string) {
   return getStripeFeeInfoFromCharge(chargeId);
 }
 
-// V3: Manual Payment Intent (Hold funds) - STRICT USD ONLY
+// V3.1: Manual Payment Intent - DYNAMIC LOCAL CURRENCY
+// Charges in user's local currency using real-time Stripe Exchange Rates.
+// Funds settle on Platform Account (converted to Platform currency if needed).
 export const createManualPaymentIntent = action({
   args: {
     creatorSlug: v.string(),
     ticketRef: v.string(),
-    amountCents: v.number(), // Always in USD cents
+    amountCents: v.number(), // Input is always USD
+    currency: v.optional(v.string()), // Target currency (e.g. "mxn")
   },
   handler: async (ctx, args) => {
     if (args.amountCents <= 0) {
@@ -449,16 +452,50 @@ export const createManualPaymentIntent = action({
       throw new Error("Creator does not have a connected Stripe account");
     }
 
-    // Create a PaymentIntent with capture_method: 'manual'
-    // Always charge in USD to ensure global acceptance and platform settlement
+    // Default to USD
+    let chargeCurrency = "usd";
+    let chargeAmountCents = args.amountCents;
+    let exchangeRate = 1;
+
+    // If target currency is provided and not USD, fetch real-time rate
+    if (args.currency && args.currency.toLowerCase() !== "usd") {
+      try {
+        const targetCurrency = args.currency.toLowerCase();
+
+        // Fetch real-time exchange rates from Stripe
+        // This ensures we don't have hardcoded values
+        const rates = await stripe.exchangeRates.retrieve("usd");
+        const rate = rates.rates[targetCurrency];
+
+        if (rate) {
+          chargeCurrency = targetCurrency;
+          exchangeRate = rate;
+          // Calculate local amount: USD * Rate
+          chargeAmountCents = Math.round(args.amountCents * rate);
+
+          console.log(`[Payment] Converting ${args.amountCents} USD to ${chargeCurrency} at rate ${rate} = ${chargeAmountCents}`);
+        } else {
+          console.warn(`[Payment] Exchange rate not found for ${targetCurrency}, falling back to USD`);
+        }
+      } catch (err) {
+        console.error("[Payment] Failed to fetch exchange rates:", err);
+        // Fallback to USD on error
+      }
+    }
+
+    // Create PaymentIntent in the determined currency
+    // Funds held on Platform Account (`on_behalf_of` is NOT used here to preserve "Hold" logic)
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: args.amountCents,
-      currency: "usd",
+      amount: chargeAmountCents,
+      currency: chargeCurrency,
       capture_method: "manual",
       automatic_payment_methods: { enabled: true },
       metadata: {
         creatorSlug: args.creatorSlug,
         ticketRef: args.ticketRef,
+        originalUsdCents: String(args.amountCents),
+        exchangeRate: String(exchangeRate),
+        chargeCurrency,
       },
     });
 
@@ -472,6 +509,9 @@ export const createManualPaymentIntent = action({
     return {
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
+      chargeAmountCents,
+      chargeCurrency,
+      exchangeRate,
     };
   },
 });

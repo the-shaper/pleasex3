@@ -7,7 +7,7 @@ import { api } from "@convex/_generated/api";
 import PaymentWrapper from "@/components/checkout/PaymentWrapper";
 import { TosModal } from "@/components/general/tosModal";
 import { normalizeUrl } from "@/lib/urlUtils";
-import { detectUserCurrency } from "@/lib/currency";
+import { detectUserCurrency, type SupportedCurrency } from "@/lib/currency";
 
 type QueuePayload = {
   creator: { slug: string; displayName: string; minPriorityTipCents: number };
@@ -55,6 +55,18 @@ export default function SubmitClient({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [pendingTicketRef, setPendingTicketRef] = useState<string | null>(null);
+
+  // Multi-currency support
+  const [detectedCurrency, setDetectedCurrency] = useState<SupportedCurrency>("usd");
+  const [chargeAmountCents, setChargeAmountCents] = useState<number>(0);
+  const [chargeCurrency, setChargeCurrency] = useState<SupportedCurrency>("usd");
+
+  // Detect user's currency on mount
+  useEffect(() => {
+    const currency = detectUserCurrency();
+    setDetectedCurrency(currency);
+    console.log("[Currency] Detected user currency:", currency);
+  }, []);
 
   // TOS Modal State
   const [isTosModalOpen, setIsTosModalOpen] = useState(false);
@@ -229,11 +241,18 @@ export default function SubmitClient({
       const result = await createManualPaymentIntent({
         creatorSlug: slug,
         ticketRef: json.ref,
-        amountCents: form.priorityTipCents, // USD cents (display currency)
+        amountCents: form.priorityTipCents, // USD input
+        currency: detectedCurrency, // Pass detected currency
       });
 
-      console.log("[Submit] Payment intent created successfully");
+      console.log("[Submit] Payment intent created successfully", {
+        chargeAmountCents: result.chargeAmountCents,
+        chargeCurrency: result.chargeCurrency,
+      });
 
+      // Store the actual charge amount/currency for display in modal
+      setChargeAmountCents(result.chargeAmountCents ?? form.priorityTipCents);
+      setChargeCurrency((result.chargeCurrency as SupportedCurrency) ?? "usd");
       setClientSecret(result.clientSecret);
       setShowPaymentModal(true);
     } catch (err: any) {

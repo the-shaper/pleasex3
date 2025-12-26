@@ -25,6 +25,8 @@ export interface CurrencyInfo {
 }
 
 // Currency definitions
+// Note: We do NOT hardcode exchange rates here.
+// Real-time rates are fetched from Stripe on the backend.
 export const CURRENCIES: Record<SupportedCurrency, CurrencyInfo> = {
   usd: { code: "usd", symbol: "$", name: "US Dollar" },
   mxn: { code: "mxn", symbol: "$", name: "Mexican Peso" },
