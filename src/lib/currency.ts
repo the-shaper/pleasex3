@@ -1,6 +1,6 @@
 /**
  * Currency detection and conversion utilities for multi-currency payment support.
- * 
+ *
  * This module handles:
  * 1. Detecting user's preferred currency based on timezone/locale
  * 2. Mapping countries to their primary currencies
@@ -8,28 +8,32 @@
  */
 
 // Supported currencies for payment processing
-export type SupportedCurrency = "usd" | "mxn" | "eur" | "gbp" | "cad" | "aud" | "jpy" | "brl";
+export type SupportedCurrency =
+  | "usd"
+  | "mxn"
+  | "eur"
+  | "gbp"
+  | "cad"
+  | "aud"
+  | "jpy"
+  | "brl";
 
 export interface CurrencyInfo {
   code: SupportedCurrency;
   symbol: string;
   name: string;
-  // Approximate exchange rate from USD (updated periodically)
-  // In production, fetch real-time rates from an API
-  usdRate: number;
 }
 
-// Currency definitions with approximate USD exchange rates
-// These are fallback rates - production should fetch real-time rates
+// Currency definitions
 export const CURRENCIES: Record<SupportedCurrency, CurrencyInfo> = {
-  usd: { code: "usd", symbol: "$", name: "US Dollar", usdRate: 1 },
-  mxn: { code: "mxn", symbol: "$", name: "Mexican Peso", usdRate: 17.5 }, // ~17.5 MXN per USD
-  eur: { code: "eur", symbol: "€", name: "Euro", usdRate: 0.92 },
-  gbp: { code: "gbp", symbol: "£", name: "British Pound", usdRate: 0.79 },
-  cad: { code: "cad", symbol: "$", name: "Canadian Dollar", usdRate: 1.36 },
-  aud: { code: "aud", symbol: "$", name: "Australian Dollar", usdRate: 1.57 },
-  jpy: { code: "jpy", symbol: "¥", name: "Japanese Yen", usdRate: 157 },
-  brl: { code: "brl", symbol: "R$", name: "Brazilian Real", usdRate: 6.2 },
+  usd: { code: "usd", symbol: "$", name: "US Dollar" },
+  mxn: { code: "mxn", symbol: "$", name: "Mexican Peso" },
+  eur: { code: "eur", symbol: "€", name: "Euro" },
+  gbp: { code: "gbp", symbol: "£", name: "British Pound" },
+  cad: { code: "cad", symbol: "$", name: "Canadian Dollar" },
+  aud: { code: "aud", symbol: "$", name: "Australian Dollar" },
+  jpy: { code: "jpy", symbol: "¥", name: "Japanese Yen" },
+  brl: { code: "brl", symbol: "R$", name: "Brazilian Real" },
 };
 
 // Timezone to country mapping (most common timezones)
@@ -131,18 +135,19 @@ export function detectUserCurrency(): SupportedCurrency {
   try {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const country = TIMEZONE_TO_COUNTRY[timezone];
-    
+
     if (country) {
       const currency = COUNTRY_TO_CURRENCY[country];
       if (currency && CURRENCIES[currency]) {
         return currency;
       }
     }
-    
+
     // Fallback: try to detect from browser language
-    const lang = navigator.language || (navigator as any).userLanguage || "en-US";
+    const lang =
+      navigator.language || (navigator as any).userLanguage || "en-US";
     const langCountry = lang.split("-")[1]?.toUpperCase();
-    
+
     if (langCountry) {
       const currency = COUNTRY_TO_CURRENCY[langCountry];
       if (currency && CURRENCIES[currency]) {
@@ -152,7 +157,7 @@ export function detectUserCurrency(): SupportedCurrency {
   } catch {
     // Ignore detection errors
   }
-  
+
   return "usd"; // Default fallback
 }
 
@@ -168,30 +173,18 @@ export function detectUserCountry(): string | null {
   }
 }
 
-/**
- * Convert USD cents to target currency cents.
- * Uses fallback rates - production should use real-time rates.
- */
-export function convertUsdToLocalCents(usdCents: number, targetCurrency: SupportedCurrency): number {
-  const rate = CURRENCIES[targetCurrency]?.usdRate || 1;
-  return Math.round(usdCents * rate);
-}
 
-/**
- * Convert local currency cents back to USD cents (for display purposes).
- */
-export function convertLocalToUsdCents(localCents: number, sourceCurrency: SupportedCurrency): number {
-  const rate = CURRENCIES[sourceCurrency]?.usdRate || 1;
-  return Math.round(localCents / rate);
-}
 
 /**
  * Format an amount in cents as a currency string.
  */
-export function formatCurrency(cents: number, currency: SupportedCurrency): string {
+export function formatCurrency(
+  cents: number,
+  currency: SupportedCurrency
+): string {
   const info = CURRENCIES[currency];
   const amount = cents / 100;
-  
+
   // Use Intl.NumberFormat for proper locale-aware formatting
   try {
     return new Intl.NumberFormat(undefined, {
@@ -216,7 +209,8 @@ export function getCurrencyInfo(currency: SupportedCurrency): CurrencyInfo {
 /**
  * Check if a currency is supported for payment processing.
  */
-export function isSupportedCurrency(currency: string): currency is SupportedCurrency {
+export function isSupportedCurrency(
+  currency: string
+): currency is SupportedCurrency {
   return currency in CURRENCIES;
 }
-

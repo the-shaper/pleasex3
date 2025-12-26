@@ -429,35 +429,12 @@ async function getStripeFeeInfo(paymentIntentId: string) {
   return getStripeFeeInfoFromCharge(chargeId);
 }
 
-// Supported currencies and their USD exchange rates (fallback values)
-// In production, these could be fetched from an API or Stripe
-const CURRENCY_USD_RATES: Record<string, number> = {
-  usd: 1,
-  mxn: 17.5,
-  eur: 0.92,
-  gbp: 0.79,
-  cad: 1.36,
-  aud: 1.57,
-  jpy: 157,
-  brl: 6.2,
-};
-
-/**
- * Convert USD cents to target currency cents using fallback rates.
- * The frontend passes USD amount, we convert to local currency for charging.
- */
-function convertUsdCentsToLocal(usdCents: number, targetCurrency: string): number {
-  const rate = CURRENCY_USD_RATES[targetCurrency.toLowerCase()] || 1;
-  return Math.round(usdCents * rate);
-}
-
-// V3: Manual Payment Intent (Hold funds) - WITH MULTI-CURRENCY SUPPORT
+// V3: Manual Payment Intent (Hold funds) - STRICT USD ONLY
 export const createManualPaymentIntent = action({
   args: {
     creatorSlug: v.string(),
     ticketRef: v.string(),
-    amountCents: v.number(), // Always in USD cents (display currency)
-    currency: v.optional(v.string()), // Target currency for charging (e.g., "mxn")
+    amountCents: v.number(), // Always in USD cents
   },
   handler: async (ctx, args) => {
     if (args.amountCents <= 0) {
@@ -472,53 +449,18 @@ export const createManualPaymentIntent = action({
       throw new Error("Creator does not have a connected Stripe account");
     }
 
-    // Determine the charging currency and convert amount
-    const chargeCurrency = (args.currency ?? "usd").toLowerCase();
-    const chargeAmountCents = chargeCurrency === "usd" 
-      ? args.amountCents 
-      : convertUsdCentsToLocal(args.amountCents, chargeCurrency);
-
-    // #region agent log
-    console.log(
-      "[DEBUG][createManualPaymentIntent] Creating PI with multi-currency:",
-      JSON.stringify({
-        originalUsdCents: args.amountCents,
-        chargeCurrency,
-        chargeAmountCents,
-        creatorSlug: args.creatorSlug,
-        ticketRef: args.ticketRef,
-        hypothesisId: "B-multicurrency",
-      })
-    );
-    // #endregion
-
     // Create a PaymentIntent with capture_method: 'manual'
-    // Currency is set to user's local currency for card compatibility
+    // Always charge in USD to ensure global acceptance and platform settlement
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: chargeAmountCents,
-      currency: chargeCurrency,
+      amount: args.amountCents,
+      currency: "usd",
       capture_method: "manual",
       automatic_payment_methods: { enabled: true },
       metadata: {
         creatorSlug: args.creatorSlug,
         ticketRef: args.ticketRef,
-        originalUsdCents: String(args.amountCents), // Store original USD for reference
-        chargeCurrency,
       },
     });
-
-    // #region agent log
-    console.log(
-      "[DEBUG][createManualPaymentIntent] PI created:",
-      JSON.stringify({
-        id: paymentIntent.id,
-        currency: paymentIntent.currency,
-        amount: paymentIntent.amount,
-        status: paymentIntent.status,
-        hypothesisId: "B-multicurrency",
-      })
-    );
-    // #endregion
 
     // Store the paymentIntentId on the ticket immediately
     await ctx.runMutation(api.payments.setPaymentIntentForTicket, {
@@ -530,9 +472,6 @@ export const createManualPaymentIntent = action({
     return {
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
-      // Return charge info so frontend can display it
-      chargeAmountCents,
-      chargeCurrency,
     };
   },
 });

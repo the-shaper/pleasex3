@@ -7,7 +7,7 @@ import { api } from "@convex/_generated/api";
 import PaymentWrapper from "@/components/checkout/PaymentWrapper";
 import { TosModal } from "@/components/general/tosModal";
 import { normalizeUrl } from "@/lib/urlUtils";
-import { detectUserCurrency, formatCurrency, convertUsdToLocalCents, type SupportedCurrency } from "@/lib/currency";
+import { detectUserCurrency } from "@/lib/currency";
 
 type QueuePayload = {
   creator: { slug: string; displayName: string; minPriorityTipCents: number };
@@ -55,21 +55,6 @@ export default function SubmitClient({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [pendingTicketRef, setPendingTicketRef] = useState<string | null>(null);
-  
-  // Multi-currency support
-  const [detectedCurrency, setDetectedCurrency] = useState<SupportedCurrency>("usd");
-  const [chargeAmountCents, setChargeAmountCents] = useState<number>(0);
-  const [chargeCurrency, setChargeCurrency] = useState<SupportedCurrency>("usd");
-
-  // Detect user's currency on mount
-  useEffect(() => {
-    const currency = detectUserCurrency();
-    setDetectedCurrency(currency);
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SubmitClient.tsx:currencyDetection',message:'Detected user currency',data:{detectedCurrency: currency, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B-multicurrency'})}).catch(()=>{});
-    // #endregion
-    console.log("[Currency] Detected user currency:", currency);
-  }, []);
 
   // TOS Modal State
   const [isTosModalOpen, setIsTosModalOpen] = useState(false);
@@ -241,25 +226,14 @@ export default function SubmitClient({
         );
       }
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SubmitClient.tsx:createPaymentIntent',message:'Creating payment intent with currency',data:{usdCents: form.priorityTipCents, detectedCurrency, ticketRef: json.ref},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B-multicurrency'})}).catch(()=>{});
-      // #endregion
-      
       const result = await createManualPaymentIntent({
         creatorSlug: slug,
         ticketRef: json.ref,
         amountCents: form.priorityTipCents, // USD cents (display currency)
-        currency: detectedCurrency, // User's local currency for charging
       });
 
-      console.log("[Submit] Payment intent created successfully", {
-        chargeAmountCents: result.chargeAmountCents,
-        chargeCurrency: result.chargeCurrency,
-      });
-      
-      // Store the actual charge amount/currency for display in modal
-      setChargeAmountCents(result.chargeAmountCents ?? form.priorityTipCents);
-      setChargeCurrency((result.chargeCurrency as SupportedCurrency) ?? "usd");
+      console.log("[Submit] Payment intent created successfully");
+
       setClientSecret(result.clientSecret);
       setShowPaymentModal(true);
     } catch (err: any) {
@@ -337,11 +311,10 @@ export default function SubmitClient({
           </div>
           <div className="flex gap-2">
             <button
-              className={`px-3 py-1 uppercase ${
-                queue === "personal"
-                  ? "bg-greenlite text-text font-bold"
-                  : "bg-slate-200"
-              }`}
+              className={`px-3 py-1 uppercase ${queue === "personal"
+                ? "bg-greenlite text-text font-bold"
+                : "bg-slate-200"
+                }`}
               onClick={() => {
                 // Restore last personal tip and switch tab
                 if (form.priorityTipCents !== lastPersonalTipCents) {
@@ -354,11 +327,10 @@ export default function SubmitClient({
             </button>
             {priorityEnabled && (
               <button
-                className={`px-3 py-1 uppercase ${
-                  queue === "priority"
-                    ? "bg-gold text-tex font-bold"
-                    : "bg-slate-200"
-                }`}
+                className={`px-3 py-1 uppercase ${queue === "priority"
+                  ? "bg-gold text-tex font-bold"
+                  : "bg-slate-200"
+                  }`}
                 onClick={() => {
                   const adjusted = Math.max(
                     form.priorityTipCents,
@@ -441,9 +413,8 @@ export default function SubmitClient({
         <aside ref={asideRef} className="w-full md:w-1/2 space-y-2 pt-3 ">
           <div
             onClick={handleTicketHeadingClick}
-            className={`${
-              isPriority ? "bg-gold" : "bg-greenlite"
-            } box-border content-stretch flex flex-row items-center justify-center px-[13px] py-2 w-full text-center uppercase md:cursor-default cursor-pointer`}
+            className={`${isPriority ? "bg-gold" : "bg-greenlite"
+              } box-border content-stretch flex flex-row items-center justify-center px-[13px] py-2 w-full text-center uppercase md:cursor-default cursor-pointer`}
             style={{ fontFamily: "var(--font-body)" }}
           >
             <span className="text-[15.98px] tracking-[-0.3196px] text-text font-bold">
@@ -471,17 +442,16 @@ export default function SubmitClient({
               <div className="text-sm space-y-1 min-w-0 break-words">
                 {form.attachments.trim()
                   ? form.attachments.split(/\s+/).map((u, i) => (
-                      <div key={i} className="truncate" title={u}>
-                        {u}
-                      </div>
-                    ))
+                    <div key={i} className="truncate" title={u}>
+                      {u}
+                    </div>
+                  ))
                   : "—"}
               </div>
             </div>
             <div
-              className={`${
-                isPriority ? "bg-gold" : "bg-greenlite"
-              } pt-4 pb-4 px-9 border border-gray-subtle text-text text-center flex flex-col items-center`}
+              className={`${isPriority ? "bg-gold" : "bg-greenlite"
+                } pt-4 pb-4 px-9 border border-gray-subtle text-text text-center flex flex-col items-center`}
             >
               <div
                 className="text-[18px]"
@@ -534,11 +504,10 @@ export default function SubmitClient({
           <button
             form="ticket-form"
             type="submit"
-            className={`${
-              isPriority
-                ? "bg-coral hover:bg-coral/80"
-                : "bg-blue hover:bg-blue/80"
-            } cursor-pointer text-text uppercase text-[24px] px-6 py-3.5 w-full font-bold flex items-center justify-between`}
+            className={`${isPriority
+              ? "bg-coral hover:bg-coral/80"
+              : "bg-blue hover:bg-blue/80"
+              } cursor-pointer text-text uppercase text-[24px] px-6 py-3.5 w-full font-bold flex items-center justify-between`}
             style={{ fontFamily: "var(--font-body)" }}
           >
             <span>CLAIM TICKET {displayedNextNumber ?? ""}</span>
@@ -552,9 +521,8 @@ export default function SubmitClient({
           clientSecret={clientSecret}
           onSuccess={handlePaymentSuccess}
           onCancel={() => setShowPaymentModal(false)}
-          amountCents={chargeAmountCents}
-          currency={chargeCurrency}
-          originalUsdCents={form.priorityTipCents}
+          amountCents={form.priorityTipCents}
+          currency="usd"
         />
       )}
 
