@@ -484,35 +484,82 @@ export const createManualPaymentIntent = action({
     }
 
     // Create PaymentIntent in the determined currency
-    // Funds held on Platform Account (`on_behalf_of` is NOT used here to preserve "Hold" logic)
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: chargeAmountCents,
-      currency: chargeCurrency,
-      capture_method: "manual",
-      automatic_payment_methods: { enabled: true },
-      metadata: {
+    try {
+      const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
+        amount: chargeAmountCents,
+        currency: chargeCurrency,
+        capture_method: "manual",
+        automatic_payment_methods: { enabled: true },
+        metadata: {
+          creatorSlug: args.creatorSlug,
+          ticketRef: args.ticketRef,
+          originalUsdCents: String(args.amountCents),
+          exchangeRate: String(exchangeRate),
+          chargeCurrency,
+        },
+      };
+
+      console.log("[Payment] Creating Stripe PaymentIntent with params:", JSON.stringify(paymentIntentParams, null, 2));
+
+      // Funds held on Platform Account (`on_behalf_of` is NOT used here to preserve "Hold" logic)
+      const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
+
+      // Store transaction details immediately in payments table
+      await ctx.runMutation(api.payments.createPendingPayment, {
         creatorSlug: args.creatorSlug,
         ticketRef: args.ticketRef,
-        originalUsdCents: String(args.amountCents),
-        exchangeRate: String(exchangeRate),
+        amountGross: chargeAmountCents,
+        currency: chargeCurrency,
+        externalId: paymentIntent.id,
+        originalAmountCents: args.amountCents,
+        exchangeRate: exchangeRate,
+      });
+
+      // Store the paymentIntentId on the ticket
+      await ctx.runMutation(api.payments.setPaymentIntentForTicket, {
+        ticketRef: args.ticketRef,
+        paymentIntentId: paymentIntent.id,
+        status: "pending",
+      });
+
+      return {
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+        chargeAmountCents,
         chargeCurrency,
-      },
-    });
+        exchangeRate,
+      };
 
-    // Store the paymentIntentId on the ticket immediately
-    await ctx.runMutation(api.payments.setPaymentIntentForTicket, {
+    } catch (error: any) {
+      console.error("[Payment] Create PaymentIntent failed:", error);
+      throw new Error(`Payment setup failed: ${error.message}`);
+    }
+  },
+});
+
+export const createPendingPayment = mutation({
+  args: {
+    creatorSlug: v.string(),
+    ticketRef: v.string(),
+    amountGross: v.number(),
+    currency: v.string(),
+    externalId: v.string(),
+    originalAmountCents: v.optional(v.number()),
+    exchangeRate: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("payments", {
+      creatorSlug: args.creatorSlug,
       ticketRef: args.ticketRef,
-      paymentIntentId: paymentIntent.id,
+      amountGross: args.amountGross,
+      currency: args.currency,
       status: "pending",
+      provider: "stripe",
+      externalId: args.externalId,
+      createdAt: Date.now(),
+      originalAmountCents: args.originalAmountCents,
+      exchangeRate: args.exchangeRate,
     });
-
-    return {
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
-      chargeAmountCents,
-      chargeCurrency,
-      exchangeRate,
-    };
   },
 });
 

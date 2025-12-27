@@ -80,6 +80,27 @@ http.route({
           status: "requires_capture",
         });
       }
+    } else if (event.type === "payment_intent.payment_failed") {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      const creatorSlug = paymentIntent.metadata.creatorSlug;
+      const ticketRef = paymentIntent.metadata.ticketRef;
+
+      console.error("[ConvexHTTP] Payment FAILED", {
+        id: paymentIntent.id,
+        creatorSlug,
+        ticketRef,
+        status: paymentIntent.status,
+        error_code: paymentIntent.last_payment_error?.code,
+        error_message: paymentIntent.last_payment_error?.message,
+        decline_code: paymentIntent.last_payment_error?.decline_code,
+      });
+
+      // Optionally update DB status to failed if needed, but logging is the priority request
+      if (ticketRef) {
+        // You might want to record this failure if you have a place for it, 
+        // but strictly for debugging logs, the console.error is what will show up in the Dashboard.
+      }
+
     } else if (event.type === "account.updated") {
       // Handle Stripe Connect account updates (onboarding completion)
       const account = event.data.object as Stripe.Account;

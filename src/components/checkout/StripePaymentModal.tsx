@@ -45,18 +45,18 @@ const PaymentForm = ({ onSuccess, onCancel, amountCents }: PaymentFormProps) => 
     });
 
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StripePaymentModal.tsx:confirmPayment',message:'Payment confirmation result',data:{error: error ? { type: error.type, code: error.code, message: error.message, decline_code: (error as any).decline_code } : null, paymentIntentStatus: paymentIntent?.status, paymentIntentId: paymentIntent?.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StripePaymentModal.tsx:confirmPayment', message: 'Payment confirmation result', data: { error: error ? { type: error.type, code: error.code, message: error.message, decline_code: (error as any).decline_code } : null, paymentIntentStatus: paymentIntent?.status, paymentIntentId: paymentIntent?.id }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'A' }) }).catch(() => { });
     // #endregion
 
     if (error) {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StripePaymentModal.tsx:error',message:'Payment FAILED',data:{errorType: error.type, errorCode: error.code, errorMessage: error.message, declineCode: (error as any).decline_code},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StripePaymentModal.tsx:error', message: 'Payment FAILED', data: { errorType: error.type, errorCode: error.code, errorMessage: error.message, declineCode: (error as any).decline_code }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'A' }) }).catch(() => { });
       // #endregion
       setErrorMessage(error.message ?? "An unknown error occurred");
       setProcessing(false);
     } else {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StripePaymentModal.tsx:success',message:'Payment SUCCESS',data:{status: paymentIntent?.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/52800dcc-1f0f-4708-aec6-2c5e74412eb3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StripePaymentModal.tsx:success', message: 'Payment SUCCESS', data: { status: paymentIntent?.status }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'A' }) }).catch(() => { });
       // #endregion
       // Payment authorized!
       onSuccess();
@@ -76,7 +76,7 @@ const PaymentForm = ({ onSuccess, onCancel, amountCents }: PaymentFormProps) => 
           type="button"
           onClick={onCancel}
           disabled={processing}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300  hover:bg-gray-50"
         >
           Cancel
         </button>
@@ -117,7 +117,7 @@ export default function StripePaymentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white p-6 shadow-xl w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
         <h2 className="text-xl font-bold mb-4 text-gray-900">Complete Payment</h2>
         <p className="text-sm text-gray-500 mb-6">
           Your funds will be held securely and only captured when your request is approved.

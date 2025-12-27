@@ -98,6 +98,9 @@ export default defineSchema({
     // Stripe fee and net amounts (optional for legacy rows)
     stripeFeeCents: v.optional(v.number()), // processing fee charged by Stripe
     netCents: v.optional(v.number()), // amount after Stripe fees (platform fee applied separately)
+    // Currency conversion tracking
+    exchangeRate: v.optional(v.number()),
+    originalAmountCents: v.optional(v.number()),
   })
     .index("by_creator", ["creatorSlug"])
     .index("by_creator_createdAt", ["creatorSlug", "createdAt"])
