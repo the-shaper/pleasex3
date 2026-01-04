@@ -101,6 +101,9 @@ export default defineSchema({
     // Currency conversion tracking
     exchangeRate: v.optional(v.number()),
     originalAmountCents: v.optional(v.number()),
+    // Local currency details (if different from main storage currency)
+    localCurrency: v.optional(v.string()), // e.g. "mxn"
+    localAmountGross: v.optional(v.number()), // e.g. 1791
   })
     .index("by_creator", ["creatorSlug"])
     .index("by_creator_createdAt", ["creatorSlug", "createdAt"])

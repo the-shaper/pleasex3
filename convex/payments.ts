@@ -66,12 +66,17 @@ export const recordStripePayment = mutation({
     createdAt: v.optional(v.number()),
     stripeFeeCents: v.optional(v.number()),
     netCents: v.optional(v.number()),
+    exchangeRate: v.optional(v.number()),
+    originalAmountCents: v.optional(v.number()),
+    localCurrency: v.optional(v.string()),
+    localAmountGross: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     console.log("[Convex][recordStripePayment] incoming", {
       externalId: args.externalId,
       creatorSlug: args.creatorSlug,
       amount: args.amountGross,
+      currency: args.currency,
       stripeFeeCents: args.stripeFeeCents,
       netCents: args.netCents,
     });
@@ -96,6 +101,11 @@ export const recordStripePayment = mutation({
       await ctx.db.patch(existing._id, {
         stripeFeeCents,
         netCents,
+        // Update normalization fields if provided (e.g. on capture)
+        amountGross: args.amountGross,
+        currency: args.currency,
+        localCurrency: args.localCurrency ?? existing.localCurrency,
+        localAmountGross: args.localAmountGross ?? existing.localAmountGross,
       });
 
       return { ok: true, paymentId: existing._id as string };
@@ -116,6 +126,10 @@ export const recordStripePayment = mutation({
       ticketRef: args.ticketRef,
       stripeFeeCents,
       netCents,
+      exchangeRate: args.exchangeRate,
+      originalAmountCents: args.originalAmountCents,
+      localCurrency: args.localCurrency,
+      localAmountGross: args.localAmountGross,
     });
 
     console.log("[Convex][recordStripePayment] inserted", insertedId);
@@ -462,10 +476,15 @@ export const createManualPaymentIntent = action({
       try {
         const targetCurrency = args.currency.toLowerCase();
 
-        // Fetch real-time exchange rates from Stripe
-        // This ensures we don't have hardcoded values
-        const rates = await stripe.exchangeRates.retrieve("usd");
-        const rate = rates.rates[targetCurrency];
+        // Use a public, reliable Exchange Rate API instead of restricted Stripe endpoint
+        // This solves the 404 "Unrecognized request URL" error
+        const response = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+        if (!response.ok) {
+          throw new Error(`Exchange rate API failed: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const rate = data.rates[targetCurrency.toUpperCase()]; // API uses uppercase keys
 
         if (rate) {
           chargeCurrency = targetCurrency;
@@ -695,17 +714,60 @@ export const capturePaymentForTicket = action({
         const { stripeFeeCents, netCents, amount, currency } =
           await getStripeFeeInfo(ticket.paymentIntentId);
 
+        // Normalize currency to USD if needed
+        let finalAmountGross = amount ?? paymentIntent.amount;
+        let finalStripeFeeCents = stripeFeeCents;
+        let finalNetCents = netCents;
+        let finalCurrency = currency ?? paymentIntent.currency;
+        let localCurrency = null;
+        let localAmountGross = null;
+
+        // If local currency was used, we normalize to USD for the dashboard
+        if (finalCurrency.toLowerCase() !== "usd") {
+          const grossUsdCents = ticket.tipCents; // This is the original USD amount from ticket creation
+
+          if (grossUsdCents > 0) {
+            // Calculate effective rate: LocalAmount / UsdAmount
+            // e.g. 1791 / 100 = 17.91
+            const effectiveRate = finalAmountGross / grossUsdCents;
+
+            // Normalize Fee to USD: LocalFee / Rate
+            // e.g. 422 / 17.91 = ~23.5 cents USD
+            const feeUsdCents = Math.round(finalStripeFeeCents / effectiveRate);
+
+            console.log(`[Capture] Normalizing Fees to USD:`, {
+              localGross: finalAmountGross,
+              localFee: finalStripeFeeCents,
+              usdGross: grossUsdCents,
+              effectiveRate,
+              usdFee: feeUsdCents
+            });
+
+            // Set normalized values for storage
+            finalCurrency = "usd";
+            finalAmountGross = grossUsdCents;
+            finalStripeFeeCents = feeUsdCents;
+            finalNetCents = Math.max(0, grossUsdCents - feeUsdCents);
+
+            // Store original values for reference
+            localCurrency = currency ?? paymentIntent.currency;
+            localAmountGross = amount ?? paymentIntent.amount;
+          }
+        }
+
         // Record in payments table
         await ctx.runMutation(api.payments.recordStripePayment, {
           creatorSlug: ticket.creatorSlug,
-          amountGross: amount ?? paymentIntent.amount,
-          currency: currency ?? paymentIntent.currency,
+          amountGross: finalAmountGross,
+          currency: finalCurrency,
           externalId: paymentIntent.id,
           provider: "stripe",
           status: "succeeded",
           ticketRef: ticket.ref,
-          stripeFeeCents,
-          netCents,
+          stripeFeeCents: finalStripeFeeCents,
+          netCents: finalNetCents,
+          localCurrency: localCurrency ?? undefined,
+          localAmountGross: localAmountGross ?? undefined,
         });
 
         // Update ticket status
@@ -743,6 +805,30 @@ export const capturePaymentForTicket = action({
           const { stripeFeeCents, netCents, amount, currency } =
             await getStripeFeeInfo(ticket.paymentIntentId);
 
+          // Normalize currency to USD if needed (Duplicate logic for idempotency path)
+          let finalAmountGross = amount ?? pi.amount;
+          let finalStripeFeeCents = stripeFeeCents;
+          let finalNetCents = netCents;
+          let finalCurrency = currency ?? pi.currency;
+          let localCurrency = null;
+          let localAmountGross = null;
+
+          if (finalCurrency.toLowerCase() !== "usd") {
+            const grossUsdCents = ticket.tipCents;
+            if (grossUsdCents > 0) {
+              const effectiveRate = finalAmountGross / grossUsdCents;
+              const feeUsdCents = Math.round(finalStripeFeeCents / effectiveRate);
+
+              finalCurrency = "usd";
+              finalAmountGross = grossUsdCents;
+              finalStripeFeeCents = feeUsdCents;
+              finalNetCents = Math.max(0, grossUsdCents - feeUsdCents);
+
+              localCurrency = currency ?? pi.currency;
+              localAmountGross = amount ?? pi.amount;
+            }
+          }
+
           // Ensure DB is in sync
           await ctx.runMutation(api.payments.setPaymentIntentForTicket, {
             ticketRef: args.ticketRef,
@@ -752,14 +838,16 @@ export const capturePaymentForTicket = action({
 
           await ctx.runMutation(api.payments.recordStripePayment, {
             creatorSlug: ticket.creatorSlug,
-            amountGross: amount ?? pi.amount,
-            currency: currency ?? pi.currency,
+            amountGross: finalAmountGross,
+            currency: finalCurrency,
             externalId: pi.id,
             provider: "stripe",
             status: "succeeded",
             ticketRef: ticket.ref,
-            stripeFeeCents,
-            netCents,
+            stripeFeeCents: finalStripeFeeCents,
+            netCents: finalNetCents,
+            localCurrency: localCurrency ?? undefined,
+            localAmountGross: localAmountGross ?? undefined,
           });
 
           // Mark ticket as approved in the main table

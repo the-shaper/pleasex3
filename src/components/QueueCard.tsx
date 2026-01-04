@@ -87,9 +87,9 @@ export default function QueueCard({
   return (
     <section className="space-y-2 w-full">
       <div className="space-y-2">
-        <div className="flex flex-col md:flex-row gap-2 items-stretch">
+        <div className="flex flex-row gap-2 items-stretch">
           <div
-            className="md:w-32 w-full grid gap-2 items-stretch"
+            className="w-32  grid gap-2 items-stretch"
             style={{ gridTemplateRows: "auto auto 1fr", minHeight: 167 }}
           >
             <div
@@ -144,7 +144,7 @@ export default function QueueCard({
                 {nextTicketNumber ?? data.nextTicketNumber ?? "—"}
               </span>
               <div
-                className="flex-1 ml-[9px] mr-2 text-[12px] uppercase text-text text-left max-w-[44%]"
+                className="flex-1 ml-[9px] mr-2 text-[10px] uppercase text-text text-left max-w-[44%]"
                 style={{ fontFamily: "var(--font-body)" }}
               >
                 <p>
