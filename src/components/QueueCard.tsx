@@ -87,9 +87,9 @@ export default function QueueCard({
   return (
     <section className="space-y-2 w-full">
       <div className="space-y-2">
-        <div className="flex flex-row gap-2 items-stretch">
+        <div className="flex flex-col md:flex-row gap-2 items-stretch">
           <div
-            className="w-32  grid gap-2 items-stretch"
+            className="md:w-32 w-full grid gap-2 items-stretch"
             style={{ gridTemplateRows: "auto auto 1fr", minHeight: 167 }}
           >
             <div
@@ -101,7 +101,7 @@ export default function QueueCard({
               </span>
             </div>
             <div
-              className="bg-[#412c2c] box-border content-stretch flex flex-row gap-2.5 items-center justify-center px-[30px] py-2.5 w-full text-center"
+              className="bg-[#412c2c] box-border content-stretch flex flex-row gap-2.5 items-center justify-center px-[30px] md:py-2.5 py-1 w-full text-center"
               style={{ fontFamily: "var(--font-body)" }}
             >
               <span className="text-[14.386px] tracking-[-0.2877px] text-coral leading-none  ">
@@ -197,7 +197,7 @@ export default function QueueCard({
                 }}
               >
                 <div
-                  className={`inline-flex items-center gap-2 text-[16px] ${tipTextClass}`}
+                  className={`flex items-center justify-center gap-2 text-[16px] ${tipTextClass}`}
                 >
                   <button
                     type="button"

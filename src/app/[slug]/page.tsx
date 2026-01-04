@@ -113,7 +113,7 @@ export default function CreatorQueuesPage() {
           </div>
         </header>
         <main className="flex-1 flex items-center md:pb-0 pb-6">
-          <div className="flex md:flex-row flex-col w-full items-stretch content-stretch justify-center gap-6">
+          <div className="flex md:flex-row flex-col w-full items-stretch content-stretch justify-center gap-12 md:gap-6">
             <QueueCard
               kind="personal"
               slug={slug}
